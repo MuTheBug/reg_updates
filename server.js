@@ -130,6 +130,12 @@ const upload = multer({
     limits: { fileSize: 10 * 1024 * 1024, files: 2 }
 });
 
+// Separate multer for backup restore (higher size limit, temp storage)
+const backupUpload = multer({
+    dest: path.join(__dirname, 'temp_uploads'),
+    limits: { fileSize: 500 * 1024 * 1024 }
+});
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -479,10 +485,11 @@ app.get('/api/backup/full', authMiddleware, (req, res) => {
     }
 });
 
-app.post('/api/restore/full', authMiddleware, upload.single('backup'), (req, res) => {
+app.post('/api/restore/full', authMiddleware, backupUpload.single('backup'), (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const uploadedFilePath = req.file.path;
     try {
-        const zip = new AdmZip(req.file.path);
+        const zip = new AdmZip(uploadedFilePath);
         const tempDir = path.join(__dirname, 'temp_restore');
         if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
         fs.mkdirSync(tempDir);
@@ -500,6 +507,7 @@ app.post('/api/restore/full', authMiddleware, upload.single('backup'), (req, res
             // Reopen db
             db = new Database(DB_PATH);
             db.pragma('journal_mode = WAL');
+            db.pragma('busy_timeout = 5000');
             initDbSchema();
         }
 
@@ -509,11 +517,16 @@ app.post('/api/restore/full', authMiddleware, upload.single('backup'), (req, res
         }
 
         fs.rmSync(tempDir, { recursive: true });
-        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        if (fs.existsSync(uploadedFilePath)) fs.unlinkSync(uploadedFilePath);
+        // Clean up temp_uploads dir
+        const tempUploadsDir = path.join(__dirname, 'temp_uploads');
+        if (fs.existsSync(tempUploadsDir)) fs.rmSync(tempUploadsDir, { recursive: true });
 
         res.json({ success: true });
     } catch (e) {
         console.error(e);
+        // Clean up on error
+        if (fs.existsSync(uploadedFilePath)) try { fs.unlinkSync(uploadedFilePath); } catch(x) {}
         res.status(500).json({ error: e.message });
     }
 });

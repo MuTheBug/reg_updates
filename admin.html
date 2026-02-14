@@ -347,12 +347,13 @@
 
         /* Print styles */
         @media print {
-            body { background: #fff !important; color: #000 !important; }
+            * { box-shadow: none !important; text-shadow: none !important; }
+            body { background: #fff !important; color: #000 !important; font-size: 10pt !important; }
             .bg-effects, .main-header, .filter-bar, .adv-filter-panel,
             .pagination, .action-btns, .act-btn, .header-actions,
             .modal-close, .modal-print-btn, .modal-head-actions,
             .print-btn, .export-btn, .reset-btn, .filter-btn, .btn-action,
-            .stats-grid, .lightbox { display: none !important; }
+            .stats-grid, .lightbox, .adv-toggle { display: none !important; }
             .wrapper { margin: 0; padding: 0; max-width: 100%; }
             .table-container, .modal, .modal-overlay { border: none; box-shadow: none; background: #fff; }
             .modal-overlay.show {
@@ -366,15 +367,20 @@
             .detail-value { color: #000 !important; }
             .detail-section-title { color: #000 !important; border-color: #333 !important; }
             .status-badge { border: 1px solid #000; color: #000 !important; background: #eee !important; }
-            table { min-width: auto; }
-            thead th { background: #eee; color: #000; border-color: #333; }
-            tbody td { border-color: #ccc; color: #000; }
-            .table-scroll { overflow: visible; }
+            table { min-width: auto !important; width: 100% !important; font-size: 9pt !important; }
+            thead th { background: #eee !important; color: #000 !important; border-color: #333 !important; padding: 4px 6px !important; font-size: 9pt !important; }
+            tbody td { border-color: #ccc !important; color: #000 !important; padding: 3px 6px !important; font-size: 9pt !important; }
+            .table-scroll { overflow: visible !important; }
+            .photo-thumb { width: 24px !important; height: 24px !important; border-radius: 4px !important; }
 
             /* Print header */
-            .print-header { display: block !important; text-align: center; margin-bottom: 20px; }
-            .print-header img { width: 80px; }
-            .print-header h2 { margin-top: 8px; }
+            .print-header { display: block !important; text-align: center; margin-bottom: 10px; }
+            .print-header img { width: 60px; }
+            .print-header h2 { margin-top: 4px; font-size: 14pt; }
+
+            /* Force page breaks between records in single-record print */
+            .modal-body { padding: 10px !important; }
+            .detail-row { padding: 4px 0 !important; }
         }
         .print-header { display: none; }
 
@@ -382,18 +388,31 @@
         @media (max-width: 768px) {
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .filter-bar { flex-direction: column; }
-            .filter-group, .filter-group.fg-wide, .filter-group.fg-narrow { min-width: auto; flex: auto; }
-            .header-inner { padding: 10px 14px; gap: 12px; }
+            .filter-group, .filter-group.fg-wide, .filter-group.fg-narrow { min-width: 0 !important; flex: 1 1 100%; width: 100%; }
+            .header-inner { padding: 10px 14px; gap: 12px; flex-wrap: wrap; }
             .header-text h1 { font-size: 1.2em; }
+            .header-actions { width: 100%; justify-content: center; }
             .header-actions a, .header-actions button { padding: 8px 14px; font-size: 0.8em; }
             .detail-row { grid-template-columns: 1fr; }
             .adv-grid { flex-direction: column; }
+            .adv-grid .filter-group { min-width: 0 !important; flex: 1 1 100%; }
+            .wrapper { padding: 0 10px 50px; }
+            .modal-overlay { padding: 10px 8px; }
+            .modal { max-width: 100%; border-radius: 14px; }
+            .modal-body { padding: 16px 12px; }
+            .modal-head { padding: 14px 12px; }
+            .action-btns { flex-wrap: wrap; }
+            table { font-size: 0.82em; }
+            thead th, tbody td { padding: 8px 6px; }
         }
 
         @media (max-width: 480px) {
             .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
             .stat-card { padding: 14px; }
             .stat-number { font-size: 1.6em; }
+            .modal-body { padding: 12px 8px; }
+            .filter-group input, .filter-group select { padding: 9px 10px; font-size: 0.85em; }
+            .detail-section-title { font-size: 0.92em; }
         }
 
         ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -1416,6 +1435,22 @@ async function editRecord(id) {
                 <textarea name="notes" rows="3" style="background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:12px;">${esc(r.notes||'')}</textarea>
             </div>
 
+            <div class="detail-section-title">المرفقات</div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>الصورة الشخصية ${r.photo_path ? '(يوجد صورة حالية)' : '(لا يوجد صورة)'}</label>
+                    ${r.photo_path ? `<div style="margin:6px 0;"><img src="/uploads/photos/${r.photo_path}" style="width:60px;height:60px;border-radius:10px;object-fit:cover;border:2px solid var(--border);"></div>` : ''}
+                    <input type="file" name="photo" accept="image/*" style="padding:8px; background:var(--bg-input); border:2px solid var(--border); border-radius:10px; color:var(--text);">
+                    <span style="font-size:0.75em;color:var(--text-dim);">اتركه فارغاً للاحتفاظ بالصورة الحالية</span>
+                </div>
+                <div class="filter-group">
+                    <label>وثيقة الإثبات ${r.document_path ? '(يوجد وثيقة حالية)' : '(لا يوجد وثيقة)'}</label>
+                    ${r.document_path ? `<div style="margin:6px 0;"><a href="/uploads/documents/${r.document_path}" target="_blank" style="color:var(--accent);font-size:0.85em;">عرض الوثيقة الحالية</a></div>` : ''}
+                    <input type="file" name="document" accept="image/*,.pdf" style="padding:8px; background:var(--bg-input); border:2px solid var(--border); border-radius:10px; color:var(--text);">
+                    <span style="font-size:0.75em;color:var(--text-dim);">اتركه فارغاً للاحتفاظ بالوثيقة الحالية</span>
+                </div>
+            </div>
+
             <div style="margin-top:20px; display:flex; gap:10px;">
                 <button type="submit" class="filter-btn">حفظ التغييرات</button>
                 <button type="button" class="reset-btn" onclick="closeModal()">إلغاء</button>
@@ -1453,34 +1488,31 @@ function toggleEditHousing() {
 
 async function saveEdit(e) {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const data = {};
-    formData.forEach((value, key) => { data[key] = value; });
+    const formEl = e.target;
+    const formData = new FormData(formEl);
 
     // Ensure checkboxes are included as 'yes' or 'no'
-    data.hasHypertension = formData.get('hasHypertension') || 'no';
-    data.hasDiabetes = formData.get('hasDiabetes') || 'no';
-    data.hasSpecialNeeds = formData.get('hasSpecialNeeds') || 'no';
-    data.isOfficiallyRegistered = formData.get('isOfficiallyRegistered') || 'no';
+    if (!formData.get('hasHypertension')) formData.set('hasHypertension', 'no');
+    if (!formData.get('hasDiabetes')) formData.set('hasDiabetes', 'no');
+    if (!formData.get('hasSpecialNeeds')) formData.set('hasSpecialNeeds', 'no');
 
-    if (data.otherDiseases) {
-        const list = data.otherDiseases.split(',').map(s => s.trim()).filter(s => s);
-        data.otherDiseases = JSON.stringify(list);
-    } else {
-        data.otherDiseases = null;
+    // Process otherDiseases to JSON
+    const od = formData.get('otherDiseases');
+    if (od) {
+        const list = od.split(',').map(s => s.trim()).filter(s => s);
+        formData.set('otherDiseases', JSON.stringify(list));
     }
 
-    // Convert empty date values to null
-    ['birthDay','birthMonth','birthYear','arrestDay','arrestMonth','arrestYear',
-     'releaseDay','releaseMonth','releaseYear','deathDay','deathMonth','deathYear'].forEach(k => {
-        if (data[k] === '' || data[k] === undefined) data[k] = null;
-    });
+    // Remove empty file inputs so server keeps existing files
+    const photoFile = formData.get('photo');
+    if (photoFile && photoFile.size === 0) formData.delete('photo');
+    const docFile = formData.get('document');
+    if (docFile && docFile.size === 0) formData.delete('document');
 
     try {
         const res = await fetch('/api/records/' + currentRecordId, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: formData
         });
         if (res.ok) {
             closeModal();
