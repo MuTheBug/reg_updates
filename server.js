@@ -166,15 +166,17 @@ app.get('/api/logout', (req, res) => {
 function collectChildrenData(body, prefix) {
     const children = [];
     let under18Count = 0;
+    const currentYear = new Date().getFullYear();
     for (let i = 1; i <= 20; i++) {
         const key = `cName_${prefix}_${i}`;
         if (body[key]) {
-            const ageVal = body[`cAge_${prefix}_${i}`];
-            const age = parseInt(ageVal);
-            if (!isNaN(age) && age < 18) under18Count++;
+            const birthYearVal = body[`cBirthYear_${prefix}_${i}`];
+            const birthYear = parseInt(birthYearVal);
+            if (!isNaN(birthYear) && (currentYear - birthYear) < 18) under18Count++;
             children.push({
                 name: body[key],
-                age: ageVal || '',
+                gender: body[`cGender_${prefix}_${i}`] || '',
+                birthYear: birthYearVal || '',
                 education: body[`cEdu_${prefix}_${i}`] || '',
                 eduType: body[`cEduType_${prefix}_${i}`] || '',
                 specialization: body[`cSpec_${prefix}_${i}`] || '',
@@ -338,17 +340,19 @@ app.put('/api/records/:id', authMiddleware, upload.fields([{ name: 'photo' }, { 
             firstName:'first_name', fatherName:'father_name', lastName:'last_name', gender:'gender', motherName:'mother_name',
             birthDay:'birth_day', birthMonth:'birth_month', birthYear:'birth_year', province:'province', nationalId:'national_id',
             phone:'phone', bloodType:'blood_type', arrestDay:'arrest_day', arrestMonth:'arrest_month', arrestYear:'arrest_year',
-            arrestPlace:'arrest_place', arrestAuthority:'arrest_authority', arrestReason:'arrest_reason', status:'status',
+            arrestPlace:'arrest_place', arrestAuthority:'arrest_authority', arrestReason:'arrest_reason', arrestCauser:'arrest_causer',
+            status:'status',
             releaseDay:'release_day', releaseMonth:'release_month', releaseYear:'release_year',
-            deathDay:'death_day', deathMonth:'death_month', deathYear:'death_year',
+            deathDay:'death_day', deathMonth:'death_month', deathYear:'death_year', deathPlace:'death_place',
             marital:'marital', spouseName:'spouse_name', spousePhone:'spouse_phone', exSpouseName:'ex_spouse_name',
             guardianName:'guardian_name', guardianRelation:'guardian_relation', guardianPhone:'guardian_phone',
-            kidsCount:'kids_count', kidsCountW:'kids_count_w', kids_under_18_count:'kids_under_18_count',
+            hasKids:'has_kids', kidsCount:'kids_count', hasKidsW:'has_kids_w', kidsCountW:'kids_count_w',
+            kids_under_18_count:'kids_under_18_count',
             address:'address', housingType:'housing_type', employment:'employment', profession:'profession',
             employer:'employer', breadwinner:'breadwinner', breadwinnerJob:'breadwinner_job',
             chronic:'chronic', diseases:'diseases',
             education:'education', eduType:'edu_type', eduSpecialization:'edu_specialization',
-            eduUniversity:'edu_university', legal:'legal', legal_details:'legal_details', deathPlace:'death_place',
+            eduUniversity:'edu_university', legal:'legal', legal_details:'legal_details',
             children_data:'children_data', children_data_w:'children_data_w',
             assoc:'assoc', assocName:'assoc_name', serviceType:'service_type', notes:'notes',
             rentAmount:'rent_amount', hasHypertension:'has_hypertension', hasDiabetes:'has_diabetes',

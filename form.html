@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>جمعية حقنا - نموذج بيانات</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap');
+        /* Tajawal font - loaded locally for offline support */
+        @font-face { font-family: 'Tajawal'; font-style: normal; font-display: swap; font-weight: 300; src: url('/fonts/tajawal-arabic-300-normal.woff2') format('woff2'), url('/fonts/tajawal-latin-300-normal.woff2') format('woff2'); }
+        @font-face { font-family: 'Tajawal'; font-style: normal; font-display: swap; font-weight: 400; src: url('/fonts/tajawal-arabic-400-normal.woff2') format('woff2'), url('/fonts/tajawal-latin-400-normal.woff2') format('woff2'); }
+        @font-face { font-family: 'Tajawal'; font-style: normal; font-display: swap; font-weight: 500; src: url('/fonts/tajawal-arabic-500-normal.woff2') format('woff2'), url('/fonts/tajawal-latin-500-normal.woff2') format('woff2'); }
+        @font-face { font-family: 'Tajawal'; font-style: normal; font-display: swap; font-weight: 700; src: url('/fonts/tajawal-arabic-700-normal.woff2') format('woff2'), url('/fonts/tajawal-latin-700-normal.woff2') format('woff2'); }
+        @font-face { font-family: 'Tajawal'; font-style: normal; font-display: swap; font-weight: 800; src: url('/fonts/tajawal-arabic-800-normal.woff2') format('woff2'), url('/fonts/tajawal-latin-800-normal.woff2') format('woff2'); }
+        @font-face { font-family: 'Tajawal'; font-style: normal; font-display: swap; font-weight: 900; src: url('/fonts/tajawal-arabic-900-normal.woff2') format('woff2'), url('/fonts/tajawal-latin-900-normal.woff2') format('woff2'); }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -1193,6 +1199,10 @@
                     <option value="">-- اختر --</option>
                     <option>علمي</option>
                     <option>ادبي</option>
+                    <option>شريعة</option>
+                    <option>صناعة وفنون</option>
+                    <option>تجارة</option>
+                    <option>معلوماتية</option>
                 </select>
             </div>
         </div>
@@ -1507,6 +1517,11 @@ function buildKids(boxId, count) {
     box.innerHTML = '';
     const n = parseInt(count) || 0;
     const eduOptions = ['أمي', 'ابتدائية', 'إعدادية', 'ثانوية', 'معهد', 'بكالوريوس', 'ماجستير', 'دكتوراه'];
+    const currentYear = new Date().getFullYear();
+    let yearOptions = '<option value="">-- السنة --</option>';
+    for (let y = currentYear; y >= 1940; y--) {
+        yearOptions += `<option value="${y}">${y}</option>`;
+    }
     for (let i = 1; i <= n; i++) {
         const uid = boxId + '_' + i;
         box.innerHTML += `
@@ -1516,7 +1531,20 @@ function buildKids(boxId, count) {
             </div>
             <div class="g g2">
                 <div class="fg"><label>الاسم</label><input type="text" name="cName_${uid}" placeholder="اسم الولد"></div>
-                <div class="fg"><label>العمر</label><input type="number" name="cAge_${uid}" placeholder="العمر" min="0" max="100"></div>
+                <div class="fg">
+                    <label>الجنس</label>
+                    <select name="cGender_${uid}">
+                        <option value="">-- اختر --</option>
+                        <option value="male">ذكر</option>
+                        <option value="female">أنثى</option>
+                    </select>
+                </div>
+                <div class="fg">
+                    <label>سنة الميلاد</label>
+                    <select name="cBirthYear_${uid}">
+                        ${yearOptions}
+                    </select>
+                </div>
                 <div class="fg">
                     <label>التحصيل العلمي</label>
                     <select name="cEdu_${uid}" onchange="toggleChildEdu(this, '${uid}')">
@@ -1530,6 +1558,10 @@ function buildKids(boxId, count) {
                         <option value="">-- اختر --</option>
                         <option>علمي</option>
                         <option>ادبي</option>
+                        <option>شريعة</option>
+                        <option>صناعة وفنون</option>
+                        <option>تجارة</option>
+                        <option>معلوماتية</option>
                     </select>
                 </div>
                 <div class="fg" id="cHigherEduBox_${uid}" style="display:none; grid-column: span 2;">

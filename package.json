@@ -8,6 +8,7 @@
     "dev": "node server.js"
   },
   "dependencies": {
+    "@fontsource/tajawal": "^5.2.7",
     "@playwright/test": "^1.58.2",
     "adm-zip": "^0.5.16",
     "better-sqlite3": "^11.7.0",

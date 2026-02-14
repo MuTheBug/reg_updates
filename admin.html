@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>جمعية حقنا - لوحة الإدارة</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap');
+        /* Tajawal font - loaded locally for offline support */
+        @font-face { font-family: 'Tajawal'; font-style: normal; font-display: swap; font-weight: 300; src: url('/fonts/tajawal-arabic-300-normal.woff2') format('woff2'), url('/fonts/tajawal-latin-300-normal.woff2') format('woff2'); }
+        @font-face { font-family: 'Tajawal'; font-style: normal; font-display: swap; font-weight: 400; src: url('/fonts/tajawal-arabic-400-normal.woff2') format('woff2'), url('/fonts/tajawal-latin-400-normal.woff2') format('woff2'); }
+        @font-face { font-family: 'Tajawal'; font-style: normal; font-display: swap; font-weight: 500; src: url('/fonts/tajawal-arabic-500-normal.woff2') format('woff2'), url('/fonts/tajawal-latin-500-normal.woff2') format('woff2'); }
+        @font-face { font-family: 'Tajawal'; font-style: normal; font-display: swap; font-weight: 700; src: url('/fonts/tajawal-arabic-700-normal.woff2') format('woff2'), url('/fonts/tajawal-latin-700-normal.woff2') format('woff2'); }
+        @font-face { font-family: 'Tajawal'; font-style: normal; font-display: swap; font-weight: 800; src: url('/fonts/tajawal-arabic-800-normal.woff2') format('woff2'), url('/fonts/tajawal-latin-800-normal.woff2') format('woff2'); }
+        @font-face { font-family: 'Tajawal'; font-style: normal; font-display: swap; font-weight: 900; src: url('/fonts/tajawal-arabic-900-normal.woff2') format('woff2'), url('/fonts/tajawal-latin-900-normal.woff2') format('woff2'); }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -883,8 +889,12 @@ async function viewRecord(id) {
                             if (c.healthDetails) cHPStr += ` (${c.healthDetails})`;
                         }
 
+                        const genderStr = c.gender === 'male' ? 'ذكر' : (c.gender === 'female' ? 'أنثى' : '—');
+                        const birthYearStr = c.birthYear || c.age || '—';
+                        const birthLabel = c.birthYear ? 'سنة الميلاد' : 'العمر';
+
                         html += `<div style="padding:6px 12px;margin:4px 0;background:var(--bg-input);border-radius:8px;font-size:0.88em;">
-                            <strong>${i+1}.</strong> ${esc(c.name) || '—'} | العمر: ${c.age || '—'} | التعليم: ${esc(cEduStr)} | المهنة: ${esc(c.job) || '—'} | الصحة: ${esc(cHPStr)}
+                            <strong>${i+1}.</strong> ${esc(c.name) || '—'} | الجنس: ${genderStr} | ${birthLabel}: ${birthYearStr} | التعليم: ${esc(cEduStr)} | المهنة: ${esc(c.job) || '—'} | الصحة: ${esc(cHPStr)}
                         </div>`;
                     });
                 }
@@ -911,8 +921,12 @@ async function viewRecord(id) {
                             if (c.healthDetails) cHPStr += ` (${c.healthDetails})`;
                         }
 
+                        const genderStr = c.gender === 'male' ? 'ذكر' : (c.gender === 'female' ? 'أنثى' : '—');
+                        const birthYearStr = c.birthYear || c.age || '—';
+                        const birthLabel = c.birthYear ? 'سنة الميلاد' : 'العمر';
+
                         html += `<div style="padding:6px 12px;margin:4px 0;background:var(--bg-input);border-radius:8px;font-size:0.88em;">
-                            <strong>${i+1}.</strong> ${esc(c.name) || '—'} | العمر: ${c.age || '—'} | التعليم: ${esc(cEduStr)} | المهنة: ${esc(c.job) || '—'} | الصحة: ${esc(cHPStr)}
+                            <strong>${i+1}.</strong> ${esc(c.name) || '—'} | الجنس: ${genderStr} | ${birthLabel}: ${birthYearStr} | التعليم: ${esc(cEduStr)} | المهنة: ${esc(c.job) || '—'} | الصحة: ${esc(cHPStr)}
                         </div>`;
                     });
                 }
@@ -1028,6 +1042,27 @@ function closeLightbox() {
 }
 
 // ══════════════ EDIT RECORD ══════════════
+function buildDateOptions(type, selectedVal) {
+    const val = parseInt(selectedVal) || 0;
+    if (type === 'day') {
+        let opts = '<option value="">اليوم</option>';
+        for (let d = 1; d <= 31; d++) opts += `<option value="${d}" ${val===d?'selected':''}>${d}</option>`;
+        return opts;
+    }
+    if (type === 'month') {
+        let opts = '<option value="">الشهر</option>';
+        months.forEach((n, i) => { opts += `<option value="${i+1}" ${val===(i+1)?'selected':''}>${n}</option>`; });
+        return opts;
+    }
+    if (type === 'year') {
+        let opts = '<option value="">السنة</option>';
+        const now = new Date().getFullYear();
+        for (let y = now; y >= 1940; y--) opts += `<option value="${y}" ${val===y?'selected':''}>${y}</option>`;
+        return opts;
+    }
+    return '';
+}
+
 async function editRecord(id) {
     try {
         const res = await fetch('/api/records/' + id);
@@ -1035,10 +1070,13 @@ async function editRecord(id) {
         currentRecordId = id;
         document.getElementById('modalTitle').textContent = `تعديل السجل #${r.id}`;
 
-        const provinces = ["دمشق","ريف دمشق","حلب","حمص","حماة","اللاذقية","طرطوس","إدلب","دير الزور","الرقة","الحسكة","درعا","السويداء","القنيطرة"];
+        const provinces = ["دمشق","ريف دمشق","حلب","حمص","حماة","اللاذقية","طرطوس","إدلب","دير الزور","الرقة","الحسكة","درعا","السويداء","القنيطرة","أخرى"];
+        const arrestPlacesList = ["صيدنايا الامني (الاحمر)","صيدنايا القضائي (الابيض)","الفرع 235 فرع فلسطين","فرع 248، التحقيق العسكري","فرع 215، بسرية المداهمة والاقتحام","فرع 251، فرع الخطيب","فرع 216، فرع الدوريات","فرع 227، فرع المنطقة","فرع 285، فرع التحقيق","فرع 295، مكافحة الإرهاب","الدفاع الوطني","السجن المدني"];
+        const eduTypeOptions = ['علمي','ادبي','شريعة','صناعة وفنون','تجارة','معلوماتية'];
 
-        let html = `<form id="editForm" onsubmit="saveEdit(event)" style="display:flex; flex-direction:column; gap:16px;">
-            <div class="detail-section-title">المعلومات الأساسية</div>
+        let html = `<form id="editForm" onsubmit="saveEdit(event)" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:16px;">
+
+            <div class="detail-section-title">المعلومات الشخصية الأساسية</div>
             <div class="adv-grid">
                 <div class="filter-group"><label>الاسم</label><input name="firstName" value="${esc(r.first_name)}" required></div>
                 <div class="filter-group"><label>اسم الأب</label><input name="fatherName" value="${esc(r.father_name)}" required></div>
@@ -1047,45 +1085,82 @@ async function editRecord(id) {
             </div>
             <div class="adv-grid">
                 <div class="filter-group">
+                    <label>الجنس</label>
+                    <select name="gender">
+                        <option value="male" ${r.gender==='male'?'selected':''}>ذكر</option>
+                        <option value="female" ${r.gender==='female'?'selected':''}>أنثى</option>
+                    </select>
+                </div>
+                <div class="filter-group">
                     <label>المحافظة</label>
                     <select name="province" required>
                         ${provinces.map(p => `<option ${r.province===p?'selected':''}>${p}</option>`).join('')}
                     </select>
                 </div>
                 <div class="filter-group"><label>الرقم الوطني</label><input name="nationalId" value="${esc(r.national_id)}" required></div>
-                <div class="filter-group"><label>الهاتف</label><input name="phone" value="${esc(r.phone)}"></div>
+                <div class="filter-group"><label>رقم التواصل</label><input name="phone" value="${esc(r.phone||'')}"></div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>تاريخ الميلاد - اليوم</label>
+                    <select name="birthDay">${buildDateOptions('day', r.birth_day)}</select>
+                </div>
+                <div class="filter-group">
+                    <label>الشهر</label>
+                    <select name="birthMonth">${buildDateOptions('month', r.birth_month)}</select>
+                </div>
+                <div class="filter-group">
+                    <label>السنة</label>
+                    <select name="birthYear">${buildDateOptions('year', r.birth_year)}</select>
+                </div>
+                <div class="filter-group">
+                    <label>زمرة الدم</label>
+                    <select name="bloodType">
+                        <option value="">-- اختر --</option>
+                        ${['A+','A-','B+','B-','AB+','AB-','O+','O-','unknown'].map(bt => `<option value="${bt}" ${r.blood_type===bt?'selected':''}>${bt === 'unknown' ? 'غير معروف' : bt}</option>`).join('')}
+                    </select>
+                </div>
             </div>
 
-            <div class="detail-section-title">معلومات الاعتقال والحالة</div>
+            <div class="detail-section-title">معلومات الاعتقال</div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>تاريخ الاعتقال - اليوم</label>
+                    <select name="arrestDay">${buildDateOptions('day', r.arrest_day)}</select>
+                </div>
+                <div class="filter-group">
+                    <label>الشهر</label>
+                    <select name="arrestMonth">${buildDateOptions('month', r.arrest_month)}</select>
+                </div>
+                <div class="filter-group">
+                    <label>السنة</label>
+                    <select name="arrestYear">${buildDateOptions('year', r.arrest_year)}</select>
+                </div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>مكان الاعتقال</label>
+                    <input list="arrestPlaces" name="arrestPlace" value="${esc(r.arrest_place||'')}">
+                    <datalist id="arrestPlaces">
+                        ${arrestPlacesList.map(p => `<option value="${p}">`).join('')}
+                    </datalist>
+                </div>
+                <div class="filter-group"><label>الجهة المسؤولة</label><input name="arrestAuthority" value="${esc(r.arrest_authority||'')}"></div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group"><label>سبب الاعتقال</label><input name="arrestReason" value="${esc(r.arrest_reason||'')}"></div>
+                <div class="filter-group"><label>المُسبِّب</label><input name="arrestCauser" value="${esc(r.arrest_causer||'')}"></div>
+            </div>
+
+            <div class="detail-section-title">الحالة والمصير</div>
             <div class="adv-grid">
                 <div class="filter-group">
                     <label>الحالة</label>
-                    <select name="status">
+                    <select name="status" id="edit_status" onchange="toggleEditStatus()">
                         <option value="enforced" ${r.status==='enforced'?'selected':''}>مغيب قسري</option>
                         <option value="survivor" ${r.status==='survivor'?'selected':''}>ناجي</option>
                         <option value="deceased" ${r.status==='deceased'?'selected':''}>متوفى</option>
                     </select>
-                </div>
-                <div class="filter-group">
-                    <label>مكان الاعتقال</label>
-                    <input list="arrestPlaces" name="arrestPlace" value="${esc(r.arrest_place)}">
-                    <datalist id="arrestPlaces">
-                        <option value="صيدنايا الامني (الاحمر)">
-                        <option value="صيدنايا القضائي (الابيض)">
-                        <option value="الفرع 235 فرع فلسطين">
-                        <option value="فرع 248، التحقيق العسكري">
-                        <option value="فرع 215، بسرية المداهمة والاقتحام">
-                        <option value="فرع 251، فرع الخطيب">
-                        <option value="فرع 216، فرع الدوريات">
-                        <option value="فرع 227، فرع المنطقة">
-                        <option value="فرع 285، فرع التحقيق">
-                        <option value="فرع 295، مكافحة الإرهاب">
-                        <option value="الدفاع الوطني">
-                        <option value="السجن المدني">
-                    </datalist>
-                </div>
-                <div class="filter-group"><label>مكان الوفاة</label>
-                    <input list="arrestPlaces" name="deathPlace" value="${esc(r.death_place||'')}">
                 </div>
                 <div class="filter-group">
                     <label>مسجل رسمياً</label>
@@ -1095,38 +1170,150 @@ async function editRecord(id) {
                     </select>
                 </div>
             </div>
-
-            <div class="detail-section-title">العائلة والأولاد والسكن</div>
-            <div class="adv-grid">
-                <div class="filter-group"><label>عدد الأولاد (من الزواج الحالي)</label><input type="number" name="kidsCount" value="${r.kids_count||0}"></div>
-                <div class="filter-group"><label>عدد الأولاد (من زواج سابق)</label><input type="number" name="kidsCountW" value="${r.kids_count_w||0}"></div>
-                <div class="filter-group"><label>عدد الأولاد تحت 18</label><input type="number" name="kids_under_18_count" value="${r.kids_under_18_count||0}"></div>
+            <div class="adv-grid" id="edit_release_box" style="display:${r.status==='survivor'?'flex':'none'}">
+                <div class="filter-group">
+                    <label>تاريخ الخروج - اليوم</label>
+                    <select name="releaseDay">${buildDateOptions('day', r.release_day)}</select>
+                </div>
+                <div class="filter-group">
+                    <label>الشهر</label>
+                    <select name="releaseMonth">${buildDateOptions('month', r.release_month)}</select>
+                </div>
+                <div class="filter-group">
+                    <label>السنة</label>
+                    <select name="releaseYear">${buildDateOptions('year', r.release_year)}</select>
+                </div>
             </div>
+            <div class="adv-grid" id="edit_death_box" style="display:${r.status==='deceased'?'flex':'none'}">
+                <div class="filter-group">
+                    <label>تاريخ الوفاة - اليوم</label>
+                    <select name="deathDay">${buildDateOptions('day', r.death_day)}</select>
+                </div>
+                <div class="filter-group">
+                    <label>الشهر</label>
+                    <select name="deathMonth">${buildDateOptions('month', r.death_month)}</select>
+                </div>
+                <div class="filter-group">
+                    <label>السنة</label>
+                    <select name="deathYear">${buildDateOptions('year', r.death_year)}</select>
+                </div>
+                <div class="filter-group">
+                    <label>مكان الوفاة</label>
+                    <input list="arrestPlaces" name="deathPlace" value="${esc(r.death_place||'')}">
+                </div>
+            </div>
+
+            <div class="detail-section-title">الحالة الاجتماعية</div>
             <div class="adv-grid">
                 <div class="filter-group">
-                    <label>نوع السكن</label>
-                    <select name="housingType" onchange="const ra = this.parentElement.nextElementSibling; if(this.value==='إيجار') ra.style.display='block'; else ra.style.display='none';">
-                        <option ${r.housing_type==='ملك'?'selected':''}>ملك</option>
-                        <option ${r.housing_type==='إيجار'?'selected':''}>إيجار</option>
-                        <option ${r.housing_type==='أخرى'?'selected':''}>أخرى</option>
+                    <label>الحالة الاجتماعية</label>
+                    <select name="marital" id="edit_marital" onchange="toggleEditMarital()">
+                        <option value="">-- اختر --</option>
+                        <option value="single" ${r.marital==='single'?'selected':''}>أعزب/عزباء</option>
+                        <option value="married" ${r.marital==='married'?'selected':''}>متزوج/ة</option>
+                        <option value="widowed" ${r.marital==='widowed'?'selected':''}>أرمل/ة</option>
+                        <option value="divorced" ${r.marital==='divorced'?'selected':''}>مطلق/ة</option>
                     </select>
                 </div>
-                <div class="filter-group" style="display:${r.housing_type==='إيجار'?'block':'none'}">
+            </div>
+            <div class="adv-grid" id="edit_guardian_box" style="display:${r.marital==='single'?'flex':'none'}">
+                <div class="filter-group"><label>اسم ولي الأمر</label><input name="guardianName" value="${esc(r.guardian_name||'')}"></div>
+                <div class="filter-group">
+                    <label>صلة القرابة</label>
+                    <select name="guardianRelation">
+                        <option value="">-- اختر --</option>
+                        ${['أب','أم','أخ','أخت','عم / خال','عمة / خالة','أخرى'].map(rel => `<option ${r.guardian_relation===rel?'selected':''}>${rel}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="filter-group"><label>هاتف ولي الأمر</label><input name="guardianPhone" value="${esc(r.guardian_phone||'')}"></div>
+            </div>
+            <div class="adv-grid" id="edit_spouse_box" style="display:${r.marital==='married'?'flex':'none'}">
+                <div class="filter-group"><label>اسم الزوج/ة</label><input name="spouseName" value="${esc(r.spouse_name||'')}"></div>
+                <div class="filter-group"><label>هاتف الزوج/ة</label><input name="spousePhone" value="${esc(r.spouse_phone||'')}"></div>
+            </div>
+            <div class="adv-grid" id="edit_exspouse_box" style="display:${r.marital==='widowed'||r.marital==='divorced'?'flex':'none'}">
+                <div class="filter-group"><label>اسم الزوج/ة (السابق/ة)</label><input name="exSpouseName" value="${esc(r.ex_spouse_name||'')}"></div>
+            </div>
+
+            <div class="detail-section-title">الأولاد</div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>هل لديه أولاد؟</label>
+                    <select name="hasKids">
+                        <option value="">-- اختر --</option>
+                        <option value="yes" ${r.has_kids==='yes'?'selected':''}>نعم</option>
+                        <option value="no" ${r.has_kids==='no'?'selected':''}>لا</option>
+                    </select>
+                </div>
+                <div class="filter-group"><label>عدد الأولاد (من الزواج الحالي)</label><input type="number" name="kidsCount" value="${r.kids_count||0}" min="0"></div>
+                <div class="filter-group">
+                    <label>هل لديه أولاد من زواج سابق؟</label>
+                    <select name="hasKidsW">
+                        <option value="">-- اختر --</option>
+                        <option value="yes" ${r.has_kids_w==='yes'?'selected':''}>نعم</option>
+                        <option value="no" ${r.has_kids_w==='no'?'selected':''}>لا</option>
+                    </select>
+                </div>
+                <div class="filter-group"><label>عدد الأولاد (من زواج سابق)</label><input type="number" name="kidsCountW" value="${r.kids_count_w||0}" min="0"></div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group"><label>عدد الأولاد تحت 18</label><input type="number" name="kids_under_18_count" value="${r.kids_under_18_count||0}" min="0"></div>
+            </div>
+            <div class="filter-group">
+                <label>بيانات الأطفال (JSON)</label>
+                <textarea name="children_data" rows="4" style="font-family:monospace; font-size:0.85em; background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:12px; direction:ltr; text-align:left;">${esc(r.children_data||'')}</textarea>
+            </div>
+            <div class="filter-group">
+                <label>بيانات أطفال الزواج السابق (JSON)</label>
+                <textarea name="children_data_w" rows="4" style="font-family:monospace; font-size:0.85em; background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:12px; direction:ltr; text-align:left;">${esc(r.children_data_w||'')}</textarea>
+            </div>
+
+            <div class="detail-section-title">السكن والعنوان</div>
+            <div class="adv-grid">
+                <div class="filter-group" style="flex:2;"><label>العنوان</label><input name="address" value="${esc(r.address||'')}"></div>
+                <div class="filter-group">
+                    <label>نوع السكن</label>
+                    <select name="housingType" id="edit_housing" onchange="toggleEditHousing()">
+                        <option value="">-- اختر --</option>
+                        ${['ملك','إيجار','رهن','مستضاف','أخرى'].map(h => `<option ${r.housing_type===h?'selected':''}>${h}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="filter-group" id="edit_rent_box" style="display:${r.housing_type==='إيجار'?'block':'none'}">
                     <label>مبلغ الإيجار</label>
                     <input name="rentAmount" value="${esc(r.rent_amount||'')}">
                 </div>
             </div>
 
-            <div class="detail-section-title">المعيل (في حال التغيب أو الوفاة)</div>
+            <div class="detail-section-title">العمل والمعيل</div>
             <div class="adv-grid">
-                <div class="filter-group"><label>المعيل</label><input name="breadwinner" value="${esc(r.breadwinner)}"></div>
-                <div class="filter-group"><label>عمل المعيل</label><input name="breadwinnerJob" value="${esc(r.breadwinner_job)}"></div>
+                <div class="filter-group">
+                    <label>حالة العمل</label>
+                    <select name="employment">
+                        <option value="">-- اختر --</option>
+                        <option value="employed" ${r.employment==='employed'?'selected':''}>يعمل</option>
+                        <option value="unemployed" ${r.employment==='unemployed'?'selected':''}>عاطل عن العمل</option>
+                    </select>
+                </div>
+                <div class="filter-group"><label>المهنة</label><input name="profession" value="${esc(r.profession||'')}"></div>
+                <div class="filter-group"><label>جهة العمل</label><input name="employer" value="${esc(r.employer||'')}"></div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group"><label>المعيل</label><input name="breadwinner" value="${esc(r.breadwinner||'')}"></div>
+                <div class="filter-group"><label>عمل المعيل</label><input name="breadwinnerJob" value="${esc(r.breadwinner_job||'')}"></div>
             </div>
 
-            <div class="detail-section-title">الصحة والتعليم</div>
+            <div class="detail-section-title">الحالة الصحية</div>
             <div class="adv-grid">
                 <div class="filter-group">
                     <label>أمراض مزمنة</label>
+                    <select name="chronic">
+                        <option value="">-- اختر --</option>
+                        <option value="yes" ${r.chronic==='yes'?'selected':''}>نعم</option>
+                        <option value="no" ${r.chronic==='no'?'selected':''}>لا</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>أمراض محددة</label>
                     <div style="display:flex; gap:10px; margin-top:8px;">
                         <label style="color:var(--text); font-size:0.85em; display:flex; align-items:center; gap:4px;">
                             <input type="checkbox" name="hasHypertension" value="yes" ${r.has_hypertension?'checked':''}> ضغط
@@ -1136,6 +1323,8 @@ async function editRecord(id) {
                         </label>
                     </div>
                 </div>
+            </div>
+            <div class="adv-grid">
                 <div class="filter-group">
                     <label>أمراض أخرى (افصل بينهم بفاصلة)</label>
                     <input name="otherDiseases" value="${(()=>{
@@ -1161,10 +1350,13 @@ async function editRecord(id) {
                     <textarea name="specialNeedsDetails" rows="2" style="background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:10px;">${esc(r.special_needs_details||'')}</textarea>
                 </div>
             </div>
+
+            <div class="detail-section-title">التحصيل الدراسي</div>
             <div class="adv-grid">
                 <div class="filter-group">
                     <label>التحصيل الدراسي</label>
                     <select name="education" id="edit_edu" onchange="toggleEditEdu()">
+                        <option value="">-- اختر --</option>
                         <option ${r.education==='أمّي'?'selected':''}>أمّي</option>
                         <option ${r.education==='ابتدائية'?'selected':''}>ابتدائية</option>
                         <option ${r.education==='إعدادية'?'selected':''}>إعدادية</option>
@@ -1179,24 +1371,49 @@ async function editRecord(id) {
                     <label>نوع الثانوية</label>
                     <select name="eduType">
                         <option value="">-- اختر --</option>
-                        <option ${r.edu_type==='علمي'?'selected':''}>علمي</option>
-                        <option ${r.edu_type==='ادبي'?'selected':''}>ادبي</option>
+                        ${eduTypeOptions.map(et => `<option ${r.edu_type===et?'selected':''}>${et}</option>`).join('')}
                     </select>
                 </div>
             </div>
             <div class="adv-grid" id="edit_higher_edu_box" style="display:${['معهد', 'بكالوريوس','ماجستير','دكتوراه'].includes(r.education)?'flex':'none'}">
-                <div class="filter-group"><label>الاختصاص</label><input name="eduSpecialization" value="${esc(r.edu_specialization)}"></div>
-                <div class="filter-group"><label>الجامعة</label><input name="eduUniversity" value="${esc(r.edu_university)}"></div>
+                <div class="filter-group"><label>الاختصاص</label><input name="eduSpecialization" value="${esc(r.edu_specialization||'')}"></div>
+                <div class="filter-group"><label>الجامعة</label><input name="eduUniversity" value="${esc(r.edu_university||'')}"></div>
             </div>
 
-            <div class="detail-section-title">بيانات متقدمة (JSON)</div>
-            <div class="filter-group">
-                <label>بيانات الأطفال</label>
-                <textarea name="children_data" rows="5" style="font-family:monospace; font-size:0.85em; background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:12px;">${esc(r.children_data)}</textarea>
+            <div class="detail-section-title">الوضع القانوني</div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>مشاكل قانونية</label>
+                    <select name="legal">
+                        <option value="">-- اختر --</option>
+                        <option value="yes" ${r.legal==='yes'?'selected':''}>نعم</option>
+                        <option value="no" ${r.legal==='no'?'selected':''}>لا</option>
+                    </select>
+                </div>
             </div>
             <div class="filter-group">
-                <label>المشاكل القانونية</label>
-                <textarea name="legal_details" rows="3" style="font-family:monospace; font-size:0.85em; background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:12px;">${esc(r.legal_details)}</textarea>
+                <label>تفاصيل المشاكل القانونية (JSON)</label>
+                <textarea name="legal_details" rows="3" style="font-family:monospace; font-size:0.85em; background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:12px; direction:ltr; text-align:left;">${esc(r.legal_details||'')}</textarea>
+            </div>
+
+            <div class="detail-section-title">ارتباط بجمعيات أخرى</div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>مسجل في جمعية أخرى؟</label>
+                    <select name="assoc">
+                        <option value="">-- اختر --</option>
+                        <option value="yes" ${r.assoc==='yes'?'selected':''}>نعم</option>
+                        <option value="no" ${r.assoc==='no'?'selected':''}>لا</option>
+                    </select>
+                </div>
+                <div class="filter-group"><label>اسم الجمعية</label><input name="assocName" value="${esc(r.assoc_name||'')}"></div>
+                <div class="filter-group"><label>نوع الخدمة</label><input name="serviceType" value="${esc(r.service_type||'')}"></div>
+            </div>
+
+            <div class="detail-section-title">ملاحظات</div>
+            <div class="filter-group">
+                <label>ملاحظات إضافية</label>
+                <textarea name="notes" rows="3" style="background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:12px;">${esc(r.notes||'')}</textarea>
             </div>
 
             <div style="margin-top:20px; display:flex; gap:10px;">
@@ -1216,6 +1433,24 @@ function toggleEditEdu() {
     document.getElementById('edit_higher_edu_box').style.display = (['معهد', 'بكالوريوس','ماجستير','دكتوراه'].includes(v)) ? 'flex' : 'none';
 }
 
+function toggleEditStatus() {
+    const v = document.getElementById('edit_status').value;
+    document.getElementById('edit_release_box').style.display = (v === 'survivor') ? 'flex' : 'none';
+    document.getElementById('edit_death_box').style.display = (v === 'deceased') ? 'flex' : 'none';
+}
+
+function toggleEditMarital() {
+    const v = document.getElementById('edit_marital').value;
+    document.getElementById('edit_guardian_box').style.display = (v === 'single') ? 'flex' : 'none';
+    document.getElementById('edit_spouse_box').style.display = (v === 'married') ? 'flex' : 'none';
+    document.getElementById('edit_exspouse_box').style.display = (v === 'widowed' || v === 'divorced') ? 'flex' : 'none';
+}
+
+function toggleEditHousing() {
+    const v = document.getElementById('edit_housing').value;
+    document.getElementById('edit_rent_box').style.display = (v === 'إيجار') ? 'block' : 'none';
+}
+
 async function saveEdit(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -1226,6 +1461,7 @@ async function saveEdit(e) {
     data.hasHypertension = formData.get('hasHypertension') || 'no';
     data.hasDiabetes = formData.get('hasDiabetes') || 'no';
     data.hasSpecialNeeds = formData.get('hasSpecialNeeds') || 'no';
+    data.isOfficiallyRegistered = formData.get('isOfficiallyRegistered') || 'no';
 
     if (data.otherDiseases) {
         const list = data.otherDiseases.split(',').map(s => s.trim()).filter(s => s);
@@ -1233,6 +1469,12 @@ async function saveEdit(e) {
     } else {
         data.otherDiseases = null;
     }
+
+    // Convert empty date values to null
+    ['birthDay','birthMonth','birthYear','arrestDay','arrestMonth','arrestYear',
+     'releaseDay','releaseMonth','releaseYear','deathDay','deathMonth','deathYear'].forEach(k => {
+        if (data[k] === '' || data[k] === undefined) data[k] = null;
+    });
 
     try {
         const res = await fetch('/api/records/' + currentRecordId, {
