@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - لوحة الإدارة</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: #0a0e17;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background: #151c2c;
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid #1e2a42;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h2 { text-align: center; margin-bottom: 30px; color: #06b6d4; }
+        .fg { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        label { font-size: 0.9em; color: #94a3b8; }
+        input {
+            padding: 12px;
+            background: #0d1320;
+            border: 2px solid #1e2a42;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1em;
+            outline: none;
+        }
+        input:focus { border-color: #06b6d4; }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover { transform: translateY(-2px); }
+        .error { color: #ef4444; font-size: 0.9em; margin-top: 10px; text-align: center; display: none; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>لوحة إدارة حقنا</h2>
+        <form id="loginForm">
+            <div class="fg">
+                <label>كلمة مرور المسؤول</label>
+                <input type="password" id="password" required placeholder="أدخل كلمة المرور">
+            </div>
+            <button type="submit">دخول</button>
+            <div class="error" id="errorMsg">كلمة المرور غير صحيحة</div>
+        </form>
+    </div>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            if (res.ok) {
+                window.location.href = '/admin';
+            } else {
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جمعية حقنا - لوحة الإدارة</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #151c2c;
+            --bg-card-hover: #1a2236;
+            --bg-input: #0d1320;
+            --bg-input-focus: #111a2e;
+            --border: #1e2a42;
+            --border-hover: #2d3f65;
+            --border-focus: #06b6d4;
+            --accent: #06b6d4;
+            --accent-glow: rgba(6, 182, 212, 0.15);
+            --accent2: #8b5cf6;
+            --accent2-glow: rgba(139, 92, 246, 0.15);
+            --green: #10b981;
+            --green-glow: rgba(16, 185, 129, 0.15);
+            --red: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.15);
+            --amber: #f59e0b;
+            --amber-glow: rgba(245, 158, 11, 0.15);
+            --text: #e2e8f0;
+            --text-dim: #64748b;
+            --text-label: #94a3b8;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            color: var(--text);
+            background-image:
+                radial-gradient(ellipse at 20% 0%, rgba(6,182,212,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 100%, rgba(139,92,246,0.06) 0%, transparent 60%);
+        }
+
+        .bg-effects {
+            position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+        }
+        .bg-effects .orb {
+            position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4;
+            animation: float 20s ease-in-out infinite;
+        }
+        .bg-effects .orb:nth-child(1) { width:400px;height:400px;background:rgba(6,182,212,0.08);top:-100px;right:-100px; }
+        .bg-effects .orb:nth-child(2) { width:350px;height:350px;background:rgba(139,92,246,0.08);bottom:-80px;left:-80px;animation-delay:-7s; }
+
+        @keyframes float {
+            0%,100%{transform:translate(0,0) scale(1)}
+            33%{transform:translate(30px,-30px) scale(1.05)}
+            66%{transform:translate(-20px,20px) scale(0.95)}
+        }
+
+        /* Header */
+        .main-header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(10, 14, 23, 0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--border);
+        }
+        .header-inner {
+            max-width: 1200px; margin: 0 auto;
+            display: flex; align-items: center; gap: 20px; padding: 14px 24px;
+        }
+        .logo-box {
+            width: 50px; height: 50px; background: var(--bg-card); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid var(--border); overflow: hidden; flex-shrink: 0;
+        }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; transform: scale(1.25); }
+        .header-text h1 { font-size: 1.5em; font-weight: 900; }
+        .header-text h1 .t1 { color: var(--text); }
+        .header-text h1 .t2 {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .header-text p { color: var(--text-dim); font-size: 0.85em; margin-top: 2px; }
+        .header-line { height: 2px; background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent); }
+        .header-actions { margin-right: auto; display: flex; gap: 10px; flex-wrap: wrap; }
+        .header-actions a, .header-actions button {
+            padding: 10px 20px; border-radius: 12px; text-decoration: none;
+            font-weight: 700; font-size: 0.9em; transition: all 0.3s;
+            font-family: 'Tajawal', sans-serif; cursor: pointer;
+        }
+        .btn-form { background: var(--bg-card); color: var(--accent); border: 2px solid var(--border); }
+        .btn-form:hover { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+        .btn-backup { background: var(--bg-card); color: var(--amber); border: 2px solid rgba(245,158,11,0.3); }
+        .btn-backup:hover { border-color: var(--amber); box-shadow: 0 0 20px var(--amber-glow); }
+
+        /* Main content */
+        .wrapper { max-width: 1200px; margin: 24px auto; padding: 0 20px 50px; position: relative; z-index: 1; }
+
+        /* Stats */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+            padding: 20px; text-align: center; transition: all 0.3s;
+        }
+        .stat-card:hover { border-color: var(--border-hover); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+        .stat-number { font-size: 2.2em; font-weight: 900; margin-bottom: 4px; }
+        .stat-label { font-size: 0.9em; color: var(--text-dim); font-weight: 600; }
+        .stat-total .stat-number { color: var(--accent); }
+        .stat-enforced .stat-number { color: var(--amber); }
+        .stat-survivors .stat-number { color: var(--green); }
+        .stat-deceased .stat-number { color: var(--red); }
+
+        /* Filter bars */
+        .filter-bar {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+            padding: 20px; margin-bottom: 12px; display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 150px; }
+        .filter-group.fg-wide { flex: 2; min-width: 220px; }
+        .filter-group.fg-narrow { flex: 0 0 120px; min-width: 100px; }
+        .filter-group label { font-size: 0.82em; font-weight: 600; color: var(--text-label); }
+        .filter-group input, .filter-group select {
+            padding: 11px 14px; background: var(--bg-input); border: 2px solid var(--border);
+            border-radius: 10px; color: var(--text); font-family: 'Tajawal', sans-serif;
+            font-size: 0.9em; outline: none; transition: all 0.3s; width: 100%;
+        }
+        .filter-group input:focus, .filter-group select:focus {
+            border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-glow);
+        }
+        .filter-group select {
+            cursor: pointer; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 12 12'%3E%3Cpath fill='%2306b6d4' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: left 10px center; padding-left: 28px;
+        }
+        .filter-group select option { background: var(--bg-secondary); color: var(--text); }
+
+        /* Advanced filter toggle */
+        .adv-toggle {
+            display: flex; align-items: center; gap: 8px; cursor: pointer;
+            color: var(--accent); font-weight: 700; font-size: 0.88em;
+            padding: 8px 0; user-select: none; width: 100%;
+        }
+        .adv-toggle:hover { color: var(--text); }
+        .adv-toggle .arrow { transition: transform 0.3s; display: inline-block; }
+        .adv-toggle .arrow.open { transform: rotate(90deg); }
+        .adv-filter-panel {
+            display: none; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 16px; padding: 20px; margin-bottom: 12px;
+            animation: slideUp 0.3s ease;
+        }
+        .adv-filter-panel.show { display: block; }
+        .adv-grid { display: flex; gap: 12px; flex-wrap: wrap; }
+
+        /* Buttons */
+        .filter-btn, .btn-action {
+            padding: 11px 24px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: #fff; border: none; border-radius: 10px; cursor: pointer;
+            font-family: 'Tajawal', sans-serif; font-weight: 700; font-size: 0.9em;
+            transition: all 0.3s; white-space: nowrap;
+        }
+        .filter-btn:hover, .btn-action:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--accent-glow); }
+        .export-btn {
+            padding: 11px 20px; background: var(--bg-card); border: 2px solid var(--green);
+            color: var(--green); border-radius: 10px; cursor: pointer;
+            font-family: 'Tajawal', sans-serif; font-weight: 700; font-size: 0.9em;
+            transition: all 0.3s; white-space: nowrap;
+        }
+        .export-btn:hover { background: var(--green-glow); box-shadow: 0 0 20px var(--green-glow); }
+        .reset-btn {
+            padding: 11px 18px; background: var(--bg-card); border: 2px solid var(--border);
+            color: var(--text-dim); border-radius: 10px; cursor: pointer;
+            font-family: 'Tajawal', sans-serif; font-weight: 700; font-size: 0.9em;
+            transition: all 0.3s; white-space: nowrap;
+        }
+        .reset-btn:hover { border-color: var(--border-hover); color: var(--text); }
+        .print-btn {
+            padding: 11px 20px; background: var(--bg-card); border: 2px solid var(--accent2);
+            color: var(--accent2); border-radius: 10px; cursor: pointer;
+            font-family: 'Tajawal', sans-serif; font-weight: 700; font-size: 0.9em;
+            transition: all 0.3s; white-space: nowrap;
+        }
+        .print-btn:hover { background: var(--accent2-glow); box-shadow: 0 0 20px var(--accent2-glow); }
+
+        /* Table */
+        .table-container {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+            overflow: hidden;
+        }
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        thead th {
+            background: rgba(6, 182, 212, 0.06); padding: 14px 16px;
+            text-align: right; font-weight: 700; font-size: 0.88em;
+            color: var(--accent); border-bottom: 2px solid var(--border); white-space: nowrap;
+        }
+        tbody td {
+            padding: 12px 16px; border-bottom: 1px solid var(--border);
+            font-size: 0.9em; vertical-align: middle;
+        }
+        tbody tr { transition: background 0.2s; }
+        tbody tr:hover { background: var(--bg-card-hover); }
+        tbody tr:last-child td { border-bottom: none; }
+
+        .status-badge {
+            padding: 5px 14px; border-radius: 20px; font-size: 0.82em; font-weight: 700;
+            display: inline-block; white-space: nowrap;
+        }
+        .badge-enforced { background: var(--amber-glow); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+        .badge-survivor { background: var(--green-glow); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+        .badge-deceased { background: var(--red-glow); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+
+        .photo-thumb {
+            width: 40px; height: 40px; border-radius: 10px; object-fit: cover;
+            border: 2px solid var(--border); cursor: pointer; transition: all 0.3s;
+        }
+        .photo-thumb:hover { border-color: var(--accent); transform: scale(1.1); }
+
+        .action-btns { display: flex; gap: 6px; }
+        .act-btn {
+            padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer;
+            font-family: 'Tajawal', sans-serif; font-weight: 700; font-size: 0.8em;
+            transition: all 0.2s;
+        }
+        .act-view { background: var(--accent-glow); color: var(--accent); }
+        .act-view:hover { background: rgba(6,182,212,0.25); }
+        .act-edit { background: var(--amber-glow); color: var(--amber); }
+        .act-edit:hover { background: rgba(245,158,11,0.25); }
+        .act-print { background: var(--accent2-glow); color: var(--accent2); }
+        .act-print:hover { background: rgba(139,92,246,0.25); }
+        .act-del { background: var(--red-glow); color: var(--red); }
+        .act-del:hover { background: rgba(239,68,68,0.25); }
+
+        /* Pagination */
+        .pagination {
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+            padding: 16px; border-top: 1px solid var(--border);
+        }
+        .page-btn {
+            padding: 8px 16px; background: var(--bg-input); border: 2px solid var(--border);
+            border-radius: 10px; color: var(--text-dim); cursor: pointer;
+            font-family: 'Tajawal', sans-serif; font-weight: 700; font-size: 0.85em;
+            transition: all 0.2s;
+        }
+        .page-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .page-btn.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+        .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .page-info { color: var(--text-dim); font-size: 0.85em; font-weight: 600; margin: 0 8px; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px); z-index: 1000;
+            justify-content: center; align-items: flex-start; padding: 40px 20px; overflow-y: auto;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px;
+            width: 100%; max-width: 750px; animation: slideUp 0.4s cubic-bezier(0.16,1,0.3,1);
+        }
+        .modal-head {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 24px; border-bottom: 1px solid var(--border);
+        }
+        .modal-head h2 { font-size: 1.2em; font-weight: 800; color: var(--accent); }
+        .modal-head-actions { display: flex; gap: 8px; }
+        .modal-close {
+            width: 36px; height: 36px; border-radius: 10px; background: var(--bg-input);
+            border: 2px solid var(--border); color: var(--text-dim); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2em; transition: all 0.2s;
+        }
+        .modal-close:hover { border-color: var(--red); color: var(--red); }
+        .modal-print-btn {
+            padding: 8px 16px; border-radius: 10px; background: var(--accent2-glow);
+            border: 2px solid var(--accent2); color: var(--accent2); cursor: pointer;
+            font-family: 'Tajawal', sans-serif; font-weight: 700; font-size: 0.85em;
+            transition: all 0.2s;
+        }
+        .modal-print-btn:hover { background: rgba(139,92,246,0.25); }
+        .modal-body { padding: 24px; }
+        .detail-row {
+            display: grid; grid-template-columns: 140px 1fr; gap: 8px;
+            padding: 10px 0; border-bottom: 1px solid rgba(30,42,66,0.5);
+        }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { font-weight: 700; color: var(--text-label); font-size: 0.88em; }
+        .detail-value { color: var(--text); font-size: 0.92em; }
+        .detail-section-title {
+            font-weight: 800; color: var(--accent); font-size: 1em;
+            margin-top: 16px; margin-bottom: 8px; padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+        }
+        .modal-photo {
+            width: 140px; height: 140px; border-radius: 16px; object-fit: cover;
+            border: 3px solid var(--border); margin-bottom: 12px; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .modal-photo:hover { border-color: var(--accent); transform: scale(1.03); }
+
+        /* Document viewer */
+        .doc-viewer {
+            margin-top: 8px; padding: 12px; background: var(--bg-input); border: 2px solid var(--border);
+            border-radius: 12px; text-align: center;
+        }
+        .doc-viewer a {
+            color: var(--accent); font-weight: 700; text-decoration: none; transition: color 0.2s;
+        }
+        .doc-viewer a:hover { color: var(--text); }
+        .doc-preview {
+            max-width: 100%; max-height: 400px; border-radius: 12px; margin-top: 8px;
+            border: 2px solid var(--border);
+        }
+
+        /* Image lightbox */
+        .lightbox {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            z-index: 2000; justify-content: center; align-items: center; cursor: zoom-out;
+        }
+        .lightbox.show { display: flex; }
+        .lightbox img {
+            max-width: 90%; max-height: 90%; border-radius: 12px; object-fit: contain;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center; padding: 60px 20px; color: var(--text-dim);
+        }
+        .empty-state .icon { font-size: 3em; margin-bottom: 12px; }
+        .empty-state p { font-size: 1.1em; font-weight: 600; }
+
+        /* Print styles */
+        @media print {
+            body { background: #fff !important; color: #000 !important; }
+            .bg-effects, .main-header, .filter-bar, .adv-filter-panel,
+            .pagination, .action-btns, .act-btn, .header-actions,
+            .modal-close, .modal-print-btn, .modal-head-actions,
+            .print-btn, .export-btn, .reset-btn, .filter-btn, .btn-action,
+            .stats-grid, .lightbox { display: none !important; }
+            .wrapper { margin: 0; padding: 0; max-width: 100%; }
+            .table-container, .modal, .modal-overlay { border: none; box-shadow: none; background: #fff; }
+            .modal-overlay.show {
+                position: static; display: block !important; background: none;
+                backdrop-filter: none; padding: 0; overflow: visible;
+            }
+            .modal { max-width: 100%; animation: none; border-radius: 0; }
+            .modal-head { border-bottom: 2px solid #333; }
+            .modal-head h2 { color: #000 !important; -webkit-text-fill-color: #000 !important; }
+            .detail-label { color: #333 !important; }
+            .detail-value { color: #000 !important; }
+            .detail-section-title { color: #000 !important; border-color: #333 !important; }
+            .status-badge { border: 1px solid #000; color: #000 !important; background: #eee !important; }
+            table { min-width: auto; }
+            thead th { background: #eee; color: #000; border-color: #333; }
+            tbody td { border-color: #ccc; color: #000; }
+            .table-scroll { overflow: visible; }
+
+            /* Print header */
+            .print-header { display: block !important; text-align: center; margin-bottom: 20px; }
+            .print-header img { width: 80px; }
+            .print-header h2 { margin-top: 8px; }
+        }
+        .print-header { display: none; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .filter-bar { flex-direction: column; }
+            .filter-group, .filter-group.fg-wide, .filter-group.fg-narrow { min-width: auto; flex: auto; }
+            .header-inner { padding: 10px 14px; gap: 12px; }
+            .header-text h1 { font-size: 1.2em; }
+            .header-actions a, .header-actions button { padding: 8px 14px; font-size: 0.8em; }
+            .detail-row { grid-template-columns: 1fr; }
+            .adv-grid { flex-direction: column; }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .stat-card { padding: 14px; }
+            .stat-number { font-size: 1.6em; }
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
+    </style>
+</head>
+<body>
+
+<div class="bg-effects"><div class="orb"></div><div class="orb"></div></div>
+
+<!-- Print header (only visible when printing) -->
+<div class="print-header">
+    <img src="logo.jpg" alt="شعار جمعية حقنا">
+    <h2>جمعية حقنا - سجل البيانات</h2>
+</div>
+
+<header class="main-header">
+    <div class="header-inner">
+        <div class="logo-box"><img src="logo.jpg" alt="Logo"></div>
+        <div class="header-text">
+            <h1><span class="t1">لوحة إدارة </span><span class="t2">حقنا</span></h1>
+            <p>عرض وإدارة السجلات المسجلة</p>
+        </div>
+        <div class="header-actions">
+            <a href="/" class="btn-form">+ تسجيل جديد</a>
+            <button class="btn-backup" onclick="backupDB()">نسخ احتياطي</button>
+            <a href="/api/logout" class="reset-btn" style="text-decoration:none; display:flex; align-items:center;">خروج</a>
+        </div>
+    </div>
+    <div class="header-line"></div>
+</header>
+
+<div class="wrapper">
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card stat-total">
+            <div class="stat-number" id="statTotal">-</div>
+            <div class="stat-label">إجمالي السجلات</div>
+        </div>
+        <div class="stat-card stat-enforced">
+            <div class="stat-number" id="statEnforced">-</div>
+            <div class="stat-label">مغيّب قسري</div>
+        </div>
+        <div class="stat-card stat-survivors">
+            <div class="stat-number" id="statSurvivors">-</div>
+            <div class="stat-label">ناجي</div>
+        </div>
+        <div class="stat-card stat-deceased">
+            <div class="stat-number" id="statDeceased">-</div>
+            <div class="stat-label">متوفى</div>
+        </div>
+    </div>
+
+    <!-- Main Filters -->
+    <div class="filter-bar">
+        <div class="filter-group fg-wide">
+            <label>البحث</label>
+            <input type="text" id="searchInput" placeholder="ابحث بالاسم، اسم الأم، الرقم الوطني، الهاتف..." onkeypress="if(event.key==='Enter') loadRecords()">
+        </div>
+        <div class="filter-group">
+            <label>الحالة</label>
+            <select id="statusFilter">
+                <option value="">الكل</option>
+                <option value="enforced">مغيّب قسري</option>
+                <option value="survivor">ناجي</option>
+                <option value="deceased">متوفى</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>المحافظة</label>
+            <select id="provinceFilter">
+                <option value="">الكل</option>
+                <option>دمشق</option><option>ريف دمشق</option><option>حلب</option><option>حمص</option>
+                <option>حماة</option><option>اللاذقية</option><option>طرطوس</option><option>إدلب</option>
+                <option>دير الزور</option><option>الرقة</option><option>الحسكة</option><option>درعا</option>
+                <option>السويداء</option><option>القنيطرة</option>
+            </select>
+        </div>
+        <button class="filter-btn" onclick="loadRecords()">بحث</button>
+        <button class="reset-btn" onclick="resetFilters()">مسح</button>
+    </div>
+
+    <!-- Advanced Filters Toggle -->
+    <div style="margin-bottom:12px;">
+        <div class="adv-toggle" onclick="toggleAdvanced()">
+            <span class="arrow" id="advArrow">&#9654;</span>
+            <span>تصفية متقدمة</span>
+        </div>
+    </div>
+
+    <!-- Advanced Filter Panel -->
+    <div class="adv-filter-panel" id="advPanel">
+        <div class="adv-grid">
+            <div class="filter-group">
+                <label>الجنس</label>
+                <select id="genderFilter">
+                    <option value="">الكل</option>
+                    <option value="male">ذكر</option>
+                    <option value="female">أنثى</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>الحالة الاجتماعية</label>
+                <select id="maritalFilter">
+                    <option value="">الكل</option>
+                    <option value="single">أعزب/عزباء</option>
+                    <option value="married">متزوج/ة</option>
+                    <option value="widowed">أرمل/ة</option>
+                    <option value="divorced">مطلق/ة</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>التحصيل الدراسي</label>
+                <select id="educationFilter">
+                    <option value="">الكل</option>
+                    <option>أمّي</option><option>ابتدائية</option>
+                    <option>إعدادية</option><option>ثانوية</option><option>معهد</option>
+                    <option>بكالوريوس</option><option>ماجستير</option>
+                    <option>دكتوراه</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>أمراض مزمنة</label>
+                <select id="chronicFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                    <option value="no">لا</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>زمرة الدم</label>
+                <select id="bloodTypeFilter">
+                    <option value="">الكل</option>
+                    <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                    <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+                </select>
+            </div>
+            <div class="filter-group fg-narrow">
+                <label>سنة الاعتقال (من)</label>
+                <input type="number" id="arrestYearFrom" placeholder="مثال: 2011" min="1940" max="2030">
+            </div>
+            <div class="filter-group fg-narrow">
+                <label>سنة الاعتقال (إلى)</label>
+                <input type="number" id="arrestYearTo" placeholder="مثال: 2024" min="1940" max="2030">
+            </div>
+            <div class="filter-group">
+                <label>صورة شخصية</label>
+                <select id="hasPhotoFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">يوجد صورة</option>
+                    <option value="no">بدون صورة</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>عدد الأولاد (كلي) ≥</label>
+                <input type="number" id="minKidsFilter" placeholder="أكبر من أو يساوي" min="0">
+            </div>
+            <div class="filter-group">
+                <label>عدد الأولاد (تحت 18) ≥</label>
+                <input type="number" id="minUnder18Filter" placeholder="أكبر من أو يساوي" min="0">
+            </div>
+            <div class="filter-group">
+                <label>بدون مستندات</label>
+                <select id="noDocsFilter">
+                    <option value="">الكل</option>
+                    <option value="true">نعم (بدون صورة أو وثيقة)</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>توفي في مكان معين</label>
+                <select id="diedInPlaceFilter">
+                    <option value="">الكل</option>
+                    <option value="صيدنايا الامني (الاحمر)">صيدنايا الامني (الاحمر)</option>
+                    <option value="صيدنايا القضائي (الابيض)">صيدنايا القضائي (الابيض)</option>
+                    <option value="الفرع 235 فرع فلسطين">الفرع 235 فرع فلسطين</option>
+                    <option value="فرع 248، التحقيق العسكري">فرع 248، التحقيق العسكري</option>
+                    <option value="فرع 215، بسرية المداهمة والاقتحام">فرع 215، بسرية المداهمة والاقتحام</option>
+                    <option value="فرع 251، فرع الخطيب">فرع 251، فرع الخطيب</option>
+                    <option value="فرع 216، فرع الدوريات">فرع 216، فرع الدوريات</option>
+                    <option value="فرع 227، فرع المنطقة">فرع 227، فرع المنطقة</option>
+                    <option value="فرع 285، فرع التحقيق">فرع 285، فرع التحقيق</option>
+                    <option value="فرع 295، مكافحة الإرهاب">فرع 295، مكافحة الإرهاب</option>
+                    <option value="الدفاع الوطني">الدفاع الوطني</option>
+                    <option value="السجن المدني">السجن المدني</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>نجا من مكان معين</label>
+                <select id="survivedInPlaceFilter">
+                    <option value="">الكل</option>
+                    <option value="صيدنايا الامني (الاحمر)">صيدنايا الامني (الاحمر)</option>
+                    <option value="صيدنايا القضائي (الابيض)">صيدنايا القضائي (الابيض)</option>
+                    <option value="الفرع 235 فرع فلسطين">الفرع 235 فرع فلسطين</option>
+                    <option value="فرع 248، التحقيق العسكري">فرع 248، التحقيق العسكري</option>
+                    <option value="فرع 215، بسرية المداهمة والاقتحام">فرع 215، بسرية المداهمة والاقتحام</option>
+                    <option value="فرع 251، فرع الخطيب">فرع 251، فرع الخطيب</option>
+                    <option value="فرع 216، فرع الدوريات">فرع 216، فرع الدوريات</option>
+                    <option value="فرع 227، فرع المنطقة">فرع 227، فرع المنطقة</option>
+                    <option value="فرع 285، فرع التحقيق">فرع 285، فرع التحقيق</option>
+                    <option value="فرع 295، مكافحة الإرهاب">فرع 295، مكافحة الإرهاب</option>
+                    <option value="الدفاع الوطني">الدفاع الوطني</option>
+                    <option value="السجن المدني">السجن المدني</option>
+                </select>
+            </div>
+        </div>
+        <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="filter-btn" onclick="loadRecords()">تطبيق التصفية</button>
+            <button class="reset-btn" onclick="resetFilters()">مسح جميع الفلاتر</button>
+        </div>
+    </div>
+
+    <!-- Action buttons row -->
+    <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
+        <button class="export-btn" onclick="exportJSON()">تصدير JSON</button>
+        <button class="export-btn" onclick="exportCSV()" style="border-color:var(--accent);color:var(--accent);">تصدير CSV</button>
+        <button class="export-btn" onclick="exportFullBackup()" style="border-color:#27ae60;color:#27ae60;">تصدير نسخة كاملة (ZIP)</button>
+        <button class="export-btn" onclick="document.getElementById('importFile').click()" style="border-color:#2980b9;color:#2980b9;">استيراد نسخة كاملة (ZIP)</button>
+        <input type="file" id="importFile" style="display:none" onchange="importFullBackup(this)">
+        <button class="print-btn" onclick="printTable()">طباعة الجدول</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container" id="tableContainer">
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>صورة</th>
+                        <th>الاسم الكامل</th>
+                        <th>المحافظة</th>
+                        <th>الرقم الوطني</th>
+                        <th>الحالة</th>
+                        <th>تاريخ التسجيل</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="8"><div class="empty-state"><div class="icon">📂</div><p>جاري التحميل...</p></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal">
+        <div class="modal-head">
+            <h2 id="modalTitle">تفاصيل السجل</h2>
+            <div class="modal-head-actions">
+                <button class="modal-print-btn" onclick="printRecord()">طباعة</button>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<!-- Image Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <img id="lightboxImg" src="" alt="صورة مكبرة">
+</div>
+
+<script>
+let currentPage = 1;
+const LIMIT = 50;
+let currentRecordId = null;
+
+function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[m]);
+}
+
+// ══════════════ STATS ══════════════
+async function loadStats() {
+    try {
+        const res = await fetch('/api/stats');
+        const s = await res.json();
+        document.getElementById('statTotal').textContent = s.total;
+        document.getElementById('statEnforced').textContent = s.enforced;
+        document.getElementById('statSurvivors').textContent = s.survivors;
+        document.getElementById('statDeceased').textContent = s.deceased;
+    } catch (e) { console.error('Stats error:', e); }
+}
+
+// ══════════════ LOAD RECORDS ══════════════
+async function loadRecords(page) {
+    if (page) currentPage = page;
+    const params = new URLSearchParams({ page: currentPage, limit: LIMIT });
+
+    // Basic filters
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    const province = document.getElementById('provinceFilter').value;
+    if (search) params.set('search', search);
+    if (status) params.set('status', status);
+    if (province) params.set('province', province);
+
+    // Advanced filters
+    const gender = document.getElementById('genderFilter').value;
+    const marital = document.getElementById('maritalFilter').value;
+    const education = document.getElementById('educationFilter').value;
+    const chronic = document.getElementById('chronicFilter').value;
+    const bloodType = document.getElementById('bloodTypeFilter').value;
+    const arrestYearFrom = document.getElementById('arrestYearFrom').value;
+    const arrestYearTo = document.getElementById('arrestYearTo').value;
+    const hasPhoto = document.getElementById('hasPhotoFilter').value;
+    const minKids = document.getElementById('minKidsFilter').value;
+    const minUnder18 = document.getElementById('minUnder18Filter').value;
+
+    if (gender) params.set('gender', gender);
+    if (marital) params.set('marital', marital);
+    if (education) params.set('education', education);
+    if (chronic) params.set('chronic', chronic);
+    if (bloodType) params.set('bloodType', bloodType);
+    if (arrestYearFrom) params.set('arrestYearFrom', arrestYearFrom);
+    if (arrestYearTo) params.set('arrestYearTo', arrestYearTo);
+    if (hasPhoto) params.set('hasPhoto', hasPhoto);
+    if (minKids) params.set('minKids', minKids);
+    if (minUnder18) params.set('minUnder18', minUnder18);
+
+    const noDocs = document.getElementById('noDocsFilter').value;
+    const diedInPlace = document.getElementById('diedInPlaceFilter').value;
+    const survivedInPlace = document.getElementById('survivedInPlaceFilter').value;
+    if (noDocs) params.set('noDocs', noDocs);
+    if (diedInPlace) params.set('diedInPlace', diedInPlace);
+    if (survivedInPlace) params.set('survivedInPlace', survivedInPlace);
+
+    try {
+        const res = await fetch('/api/records?' + params);
+        const data = await res.json();
+        renderTable(data.records);
+        renderPagination(data.pagination);
+    } catch (e) {
+        document.getElementById('tableBody').innerHTML =
+            '<tr><td colspan="8"><div class="empty-state"><div class="icon">⚠️</div><p>خطأ في الاتصال بالخادم</p></div></td></tr>';
+    }
+}
+
+// ══════════════ HELPERS ══════════════
+const months = ['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
+
+function statusLabel(s) {
+    if (s === 'enforced') return '<span class="status-badge badge-enforced">مغيّب قسري</span>';
+    if (s === 'survivor') return '<span class="status-badge badge-survivor">ناجي</span>';
+    if (s === 'deceased') return '<span class="status-badge badge-deceased">متوفى</span>';
+    return '<span style="color:var(--text-dim)">—</span>';
+}
+
+function formatDate(d, m, y) {
+    if (!y) return '—';
+    let s = '';
+    if (d) s += d + ' ';
+    if (m) s += months[m - 1] + ' ';
+    s += y;
+    return s;
+}
+
+function maritalLabel(v) {
+    const map = { single:'أعزب/عزباء', married:'متزوج/ة', widowed:'أرمل/ة', divorced:'مطلق/ة' };
+    return map[v] || '—';
+}
+
+function detailRow(label, value) {
+    if (!value) return '';
+    if (label) return `<div class="detail-row"><div class="detail-label">${label}</div><div class="detail-value">${value}</div></div>`;
+    return `<div class="detail-row" style="grid-template-columns:1fr;"><div class="detail-value">${value}</div></div>`;
+}
+
+// ══════════════ RENDER TABLE ══════════════
+function renderTable(records) {
+    const tbody = document.getElementById('tableBody');
+    if (!records.length) {
+        tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="icon">📭</div><p>لا توجد سجلات</p></div></td></tr>';
+        return;
+    }
+    tbody.innerHTML = records.map(r => {
+        const photo = r.photo_path
+            ? `<img class="photo-thumb" src="/uploads/photos/${r.photo_path}" alt="صورة" onclick="viewRecord(${r.id})">`
+            : '<span style="color:var(--text-dim);font-size:0.8em;">—</span>';
+        const name = `${r.first_name} ${r.father_name} ${r.last_name}`;
+        return `<tr>
+            <td style="color:var(--text-dim);font-weight:700;">${r.id}</td>
+            <td>${photo}</td>
+            <td style="font-weight:700;">${name}</td>
+            <td>${r.province || '—'}</td>
+            <td style="font-family:monospace;direction:ltr;text-align:right;">${r.national_id || '—'}</td>
+            <td>${statusLabel(r.status)}</td>
+            <td style="color:var(--text-dim);font-size:0.85em;">${r.created_at || '—'}</td>
+            <td>
+                <div class="action-btns">
+                    <button class="act-btn act-view" onclick="viewRecord(${r.id})">عرض</button>
+                    <button class="act-btn act-edit" onclick="editRecord(${r.id})">تعديل</button>
+                    <button class="act-btn act-print" onclick="printSingleRecord(${r.id})">طباعة</button>
+                    <button class="act-btn act-del" onclick="deleteRecord(${r.id})">حذف</button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function renderPagination(p) {
+    const el = document.getElementById('pagination');
+    if (p.pages <= 1) { el.innerHTML = `<span class="page-info">${p.total} سجل</span>`; return; }
+    let html = `<button class="page-btn" onclick="loadRecords(${p.page - 1})" ${p.page <= 1 ? 'disabled' : ''}>السابق</button>`;
+    html += `<span class="page-info">صفحة ${p.page} من ${p.pages} (${p.total} سجل)</span>`;
+    html += `<button class="page-btn" onclick="loadRecords(${p.page + 1})" ${p.page >= p.pages ? 'disabled' : ''}>التالي</button>`;
+    el.innerHTML = html;
+}
+
+// ══════════════ VIEW RECORD DETAIL ══════════════
+async function viewRecord(id) {
+    try {
+        const res = await fetch('/api/records/' + id);
+        const r = await res.json();
+        currentRecordId = id;
+        document.getElementById('modalTitle').textContent = `سجل #${r.id} — ${r.first_name} ${r.last_name}`;
+
+        let html = '';
+
+        // Photo
+        if (r.photo_path) {
+            html += `<div style="text-align:center;">
+                <img class="modal-photo" src="/uploads/photos/${r.photo_path}" alt="صورة شخصية"
+                     onclick="openLightbox('/uploads/photos/${r.photo_path}')">
+                <p style="font-size:0.8em;color:var(--text-dim);margin-top:4px;">اضغط على الصورة لتكبيرها</p>
+            </div>`;
+        }
+
+        // Personal info
+        html += `<div class="detail-section-title">المعلومات الشخصية</div>`;
+        html += detailRow('الاسم الكامل', `${r.first_name} ${r.father_name} ${r.last_name}`);
+        html += detailRow('الجنس', r.gender === 'male' ? 'ذكر' : 'أنثى');
+        html += detailRow('اسم الأم', r.mother_name);
+        html += detailRow('تاريخ الميلاد', formatDate(r.birth_day, r.birth_month, r.birth_year));
+        html += detailRow('المحافظة', r.province);
+        html += detailRow('الرقم الوطني', r.national_id);
+        html += detailRow('الهاتف', r.phone);
+        html += detailRow('زمرة الدم', r.blood_type);
+
+        // Arrest info
+        html += `<div class="detail-section-title">معلومات الاعتقال</div>`;
+        html += detailRow('تاريخ الاعتقال', formatDate(r.arrest_day, r.arrest_month, r.arrest_year));
+        html += detailRow('مكان الاعتقال', r.arrest_place);
+        html += detailRow('الجهة المسؤولة', r.arrest_authority);
+        html += detailRow('السبب', r.arrest_reason);
+        html += detailRow('المُسبِّب', r.arrest_causer);
+        html += detailRow('الحالة', statusLabel(r.status));
+        html += detailRow('مسجل رسمياً', r.is_officially_registered ? '<span style="color:var(--green)">نعم</span>' : '<span style="color:var(--text-dim)">لا</span>');
+        if (r.status === 'survivor') html += detailRow('تاريخ الخروج', formatDate(r.release_day, r.release_month, r.release_year));
+        if (r.status === 'deceased') {
+            html += detailRow('تاريخ الوفاة', formatDate(r.death_day, r.death_month, r.death_year));
+            html += detailRow('مكان الوفاة', r.death_place);
+        }
+
+        // Social & Housing
+        html += `<div class="detail-section-title">الحالة الاجتماعية والسكن</div>`;
+        html += detailRow('الحالة الاجتماعية', maritalLabel(r.marital));
+        if (r.spouse_name) html += detailRow('اسم الزوج/ة', r.spouse_name);
+        if (r.spouse_phone) html += detailRow('هاتف الزوج/ة', r.spouse_phone);
+        if (r.ex_spouse_name) html += detailRow('الزوج/ة السابق/ة', r.ex_spouse_name);
+        if (r.guardian_name) html += detailRow('ولي الأمر', r.guardian_name);
+        if (r.guardian_relation) html += detailRow('صلة القرابة', r.guardian_relation);
+        if (r.guardian_phone) html += detailRow('هاتف ولي الأمر', r.guardian_phone);
+
+        // Children data
+        if (r.children_data) {
+            try {
+                const children = JSON.parse(r.children_data);
+                if (children.length) {
+                    html += `<div style="margin-top:10px;font-weight:700;color:var(--accent);font-size:0.9em;">الأولاد (${children.length}):</div>`;
+                    children.forEach((c, i) => {
+                        let cEduStr = c.education || '—';
+                        if (c.eduType) cEduStr += ` (${c.eduType})`;
+                        if (c.specialization) cEduStr += ` - ${c.specialization}`;
+                        if (c.university) cEduStr += ` (${c.university})`;
+
+                        let cHPStr = '—';
+                        if (c.healthStatus === 'healthy') cHPStr = 'سليم';
+                        else if (c.healthStatus === 'sick') {
+                            cHPStr = 'مريض';
+                            if (c.diseases && c.diseases.length) cHPStr += ` (${c.diseases.join('، ')})`;
+                        } else if (c.healthStatus === 'special') {
+                            cHPStr = 'ذوي احتياجات خاصة';
+                            if (c.healthDetails) cHPStr += ` (${c.healthDetails})`;
+                        }
+
+                        html += `<div style="padding:6px 12px;margin:4px 0;background:var(--bg-input);border-radius:8px;font-size:0.88em;">
+                            <strong>${i+1}.</strong> ${esc(c.name) || '—'} | العمر: ${c.age || '—'} | التعليم: ${esc(cEduStr)} | المهنة: ${esc(c.job) || '—'} | الصحة: ${esc(cHPStr)}
+                        </div>`;
+                    });
+                }
+            } catch(e) {}
+        }
+        if (r.children_data_w) {
+            try {
+                const children = JSON.parse(r.children_data_w);
+                if (children.length) {
+                    html += `<div style="margin-top:10px;font-weight:700;color:var(--accent);font-size:0.9em;">الأولاد من زواج سابق (${children.length}):</div>`;
+                    children.forEach((c, i) => {
+                        let cEduStr = c.education || '—';
+                        if (c.eduType) cEduStr += ` (${c.eduType})`;
+                        if (c.specialization) cEduStr += ` - ${c.specialization}`;
+                        if (c.university) cEduStr += ` (${c.university})`;
+
+                        let cHPStr = '—';
+                        if (c.healthStatus === 'healthy') cHPStr = 'سليم';
+                        else if (c.healthStatus === 'sick') {
+                            cHPStr = 'مريض';
+                            if (c.diseases && c.diseases.length) cHPStr += ` (${c.diseases.join('، ')})`;
+                        } else if (c.healthStatus === 'special') {
+                            cHPStr = 'ذوي احتياجات خاصة';
+                            if (c.healthDetails) cHPStr += ` (${c.healthDetails})`;
+                        }
+
+                        html += `<div style="padding:6px 12px;margin:4px 0;background:var(--bg-input);border-radius:8px;font-size:0.88em;">
+                            <strong>${i+1}.</strong> ${esc(c.name) || '—'} | العمر: ${c.age || '—'} | التعليم: ${esc(cEduStr)} | المهنة: ${esc(c.job) || '—'} | الصحة: ${esc(cHPStr)}
+                        </div>`;
+                    });
+                }
+            } catch(e) {}
+        }
+
+        html += detailRow('العنوان', r.address);
+        html += detailRow('نوع السكن', r.housing_type);
+        if (r.housing_type === 'إيجار' && r.rent_amount) html += detailRow('مبلغ الإيجار', r.rent_amount);
+
+        // Work, Health, Education
+        html += `<div class="detail-section-title">العمل والصحة والتعليم</div>`;
+        if (r.status === 'survivor') {
+            html += detailRow('حالة العمل', r.employment === 'employed' ? 'يعمل' : (r.employment === 'unemployed' ? 'عاطل عن العمل' : '—'));
+            if (r.profession) html += detailRow('المهنة', r.profession);
+            if (r.employer) html += detailRow('جهة العمل', r.employer);
+        } else {
+            html += detailRow('المعيل', esc(r.breadwinner));
+            html += detailRow('عمل المعيل', esc(r.breadwinner_job));
+        }
+        let diseaseList = [];
+        if (r.has_hypertension) diseaseList.push('ضغط');
+        if (r.has_diabetes) diseaseList.push('سكري');
+        if (r.other_diseases) {
+            try {
+                const others = JSON.parse(r.other_diseases);
+                if (Array.isArray(others)) diseaseList.push(...others.map(esc));
+                else diseaseList.push(esc(r.other_diseases));
+            } catch(e) { diseaseList.push(esc(r.other_diseases)); }
+        }
+
+        html += detailRow('أمراض مزمنة', diseaseList.length > 0 ? diseaseList.join('، ') : 'لا يوجد');
+        if (r.has_special_needs) {
+            html += detailRow('ذوي احتياجات خاصة', 'نعم');
+            html += detailRow('تفاصيل الاحتياجات', esc(r.special_needs_details));
+        }
+
+        html += detailRow('التحصيل الدراسي', esc(r.education));
+        if (r.education === 'ثانوية') html += detailRow('نوع الثانوية', esc(r.edu_type));
+        if (['معهد', 'بكالوريوس', 'ماجستير', 'دكتوراه'].includes(r.education)) {
+            html += detailRow('الاختصاص', esc(r.edu_specialization));
+            html += detailRow('الجامعة', esc(r.edu_university));
+        }
+        if (r.legal === 'yes') {
+            let legStr = 'نعم';
+            try {
+                const probs = JSON.parse(r.legal_details);
+                if (Array.isArray(probs)) legStr = probs.map(p => `• ${esc(p)}`).join('<br>');
+            } catch(e) { legStr = esc(r.legal_details); }
+            html += detailRow('مشاكل قانونية', legStr);
+        } else {
+            html += detailRow('مشاكل قانونية', 'لا');
+        }
+
+        // Associations
+        if (r.assoc === 'yes') {
+            html += `<div class="detail-section-title">ارتباط بجمعيات أخرى</div>`;
+            html += detailRow('اسم الجمعية', r.assoc_name);
+            html += detailRow('نوع الخدمة', r.service_type);
+        }
+
+        // Notes
+        if (r.notes) {
+            html += `<div class="detail-section-title">ملاحظات</div>`;
+            html += detailRow('', r.notes);
+        }
+
+        // Document viewer
+        html += `<div class="detail-section-title">المرفقات</div>`;
+        if (r.photo_path) {
+            html += `<div class="doc-viewer">
+                <a href="/uploads/photos/${r.photo_path}" target="_blank">فتح الصورة الشخصية في نافذة جديدة</a>
+            </div>`;
+        }
+        if (r.document_path) {
+            const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(r.document_path);
+            const isPdf = /\.pdf$/i.test(r.document_path);
+            html += `<div class="doc-viewer" style="margin-top:8px;">
+                <a href="/uploads/documents/${r.document_path}" target="_blank">فتح وثيقة الإثبات</a>`;
+            if (isImage) {
+                html += `<br><img class="doc-preview" src="/uploads/documents/${r.document_path}" alt="وثيقة"
+                          onclick="openLightbox('/uploads/documents/${r.document_path}')">`;
+            } else if (isPdf) {
+                html += `<br><iframe src="/uploads/documents/${r.document_path}" style="width:100%;height:400px;border:none;border-radius:8px;margin-top:8px;"></iframe>`;
+            }
+            html += `</div>`;
+        }
+        if (!r.photo_path && !r.document_path) {
+            html += `<div style="color:var(--text-dim);font-size:0.9em;padding:10px 0;">لا توجد مرفقات</div>`;
+        }
+
+        document.getElementById('modalBody').innerHTML = html;
+        document.getElementById('detailModal').classList.add('show');
+    } catch (e) {
+        console.error(e);
+        alert('خطأ في تحميل السجل');
+    }
+}
+
+// ══════════════ MODAL / LIGHTBOX ══════════════
+function closeModal() {
+    document.getElementById('detailModal').classList.remove('show');
+    currentRecordId = null;
+}
+
+function openLightbox(src) {
+    document.getElementById('lightboxImg').src = src;
+    document.getElementById('lightbox').classList.add('show');
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('show');
+}
+
+// ══════════════ EDIT RECORD ══════════════
+async function editRecord(id) {
+    try {
+        const res = await fetch('/api/records/' + id);
+        const r = await res.json();
+        currentRecordId = id;
+        document.getElementById('modalTitle').textContent = `تعديل السجل #${r.id}`;
+
+        const provinces = ["دمشق","ريف دمشق","حلب","حمص","حماة","اللاذقية","طرطوس","إدلب","دير الزور","الرقة","الحسكة","درعا","السويداء","القنيطرة"];
+
+        let html = `<form id="editForm" onsubmit="saveEdit(event)" style="display:flex; flex-direction:column; gap:16px;">
+            <div class="detail-section-title">المعلومات الأساسية</div>
+            <div class="adv-grid">
+                <div class="filter-group"><label>الاسم</label><input name="firstName" value="${esc(r.first_name)}" required></div>
+                <div class="filter-group"><label>اسم الأب</label><input name="fatherName" value="${esc(r.father_name)}" required></div>
+                <div class="filter-group"><label>الكنية</label><input name="lastName" value="${esc(r.last_name)}" required></div>
+                <div class="filter-group"><label>اسم الأم</label><input name="motherName" value="${esc(r.mother_name)}" required></div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>المحافظة</label>
+                    <select name="province" required>
+                        ${provinces.map(p => `<option ${r.province===p?'selected':''}>${p}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="filter-group"><label>الرقم الوطني</label><input name="nationalId" value="${esc(r.national_id)}" required></div>
+                <div class="filter-group"><label>الهاتف</label><input name="phone" value="${esc(r.phone)}"></div>
+            </div>
+
+            <div class="detail-section-title">معلومات الاعتقال والحالة</div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>الحالة</label>
+                    <select name="status">
+                        <option value="enforced" ${r.status==='enforced'?'selected':''}>مغيب قسري</option>
+                        <option value="survivor" ${r.status==='survivor'?'selected':''}>ناجي</option>
+                        <option value="deceased" ${r.status==='deceased'?'selected':''}>متوفى</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>مكان الاعتقال</label>
+                    <input list="arrestPlaces" name="arrestPlace" value="${esc(r.arrest_place)}">
+                    <datalist id="arrestPlaces">
+                        <option value="صيدنايا الامني (الاحمر)">
+                        <option value="صيدنايا القضائي (الابيض)">
+                        <option value="الفرع 235 فرع فلسطين">
+                        <option value="فرع 248، التحقيق العسكري">
+                        <option value="فرع 215، بسرية المداهمة والاقتحام">
+                        <option value="فرع 251، فرع الخطيب">
+                        <option value="فرع 216، فرع الدوريات">
+                        <option value="فرع 227، فرع المنطقة">
+                        <option value="فرع 285، فرع التحقيق">
+                        <option value="فرع 295، مكافحة الإرهاب">
+                        <option value="الدفاع الوطني">
+                        <option value="السجن المدني">
+                    </datalist>
+                </div>
+                <div class="filter-group"><label>مكان الوفاة</label>
+                    <input list="arrestPlaces" name="deathPlace" value="${esc(r.death_place||'')}">
+                </div>
+                <div class="filter-group">
+                    <label>مسجل رسمياً</label>
+                    <select name="isOfficiallyRegistered">
+                        <option value="no" ${!r.is_officially_registered?'selected':''}>لا</option>
+                        <option value="yes" ${r.is_officially_registered?'selected':''}>نعم</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="detail-section-title">العائلة والأولاد والسكن</div>
+            <div class="adv-grid">
+                <div class="filter-group"><label>عدد الأولاد (من الزواج الحالي)</label><input type="number" name="kidsCount" value="${r.kids_count||0}"></div>
+                <div class="filter-group"><label>عدد الأولاد (من زواج سابق)</label><input type="number" name="kidsCountW" value="${r.kids_count_w||0}"></div>
+                <div class="filter-group"><label>عدد الأولاد تحت 18</label><input type="number" name="kids_under_18_count" value="${r.kids_under_18_count||0}"></div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>نوع السكن</label>
+                    <select name="housingType" onchange="const ra = this.parentElement.nextElementSibling; if(this.value==='إيجار') ra.style.display='block'; else ra.style.display='none';">
+                        <option ${r.housing_type==='ملك'?'selected':''}>ملك</option>
+                        <option ${r.housing_type==='إيجار'?'selected':''}>إيجار</option>
+                        <option ${r.housing_type==='أخرى'?'selected':''}>أخرى</option>
+                    </select>
+                </div>
+                <div class="filter-group" style="display:${r.housing_type==='إيجار'?'block':'none'}">
+                    <label>مبلغ الإيجار</label>
+                    <input name="rentAmount" value="${esc(r.rent_amount||'')}">
+                </div>
+            </div>
+
+            <div class="detail-section-title">المعيل (في حال التغيب أو الوفاة)</div>
+            <div class="adv-grid">
+                <div class="filter-group"><label>المعيل</label><input name="breadwinner" value="${esc(r.breadwinner)}"></div>
+                <div class="filter-group"><label>عمل المعيل</label><input name="breadwinnerJob" value="${esc(r.breadwinner_job)}"></div>
+            </div>
+
+            <div class="detail-section-title">الصحة والتعليم</div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>أمراض مزمنة</label>
+                    <div style="display:flex; gap:10px; margin-top:8px;">
+                        <label style="color:var(--text); font-size:0.85em; display:flex; align-items:center; gap:4px;">
+                            <input type="checkbox" name="hasHypertension" value="yes" ${r.has_hypertension?'checked':''}> ضغط
+                        </label>
+                        <label style="color:var(--text); font-size:0.85em; display:flex; align-items:center; gap:4px;">
+                            <input type="checkbox" name="hasDiabetes" value="yes" ${r.has_diabetes?'checked':''}> سكري
+                        </label>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>أمراض أخرى (افصل بينهم بفاصلة)</label>
+                    <input name="otherDiseases" value="${(()=>{
+                        if(!r.other_diseases) return '';
+                        try {
+                            const o = JSON.parse(r.other_diseases);
+                            return Array.isArray(o) ? o.join(', ') : o;
+                        } catch(e) { return r.other_diseases; }
+                    })()}">
+                </div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>ذوي احتياجات خاصة</label>
+                    <div style="display:flex; gap:10px; margin-top:8px;">
+                        <label style="color:var(--text); font-size:0.85em; display:flex; align-items:center; gap:4px;">
+                            <input type="checkbox" name="hasSpecialNeeds" value="yes" ${r.has_special_needs?'checked':''}> من ذوي الاحتياجات الخاصة
+                        </label>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>تفاصيل الاحتياجات</label>
+                    <textarea name="specialNeedsDetails" rows="2" style="background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:10px;">${esc(r.special_needs_details||'')}</textarea>
+                </div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>التحصيل الدراسي</label>
+                    <select name="education" id="edit_edu" onchange="toggleEditEdu()">
+                        <option ${r.education==='أمّي'?'selected':''}>أمّي</option>
+                        <option ${r.education==='ابتدائية'?'selected':''}>ابتدائية</option>
+                        <option ${r.education==='إعدادية'?'selected':''}>إعدادية</option>
+                        <option ${r.education==='ثانوية'?'selected':''}>ثانوية</option>
+                        <option ${r.education==='معهد'?'selected':''}>معهد</option>
+                        <option ${r.education==='بكالوريوس'?'selected':''}>بكالوريوس</option>
+                        <option ${r.education==='ماجستير'?'selected':''}>ماجستير</option>
+                        <option ${r.education==='دكتوراه'?'selected':''}>دكتوراه</option>
+                    </select>
+                </div>
+                <div class="filter-group" id="edit_edu_type_box" style="display:${r.education==='ثانوية'?'block':'none'}">
+                    <label>نوع الثانوية</label>
+                    <select name="eduType">
+                        <option value="">-- اختر --</option>
+                        <option ${r.edu_type==='علمي'?'selected':''}>علمي</option>
+                        <option ${r.edu_type==='ادبي'?'selected':''}>ادبي</option>
+                    </select>
+                </div>
+            </div>
+            <div class="adv-grid" id="edit_higher_edu_box" style="display:${['معهد', 'بكالوريوس','ماجستير','دكتوراه'].includes(r.education)?'flex':'none'}">
+                <div class="filter-group"><label>الاختصاص</label><input name="eduSpecialization" value="${esc(r.edu_specialization)}"></div>
+                <div class="filter-group"><label>الجامعة</label><input name="eduUniversity" value="${esc(r.edu_university)}"></div>
+            </div>
+
+            <div class="detail-section-title">بيانات متقدمة (JSON)</div>
+            <div class="filter-group">
+                <label>بيانات الأطفال</label>
+                <textarea name="children_data" rows="5" style="font-family:monospace; font-size:0.85em; background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:12px;">${esc(r.children_data)}</textarea>
+            </div>
+            <div class="filter-group">
+                <label>المشاكل القانونية</label>
+                <textarea name="legal_details" rows="3" style="font-family:monospace; font-size:0.85em; background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:12px;">${esc(r.legal_details)}</textarea>
+            </div>
+
+            <div style="margin-top:20px; display:flex; gap:10px;">
+                <button type="submit" class="filter-btn">حفظ التغييرات</button>
+                <button type="button" class="reset-btn" onclick="closeModal()">إلغاء</button>
+            </div>
+        </form>`;
+
+        document.getElementById('modalBody').innerHTML = html;
+        document.getElementById('detailModal').classList.add('show');
+    } catch (e) { console.error(e); alert('خطأ في تحميل السجل'); }
+}
+
+function toggleEditEdu() {
+    const v = document.getElementById('edit_edu').value;
+    document.getElementById('edit_edu_type_box').style.display = (v === 'ثانوية') ? 'block' : 'none';
+    document.getElementById('edit_higher_edu_box').style.display = (['معهد', 'بكالوريوس','ماجستير','دكتوراه'].includes(v)) ? 'flex' : 'none';
+}
+
+async function saveEdit(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = {};
+    formData.forEach((value, key) => { data[key] = value; });
+
+    // Ensure checkboxes are included as 'yes' or 'no'
+    data.hasHypertension = formData.get('hasHypertension') || 'no';
+    data.hasDiabetes = formData.get('hasDiabetes') || 'no';
+    data.hasSpecialNeeds = formData.get('hasSpecialNeeds') || 'no';
+
+    if (data.otherDiseases) {
+        const list = data.otherDiseases.split(',').map(s => s.trim()).filter(s => s);
+        data.otherDiseases = JSON.stringify(list);
+    } else {
+        data.otherDiseases = null;
+    }
+
+    try {
+        const res = await fetch('/api/records/' + currentRecordId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            closeModal();
+            loadRecords();
+            loadStats();
+        } else {
+            const err = await res.json();
+            alert('فشل في حفظ التغييرات: ' + (err.error || 'خطأ غير معروف'));
+        }
+    } catch (e) { alert('خطأ في الاتصال بالخادم'); }
+}
+
+// ══════════════ DELETE ══════════════
+async function deleteRecord(id) {
+    if (!confirm('هل أنت متأكد من حذف هذا السجل؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+    try {
+        const res = await fetch('/api/records/' + id, { method: 'DELETE' });
+        if (res.ok) {
+            loadRecords();
+            loadStats();
+            if (currentRecordId === id) closeModal();
+        } else {
+            alert('فشل في حذف السجل');
+        }
+    } catch (e) { alert('خطأ في الاتصال'); }
+}
+
+// ══════════════ ADVANCED FILTER TOGGLE ══════════════
+function toggleAdvanced() {
+    const panel = document.getElementById('advPanel');
+    const arrow = document.getElementById('advArrow');
+    panel.classList.toggle('show');
+    arrow.classList.toggle('open');
+}
+
+// ══════════════ RESET FILTERS ══════════════
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('provinceFilter').value = '';
+    document.getElementById('genderFilter').value = '';
+    document.getElementById('maritalFilter').value = '';
+    document.getElementById('educationFilter').value = '';
+    document.getElementById('chronicFilter').value = '';
+    document.getElementById('bloodTypeFilter').value = '';
+    document.getElementById('arrestYearFrom').value = '';
+    document.getElementById('arrestYearTo').value = '';
+    document.getElementById('hasPhotoFilter').value = '';
+    document.getElementById('minKidsFilter').value = '';
+    document.getElementById('minUnder18Filter').value = '';
+    document.getElementById('noDocsFilter').value = '';
+    document.getElementById('diedInPlaceFilter').value = '';
+    document.getElementById('survivedInPlaceFilter').value = '';
+    currentPage = 1;
+    loadRecords();
+}
+
+// ══════════════ EXPORT ══════════════
+function exportJSON() { window.open('/api/export', '_blank'); }
+function exportCSV() { window.open('/api/export/csv', '_blank'); }
+function exportFullBackup() { window.open('/api/backup/full', '_blank'); }
+
+async function importFullBackup(input) {
+    if (!input.files || !input.files[0]) return;
+    if (!confirm('سيتم استبدال قاعدة البيانات والصور الحالية بالنسخة المرفوعة. هل أنت متأكد؟')) return;
+
+    const formData = new FormData();
+    formData.append('backup', input.files[0]);
+
+    try {
+        const res = await fetch('/api/restore/full', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+            alert('تمت استعادة النسخة بنجاح. سيتم تحديث الصفحة.');
+            location.reload();
+        } else {
+            alert('خطأ: ' + (data.error || 'فشل الاستيراد'));
+        }
+    } catch (e) {
+        alert('حدث خطأ أثناء الاستيراد');
+    }
+}
+
+// ══════════════ BACKUP ══════════════
+function backupDB() {
+    if (!confirm('سيتم تنزيل نسخة احتياطية من قاعدة البيانات. متابعة؟')) return;
+    window.location.href = '/api/backup';
+}
+
+// ══════════════ PRINT ══════════════
+function printTable() {
+    window.print();
+}
+
+function printRecord() {
+    window.print();
+}
+
+async function printSingleRecord(id) {
+    await viewRecord(id);
+    setTimeout(() => window.print(), 300);
+}
+
+// ══════════════ EVENT LISTENERS ══════════════
+document.getElementById('detailModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        if (document.getElementById('lightbox').classList.contains('show')) closeLightbox();
+        else closeModal();
+    }
+});
+
+// ══════════════ INIT ══════════════
+loadStats();
+loadRecords();
+</script>
+
+</body>
+</html>
