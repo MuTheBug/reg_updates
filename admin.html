@@ -585,6 +585,121 @@
                 </select>
             </div>
             <div class="filter-group">
+                <label>حالة العمل</label>
+                <select id="employmentFilter">
+                    <option value="">الكل</option>
+                    <option value="employed">يعمل</option>
+                    <option value="unemployed">عاطل عن العمل</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>نوع السكن</label>
+                <select id="housingTypeFilter">
+                    <option value="">الكل</option>
+                    <option value="ملك">ملك</option>
+                    <option value="إيجار">إيجار</option>
+                    <option value="رهن">رهن</option>
+                    <option value="مستضاف">مستضاف</option>
+                    <option value="أخرى">أخرى</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>ذوي احتياجات خاصة</label>
+                <select id="hasSpecialNeedsFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                    <option value="no">لا</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>مشاكل قانونية</label>
+                <select id="legalFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                    <option value="no">لا</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>مسجل رسمياً</label>
+                <select id="isOfficiallyRegisteredFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                    <option value="no">لا</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>لديه أولاد</label>
+                <select id="hasKidsFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                    <option value="no">لا</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>مسجل في جمعية أخرى</label>
+                <select id="assocFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                    <option value="no">لا</option>
+                </select>
+            </div>
+            <div class="filter-group fg-narrow">
+                <label>سنة الميلاد (من)</label>
+                <input type="number" id="birthYearFrom" placeholder="مثال: 1960" min="1920" max="2025">
+            </div>
+            <div class="filter-group fg-narrow">
+                <label>سنة الميلاد (إلى)</label>
+                <input type="number" id="birthYearTo" placeholder="مثال: 2000" min="1920" max="2025">
+            </div>
+            <div class="filter-group fg-narrow">
+                <label>سنة الإفراج (من)</label>
+                <input type="number" id="releaseYearFrom" placeholder="مثال: 2011" min="1940" max="2030">
+            </div>
+            <div class="filter-group fg-narrow">
+                <label>سنة الإفراج (إلى)</label>
+                <input type="number" id="releaseYearTo" placeholder="مثال: 2024" min="1940" max="2030">
+            </div>
+            <div class="filter-group">
+                <label>مكان الاعتقال</label>
+                <select id="arrestPlaceFilter">
+                    <option value="">الكل</option>
+                    <option value="صيدنايا الامني (الاحمر)">صيدنايا الامني (الاحمر)</option>
+                    <option value="صيدنايا القضائي (الابيض)">صيدنايا القضائي (الابيض)</option>
+                    <option value="الفرع 235 فرع فلسطين">الفرع 235 فرع فلسطين</option>
+                    <option value="فرع 248، التحقيق العسكري">فرع 248، التحقيق العسكري</option>
+                    <option value="فرع 215، بسرية المداهمة والاقتحام">فرع 215، بسرية المداهمة والاقتحام</option>
+                    <option value="فرع 251، فرع الخطيب">فرع 251، فرع الخطيب</option>
+                    <option value="فرع 216، فرع الدوريات">فرع 216، فرع الدوريات</option>
+                    <option value="فرع 227، فرع المنطقة">فرع 227، فرع المنطقة</option>
+                    <option value="فرع 285، فرع التحقيق">فرع 285، فرع التحقيق</option>
+                    <option value="فرع 295، مكافحة الإرهاب">فرع 295، مكافحة الإرهاب</option>
+                    <option value="الدفاع الوطني">الدفاع الوطني</option>
+                    <option value="السجن المدني">السجن المدني</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>وثيقة إثبات</label>
+                <select id="hasDocumentFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">يوجد وثيقة</option>
+                    <option value="no">بدون وثيقة</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>ضغط الدم</label>
+                <select id="hasHypertensionFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>سكري</label>
+                <select id="hasDiabetesFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                </select>
+            </div>
+            <div class="filter-group">
                 <label>توفي في مكان معين</label>
                 <select id="diedInPlaceFilter">
                     <option value="">الكل</option>
@@ -620,6 +735,10 @@
                     <option value="السجن المدني">السجن المدني</option>
                 </select>
             </div>
+            <div class="filter-group">
+                <label>الجهة المسؤولة</label>
+                <input type="text" id="arrestAuthorityFilter" placeholder="ابحث بالجهة المسؤولة...">
+            </div>
         </div>
         <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
             <button class="filter-btn" onclick="loadRecords()">تطبيق التصفية</button>
@@ -635,6 +754,8 @@
         <button class="export-btn" onclick="document.getElementById('importFile').click()" style="border-color:#2980b9;color:#2980b9;">استيراد نسخة كاملة (ZIP)</button>
         <input type="file" id="importFile" style="display:none" onchange="importFullBackup(this)">
         <button class="print-btn" onclick="printTable()">طباعة الجدول</button>
+        <button class="print-btn" onclick="exportPDF('filtered')" style="border-color:var(--green);color:var(--green);">PDF السجلات المفلترة</button>
+        <button class="print-btn" onclick="exportPDF('all')" style="border-color:var(--amber);color:var(--amber);">PDF جميع السجلات</button>
     </div>
 
     <!-- Table -->
@@ -748,6 +869,41 @@ async function loadRecords(page) {
     if (noDocs) params.set('noDocs', noDocs);
     if (diedInPlace) params.set('diedInPlace', diedInPlace);
     if (survivedInPlace) params.set('survivedInPlace', survivedInPlace);
+
+    // New filters
+    const employment = document.getElementById('employmentFilter').value;
+    const housingType = document.getElementById('housingTypeFilter').value;
+    const hasSpecialNeeds = document.getElementById('hasSpecialNeedsFilter').value;
+    const legal = document.getElementById('legalFilter').value;
+    const isOfficiallyRegistered = document.getElementById('isOfficiallyRegisteredFilter').value;
+    const hasKidsVal = document.getElementById('hasKidsFilter').value;
+    const assocVal = document.getElementById('assocFilter').value;
+    const birthYearFrom = document.getElementById('birthYearFrom').value;
+    const birthYearTo = document.getElementById('birthYearTo').value;
+    const releaseYearFrom = document.getElementById('releaseYearFrom').value;
+    const releaseYearTo = document.getElementById('releaseYearTo').value;
+    const arrestPlace = document.getElementById('arrestPlaceFilter').value;
+    const hasDocument = document.getElementById('hasDocumentFilter').value;
+    const hasHypertensionVal = document.getElementById('hasHypertensionFilter').value;
+    const hasDiabetesVal = document.getElementById('hasDiabetesFilter').value;
+    const arrestAuthority = document.getElementById('arrestAuthorityFilter').value;
+
+    if (employment) params.set('employment', employment);
+    if (housingType) params.set('housingType', housingType);
+    if (hasSpecialNeeds) params.set('hasSpecialNeeds', hasSpecialNeeds);
+    if (legal) params.set('legal', legal);
+    if (isOfficiallyRegistered) params.set('isOfficiallyRegistered', isOfficiallyRegistered);
+    if (hasKidsVal) params.set('hasKids', hasKidsVal);
+    if (assocVal) params.set('assoc', assocVal);
+    if (birthYearFrom) params.set('birthYearFrom', birthYearFrom);
+    if (birthYearTo) params.set('birthYearTo', birthYearTo);
+    if (releaseYearFrom) params.set('releaseYearFrom', releaseYearFrom);
+    if (releaseYearTo) params.set('releaseYearTo', releaseYearTo);
+    if (arrestPlace) params.set('arrestPlace', arrestPlace);
+    if (hasDocument) params.set('hasDocument', hasDocument);
+    if (hasHypertensionVal) params.set('hasHypertension', hasHypertensionVal);
+    if (hasDiabetesVal) params.set('hasDiabetes', hasDiabetesVal);
+    if (arrestAuthority) params.set('arrestAuthority', arrestAuthority);
 
     try {
         const res = await fetch('/api/records?' + params);
@@ -1566,6 +1722,22 @@ function resetFilters() {
     document.getElementById('noDocsFilter').value = '';
     document.getElementById('diedInPlaceFilter').value = '';
     document.getElementById('survivedInPlaceFilter').value = '';
+    document.getElementById('employmentFilter').value = '';
+    document.getElementById('housingTypeFilter').value = '';
+    document.getElementById('hasSpecialNeedsFilter').value = '';
+    document.getElementById('legalFilter').value = '';
+    document.getElementById('isOfficiallyRegisteredFilter').value = '';
+    document.getElementById('hasKidsFilter').value = '';
+    document.getElementById('assocFilter').value = '';
+    document.getElementById('birthYearFrom').value = '';
+    document.getElementById('birthYearTo').value = '';
+    document.getElementById('releaseYearFrom').value = '';
+    document.getElementById('releaseYearTo').value = '';
+    document.getElementById('arrestPlaceFilter').value = '';
+    document.getElementById('hasDocumentFilter').value = '';
+    document.getElementById('hasHypertensionFilter').value = '';
+    document.getElementById('hasDiabetesFilter').value = '';
+    document.getElementById('arrestAuthorityFilter').value = '';
     currentPage = 1;
     loadRecords();
 }
@@ -1614,6 +1786,221 @@ function printRecord() {
 async function printSingleRecord(id) {
     await viewRecord(id);
     setTimeout(() => window.print(), 300);
+}
+
+// ══════════════ PDF EXPORT ══════════════
+function getCurrentFilterParams() {
+    const params = new URLSearchParams();
+    const filterMap = {
+        'searchInput': 'search', 'statusFilter': 'status', 'provinceFilter': 'province',
+        'genderFilter': 'gender', 'maritalFilter': 'marital', 'educationFilter': 'education',
+        'chronicFilter': 'chronic', 'bloodTypeFilter': 'bloodType', 'arrestYearFrom': 'arrestYearFrom',
+        'arrestYearTo': 'arrestYearTo', 'hasPhotoFilter': 'hasPhoto', 'minKidsFilter': 'minKids',
+        'minUnder18Filter': 'minUnder18', 'noDocsFilter': 'noDocs', 'diedInPlaceFilter': 'diedInPlace',
+        'survivedInPlaceFilter': 'survivedInPlace', 'employmentFilter': 'employment',
+        'housingTypeFilter': 'housingType', 'hasSpecialNeedsFilter': 'hasSpecialNeeds',
+        'legalFilter': 'legal', 'isOfficiallyRegisteredFilter': 'isOfficiallyRegistered',
+        'hasKidsFilter': 'hasKids', 'assocFilter': 'assoc', 'birthYearFrom': 'birthYearFrom',
+        'birthYearTo': 'birthYearTo', 'releaseYearFrom': 'releaseYearFrom', 'releaseYearTo': 'releaseYearTo',
+        'arrestPlaceFilter': 'arrestPlace', 'hasDocumentFilter': 'hasDocument',
+        'hasHypertensionFilter': 'hasHypertension', 'hasDiabetesFilter': 'hasDiabetes',
+        'arrestAuthorityFilter': 'arrestAuthority'
+    };
+    for (const [elemId, paramName] of Object.entries(filterMap)) {
+        const el = document.getElementById(elemId);
+        if (el && el.value) params.set(paramName, el.value);
+    }
+    return params;
+}
+
+function getActiveFilterSummary() {
+    const labels = {
+        search: 'بحث', status: 'الحالة', province: 'المحافظة', gender: 'الجنس',
+        marital: 'الحالة الاجتماعية', education: 'التحصيل الدراسي', chronic: 'أمراض مزمنة',
+        bloodType: 'زمرة الدم', arrestYearFrom: 'سنة الاعتقال من', arrestYearTo: 'سنة الاعتقال إلى',
+        hasPhoto: 'صورة شخصية', minKids: 'عدد الأولاد >=', minUnder18: 'أولاد تحت 18 >=',
+        noDocs: 'بدون مستندات', diedInPlace: 'توفي في', survivedInPlace: 'نجا من',
+        employment: 'حالة العمل', housingType: 'نوع السكن', hasSpecialNeeds: 'احتياجات خاصة',
+        legal: 'مشاكل قانونية', isOfficiallyRegistered: 'مسجل رسمياً', hasKids: 'لديه أولاد',
+        assoc: 'مسجل بجمعية', birthYearFrom: 'سنة الميلاد من', birthYearTo: 'سنة الميلاد إلى',
+        releaseYearFrom: 'سنة الإفراج من', releaseYearTo: 'سنة الإفراج إلى',
+        arrestPlace: 'مكان الاعتقال', hasDocument: 'وثيقة إثبات',
+        hasHypertension: 'ضغط الدم', hasDiabetes: 'سكري', arrestAuthority: 'الجهة المسؤولة'
+    };
+    const statusLabels = { enforced: 'مغيّب قسري', survivor: 'ناجي', deceased: 'متوفى' };
+    const params = getCurrentFilterParams();
+    const parts = [];
+    for (const [key, val] of params.entries()) {
+        const label = labels[key] || key;
+        const displayVal = statusLabels[val] || val;
+        parts.push(`${label}: ${displayVal}`);
+    }
+    return parts.join(' | ');
+}
+
+async function exportPDF(mode) {
+    const params = (mode === 'all') ? new URLSearchParams() : getCurrentFilterParams();
+
+    try {
+        const res = await fetch('/api/records-print?' + params);
+        const data = await res.json();
+        if (!data.records || data.records.length === 0) {
+            alert('لا توجد سجلات لتصديرها');
+            return;
+        }
+
+        const filterSummary = (mode === 'all') ? 'جميع السجلات' : (getActiveFilterSummary() || 'جميع السجلات');
+        const totalRecords = data.records.length;
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('ar-SY', { year: 'numeric', month: 'long', day: 'numeric' });
+
+        const statusMap = { enforced: 'مغيّب قسري', survivor: 'ناجي', deceased: 'متوفى' };
+        const maritalMap = { single: 'أعزب/عزباء', married: 'متزوج/ة', widowed: 'أرمل/ة', divorced: 'مطلق/ة' };
+        const monthNames = ['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
+
+        function fmtDate(d, m, y) {
+            if (!y) return '';
+            let s = '';
+            if (d) s += d + ' ';
+            if (m) s += monthNames[m - 1] + ' ';
+            s += y;
+            return s;
+        }
+
+        let tableRows = data.records.map((r, i) => {
+            const name = (r.first_name || '') + ' ' + (r.father_name || '') + ' ' + (r.last_name || '');
+            const statusText = statusMap[r.status] || '';
+            const arrestDate = fmtDate(r.arrest_day, r.arrest_month, r.arrest_year);
+            const birthDate = fmtDate(r.birth_day, r.birth_month, r.birth_year);
+            const statusClass = r.status === 'enforced' ? 'st-enforced' : (r.status === 'survivor' ? 'st-survivor' : (r.status === 'deceased' ? 'st-deceased' : ''));
+            return `<tr>
+                <td class="num">${i + 1}</td>
+                <td class="num">${r.id}</td>
+                <td class="name">${name}</td>
+                <td>${r.mother_name || ''}</td>
+                <td class="num-mono">${r.national_id || ''}</td>
+                <td>${r.province || ''}</td>
+                <td class="${statusClass}">${statusText}</td>
+                <td>${arrestDate}</td>
+                <td>${r.arrest_place || ''}</td>
+                <td>${birthDate}</td>
+                <td>${maritalMap[r.marital] || ''}</td>
+                <td>${r.phone || ''}</td>
+            </tr>`;
+        }).join('');
+
+        const pdfHtml = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>تقرير سجلات جمعية حقنا</title>
+<style>
+    @page { size: A4 landscape; margin: 12mm 10mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif;
+        font-size: 7.5pt; color: #1a1a2e; background: #fff;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .report-header {
+        display: flex; align-items: center; gap: 14px;
+        padding: 10px 16px; margin-bottom: 8px;
+        border-bottom: 2.5px solid #0a1628;
+        background: linear-gradient(135deg, #f8f9fa, #e8ecf1);
+        border-radius: 6px 6px 0 0;
+    }
+    .report-header img { width: 48px; height: 48px; border-radius: 8px; }
+    .report-header .title-block h1 {
+        font-size: 14pt; font-weight: 900; color: #0a1628; margin-bottom: 1px;
+    }
+    .report-header .title-block p {
+        font-size: 7.5pt; color: #555; font-weight: 600;
+    }
+    .report-header .meta {
+        margin-right: auto; text-align: left; font-size: 7pt; color: #666;
+    }
+    .report-header .meta .count {
+        font-size: 11pt; font-weight: 900; color: #06b6d4; display: block;
+    }
+    .filter-line {
+        background: #f0f4f8; padding: 5px 12px; border-radius: 4px;
+        margin-bottom: 8px; font-size: 7pt; color: #444;
+        border-right: 3px solid #06b6d4;
+    }
+    .filter-line strong { color: #0a1628; }
+    table {
+        width: 100%; border-collapse: collapse;
+        font-size: 7pt; page-break-inside: auto;
+    }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
+    thead th {
+        background: #0a1628; color: #fff; padding: 5px 4px;
+        text-align: right; font-weight: 700; font-size: 7pt;
+        white-space: nowrap; border: 0.5px solid #2d3f65;
+    }
+    tbody td {
+        padding: 3.5px 4px; border: 0.5px solid #d1d5db;
+        font-size: 7pt; line-height: 1.3; vertical-align: middle;
+    }
+    tbody tr:nth-child(even) { background: #f8f9fb; }
+    tbody tr:hover { background: #e8f4f8; }
+    .num { text-align: center; font-weight: 700; color: #64748b; width: 28px; }
+    .num-mono { font-family: 'Courier New', monospace; direction: ltr; text-align: center; font-size: 7pt; }
+    .name { font-weight: 700; color: #0a1628; white-space: nowrap; }
+    .st-enforced { color: #b45309; font-weight: 700; }
+    .st-survivor { color: #047857; font-weight: 700; }
+    .st-deceased { color: #dc2626; font-weight: 700; }
+    .report-footer {
+        margin-top: 8px; padding: 6px 12px; text-align: center;
+        font-size: 7pt; color: #888; border-top: 1.5px solid #ddd;
+    }
+    @media print {
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+</style>
+</head>
+<body>
+<div class="report-header">
+    <img src="/logo.jpg" alt="شعار جمعية حقنا">
+    <div class="title-block">
+        <h1>جمعية حقنا - تقرير السجلات</h1>
+        <p>تقرير مفصل بالسجلات المسجلة في قاعدة البيانات</p>
+    </div>
+    <div class="meta">
+        <span class="count">${totalRecords}</span>
+        سجل | ${dateStr}
+    </div>
+</div>
+${filterSummary !== 'جميع السجلات' ? `<div class="filter-line"><strong>الفلاتر المطبقة:</strong> ${filterSummary}</div>` : ''}
+<table>
+<thead>
+    <tr>
+        <th>#</th><th>ID</th><th>الاسم الكامل</th><th>اسم الأم</th><th>الرقم الوطني</th>
+        <th>المحافظة</th><th>الحالة</th><th>تاريخ الاعتقال</th><th>مكان الاعتقال</th>
+        <th>تاريخ الميلاد</th><th>الحالة الاجتماعية</th><th>الهاتف</th>
+    </tr>
+</thead>
+<tbody>
+${tableRows}
+</tbody>
+</table>
+<div class="report-footer">
+    جمعية حقنا &mdash; تم إنشاء التقرير بتاريخ ${dateStr} &mdash; إجمالي السجلات: ${totalRecords}
+</div>
+</body>
+</html>`;
+
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(pdfHtml);
+        printWindow.document.close();
+        printWindow.onload = function() {
+            setTimeout(() => printWindow.print(), 400);
+        };
+    } catch (e) {
+        console.error(e);
+        alert('خطأ في تصدير PDF');
+    }
 }
 
 // ══════════════ EVENT LISTENERS ══════════════

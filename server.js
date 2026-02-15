@@ -130,10 +130,9 @@ const upload = multer({
     limits: { fileSize: 10 * 1024 * 1024, files: 2 }
 });
 
-// Separate multer for backup restore (higher size limit, temp storage)
+// Separate multer for backup restore (no size limit for large backups)
 const backupUpload = multer({
-    dest: path.join(__dirname, 'temp_uploads'),
-    limits: { fileSize: 500 * 1024 * 1024 }
+    dest: path.join(__dirname, 'temp_uploads')
 });
 
 const app = express();
@@ -304,6 +303,26 @@ app.get('/api/records', authMiddleware, (req, res) => {
         if (minKids) { where += ' AND (IFNULL(kids_count, 0) + IFNULL(kids_count_w, 0)) >= ?'; params.push(parseInt(minKids)); }
         if (minUnder18) { where += ' AND kids_under_18_count >= ?'; params.push(parseInt(minUnder18)); }
 
+        // Chronic diseases filter
+        const chronic = req.query.chronic || '';
+        if (chronic) { where += ' AND chronic = ?'; params.push(chronic); }
+
+        // Blood type filter
+        const bloodType = req.query.bloodType || '';
+        if (bloodType) { where += ' AND blood_type = ?'; params.push(bloodType); }
+
+        // Arrest year range
+        const arrestYearFrom = req.query.arrestYearFrom || '';
+        const arrestYearTo = req.query.arrestYearTo || '';
+        if (arrestYearFrom) { where += ' AND arrest_year >= ?'; params.push(parseInt(arrestYearFrom)); }
+        if (arrestYearTo) { where += ' AND arrest_year <= ?'; params.push(parseInt(arrestYearTo)); }
+
+        // Has photo filter
+        const hasPhoto = req.query.hasPhoto || '';
+        if (hasPhoto === 'yes') { where += ' AND photo_path IS NOT NULL AND photo_path != ""'; }
+        if (hasPhoto === 'no') { where += ' AND (photo_path IS NULL OR photo_path = "")'; }
+
+        // No docs filter
         if (req.query.noDocs === 'true') {
             where += ' AND (photo_path IS NULL OR photo_path = "") AND (document_path IS NULL OR document_path = "")';
         }
@@ -316,9 +335,162 @@ app.get('/api/records', authMiddleware, (req, res) => {
             params.push(req.query.survivedInPlace);
         }
 
+        // Employment filter
+        const employment = req.query.employment || '';
+        if (employment) { where += ' AND employment = ?'; params.push(employment); }
+
+        // Housing type filter
+        const housingType = req.query.housingType || '';
+        if (housingType) { where += ' AND housing_type = ?'; params.push(housingType); }
+
+        // Special needs filter
+        const hasSpecialNeeds = req.query.hasSpecialNeeds || '';
+        if (hasSpecialNeeds === 'yes') { where += ' AND has_special_needs = 1'; }
+        if (hasSpecialNeeds === 'no') { where += ' AND (has_special_needs IS NULL OR has_special_needs = 0)'; }
+
+        // Legal problems filter
+        const legal = req.query.legal || '';
+        if (legal) { where += ' AND legal = ?'; params.push(legal); }
+
+        // Officially registered filter
+        const isOfficiallyRegistered = req.query.isOfficiallyRegistered || '';
+        if (isOfficiallyRegistered === 'yes') { where += ' AND is_officially_registered = 1'; }
+        if (isOfficiallyRegistered === 'no') { where += ' AND (is_officially_registered IS NULL OR is_officially_registered = 0)'; }
+
+        // Birth year range (age filter)
+        const birthYearFrom = req.query.birthYearFrom || '';
+        const birthYearTo = req.query.birthYearTo || '';
+        if (birthYearFrom) { where += ' AND birth_year >= ?'; params.push(parseInt(birthYearFrom)); }
+        if (birthYearTo) { where += ' AND birth_year <= ?'; params.push(parseInt(birthYearTo)); }
+
+        // Release year range
+        const releaseYearFrom = req.query.releaseYearFrom || '';
+        const releaseYearTo = req.query.releaseYearTo || '';
+        if (releaseYearFrom) { where += ' AND release_year >= ?'; params.push(parseInt(releaseYearFrom)); }
+        if (releaseYearTo) { where += ' AND release_year <= ?'; params.push(parseInt(releaseYearTo)); }
+
+        // Has kids filter
+        const hasKids = req.query.hasKids || '';
+        if (hasKids === 'yes') { where += ' AND has_kids = "yes"'; }
+        if (hasKids === 'no') { where += ' AND (has_kids = "no" OR has_kids IS NULL)'; }
+
+        // Association filter
+        const assoc = req.query.assoc || '';
+        if (assoc) { where += ' AND assoc = ?'; params.push(assoc); }
+
+        // Arrest authority filter
+        const arrestAuthority = req.query.arrestAuthority || '';
+        if (arrestAuthority) { where += ' AND arrest_authority LIKE ?'; params.push(`%${arrestAuthority}%`); }
+
+        // Arrest place filter (general, not died/survived specific)
+        const arrestPlace = req.query.arrestPlace || '';
+        if (arrestPlace) { where += ' AND arrest_place = ?'; params.push(arrestPlace); }
+
+        // Has document filter
+        const hasDocument = req.query.hasDocument || '';
+        if (hasDocument === 'yes') { where += ' AND document_path IS NOT NULL AND document_path != ""'; }
+        if (hasDocument === 'no') { where += ' AND (document_path IS NULL OR document_path = "")'; }
+
+        // Hypertension filter
+        const hasHypertension = req.query.hasHypertension || '';
+        if (hasHypertension === 'yes') { where += ' AND has_hypertension = 1'; }
+
+        // Diabetes filter
+        const hasDiabetes = req.query.hasDiabetes || '';
+        if (hasDiabetes === 'yes') { where += ' AND has_diabetes = 1'; }
+
         const total = db.prepare(`SELECT COUNT(*) as count FROM records ${where}`).get(...params).count;
         const records = db.prepare(`SELECT * FROM records ${where} ORDER BY id DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
         res.json({ records, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Print endpoint: returns all filtered records without pagination
+app.get('/api/records-print', authMiddleware, (req, res) => {
+    try {
+        const search = req.query.search || '';
+        const status = req.query.status || '';
+        const province = req.query.province || '';
+
+        let where = 'WHERE 1=1';
+        const params = [];
+        if (search) {
+            where += ' AND (first_name LIKE ? OR last_name LIKE ? OR father_name LIKE ? OR national_id LIKE ? OR phone LIKE ? OR mother_name LIKE ?)';
+            const s = `%${search}%`;
+            params.push(s, s, s, s, s, s);
+        }
+        if (status) { where += ' AND status = ?'; params.push(status); }
+        if (province) { where += ' AND province = ?'; params.push(province); }
+
+        const gender = req.query.gender || '';
+        const marital = req.query.marital || '';
+        const education = req.query.education || '';
+        const minKids = req.query.minKids || '';
+        const minUnder18 = req.query.minUnder18 || '';
+
+        if (gender) { where += ' AND gender = ?'; params.push(gender); }
+        if (marital) { where += ' AND marital = ?'; params.push(marital); }
+        if (education) { where += ' AND education = ?'; params.push(education); }
+        if (minKids) { where += ' AND (IFNULL(kids_count, 0) + IFNULL(kids_count_w, 0)) >= ?'; params.push(parseInt(minKids)); }
+        if (minUnder18) { where += ' AND kids_under_18_count >= ?'; params.push(parseInt(minUnder18)); }
+
+        const chronic = req.query.chronic || '';
+        if (chronic) { where += ' AND chronic = ?'; params.push(chronic); }
+        const bloodType = req.query.bloodType || '';
+        if (bloodType) { where += ' AND blood_type = ?'; params.push(bloodType); }
+        const arrestYearFrom = req.query.arrestYearFrom || '';
+        const arrestYearTo = req.query.arrestYearTo || '';
+        if (arrestYearFrom) { where += ' AND arrest_year >= ?'; params.push(parseInt(arrestYearFrom)); }
+        if (arrestYearTo) { where += ' AND arrest_year <= ?'; params.push(parseInt(arrestYearTo)); }
+        const hasPhoto = req.query.hasPhoto || '';
+        if (hasPhoto === 'yes') { where += ' AND photo_path IS NOT NULL AND photo_path != ""'; }
+        if (hasPhoto === 'no') { where += ' AND (photo_path IS NULL OR photo_path = "")'; }
+        if (req.query.noDocs === 'true') {
+            where += ' AND (photo_path IS NULL OR photo_path = "") AND (document_path IS NULL OR document_path = "")';
+        }
+        if (req.query.diedInPlace) { where += ' AND status = "deceased" AND death_place = ?'; params.push(req.query.diedInPlace); }
+        if (req.query.survivedInPlace) { where += ' AND status = "survivor" AND arrest_place = ?'; params.push(req.query.survivedInPlace); }
+        const employment = req.query.employment || '';
+        if (employment) { where += ' AND employment = ?'; params.push(employment); }
+        const housingType = req.query.housingType || '';
+        if (housingType) { where += ' AND housing_type = ?'; params.push(housingType); }
+        const hasSpecialNeeds = req.query.hasSpecialNeeds || '';
+        if (hasSpecialNeeds === 'yes') { where += ' AND has_special_needs = 1'; }
+        if (hasSpecialNeeds === 'no') { where += ' AND (has_special_needs IS NULL OR has_special_needs = 0)'; }
+        const legal = req.query.legal || '';
+        if (legal) { where += ' AND legal = ?'; params.push(legal); }
+        const isOfficiallyRegistered = req.query.isOfficiallyRegistered || '';
+        if (isOfficiallyRegistered === 'yes') { where += ' AND is_officially_registered = 1'; }
+        if (isOfficiallyRegistered === 'no') { where += ' AND (is_officially_registered IS NULL OR is_officially_registered = 0)'; }
+        const birthYearFrom = req.query.birthYearFrom || '';
+        const birthYearTo = req.query.birthYearTo || '';
+        if (birthYearFrom) { where += ' AND birth_year >= ?'; params.push(parseInt(birthYearFrom)); }
+        if (birthYearTo) { where += ' AND birth_year <= ?'; params.push(parseInt(birthYearTo)); }
+        const releaseYearFrom = req.query.releaseYearFrom || '';
+        const releaseYearTo = req.query.releaseYearTo || '';
+        if (releaseYearFrom) { where += ' AND release_year >= ?'; params.push(parseInt(releaseYearFrom)); }
+        if (releaseYearTo) { where += ' AND release_year <= ?'; params.push(parseInt(releaseYearTo)); }
+        const hasKids = req.query.hasKids || '';
+        if (hasKids === 'yes') { where += ' AND has_kids = "yes"'; }
+        if (hasKids === 'no') { where += ' AND (has_kids = "no" OR has_kids IS NULL)'; }
+        const assoc = req.query.assoc || '';
+        if (assoc) { where += ' AND assoc = ?'; params.push(assoc); }
+        const arrestAuthority = req.query.arrestAuthority || '';
+        if (arrestAuthority) { where += ' AND arrest_authority LIKE ?'; params.push(`%${arrestAuthority}%`); }
+        const arrestPlace = req.query.arrestPlace || '';
+        if (arrestPlace) { where += ' AND arrest_place = ?'; params.push(arrestPlace); }
+        const hasDocument = req.query.hasDocument || '';
+        if (hasDocument === 'yes') { where += ' AND document_path IS NOT NULL AND document_path != ""'; }
+        if (hasDocument === 'no') { where += ' AND (document_path IS NULL OR document_path = "")'; }
+        const hasHypertension = req.query.hasHypertension || '';
+        if (hasHypertension === 'yes') { where += ' AND has_hypertension = 1'; }
+        const hasDiabetes = req.query.hasDiabetes || '';
+        if (hasDiabetes === 'yes') { where += ' AND has_diabetes = 1'; }
+
+        const records = db.prepare(`SELECT * FROM records ${where} ORDER BY id DESC`).all(...params);
+        res.json({ records, total: records.length });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
