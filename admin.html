@@ -415,6 +415,50 @@
             .detail-section-title { font-size: 0.92em; }
         }
 
+        /* Column picker modal */
+        .col-picker-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px); z-index: 1100;
+            justify-content: center; align-items: center; padding: 20px;
+        }
+        .col-picker-overlay.show { display: flex; }
+        .col-picker {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px;
+            width: 100%; max-width: 600px; animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1);
+            max-height: 85vh; display: flex; flex-direction: column;
+        }
+        .col-picker-head {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 18px 24px; border-bottom: 1px solid var(--border);
+        }
+        .col-picker-head h2 { font-size: 1.1em; font-weight: 800; color: var(--accent); }
+        .col-picker-body { padding: 20px 24px; overflow-y: auto; }
+        .col-picker-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px;
+        }
+        .col-picker-item {
+            display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+            background: var(--bg-input); border: 2px solid var(--border); border-radius: 10px;
+            cursor: pointer; transition: all 0.2s; user-select: none;
+        }
+        .col-picker-item:hover { border-color: var(--border-hover); }
+        .col-picker-item.selected { border-color: var(--accent); background: var(--accent-glow); }
+        .col-picker-item input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+        .col-picker-item label { font-size: 0.88em; font-weight: 600; color: var(--text); cursor: pointer; }
+        .col-picker-actions {
+            padding: 16px 24px; border-top: 1px solid var(--border);
+            display: flex; gap: 10px; justify-content: flex-end; align-items: center;
+        }
+        .col-picker-actions .col-pick-info { margin-left: auto; font-size: 0.82em; color: var(--text-dim); font-weight: 600; }
+        .col-select-shortcuts { display: flex; gap: 8px; margin-bottom: 14px; }
+        .col-shortcut-btn {
+            padding: 6px 14px; border-radius: 8px; border: 2px solid var(--border);
+            background: var(--bg-input); color: var(--text-dim); cursor: pointer;
+            font-family: 'Tajawal', sans-serif; font-weight: 600; font-size: 0.82em;
+            transition: all 0.2s;
+        }
+        .col-shortcut-btn:hover { border-color: var(--accent); color: var(--accent); }
+
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-primary); }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
@@ -795,6 +839,30 @@
             </div>
         </div>
         <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<!-- Column Picker Modal -->
+<div class="col-picker-overlay" id="colPickerModal">
+    <div class="col-picker">
+        <div class="col-picker-head">
+            <h2>اختر الأعمدة للتقرير</h2>
+            <button class="modal-close" onclick="closeColPicker()">&times;</button>
+        </div>
+        <div class="col-picker-body">
+            <div class="col-select-shortcuts">
+                <button class="col-shortcut-btn" onclick="toggleAllCols(true)">تحديد الكل</button>
+                <button class="col-shortcut-btn" onclick="toggleAllCols(false)">إلغاء الكل</button>
+                <button class="col-shortcut-btn" onclick="selectPreset('basic')">أساسي</button>
+                <button class="col-shortcut-btn" onclick="selectPreset('detailed')">مفصّل</button>
+            </div>
+            <div class="col-picker-grid" id="colPickerGrid"></div>
+        </div>
+        <div class="col-picker-actions">
+            <span class="col-pick-info" id="colPickInfo">0 عمود محدد</span>
+            <button class="reset-btn" onclick="closeColPicker()">إلغاء</button>
+            <button class="filter-btn" onclick="confirmColPicker()">إنشاء التقرير</button>
+        </div>
     </div>
 </div>
 
@@ -1838,7 +1906,122 @@ function getActiveFilterSummary() {
     return parts.join(' | ');
 }
 
-async function exportPDF(mode) {
+// ══════════════ COLUMN PICKER & PDF ══════════════
+const PDF_COLUMNS = [
+    { key: 'rowNum', label: '#', always: true },
+    { key: 'id', label: 'ID' },
+    { key: 'fullName', label: 'الاسم الكامل', default: true },
+    { key: 'motherName', label: 'اسم الأم', default: true },
+    { key: 'nationalId', label: 'الرقم الوطني', default: true },
+    { key: 'province', label: 'المحافظة', default: true },
+    { key: 'status', label: 'الحالة', default: true },
+    { key: 'gender', label: 'الجنس' },
+    { key: 'birthDate', label: 'تاريخ الميلاد' },
+    { key: 'phone', label: 'الهاتف', default: true },
+    { key: 'bloodType', label: 'زمرة الدم' },
+    { key: 'arrestDate', label: 'تاريخ الاعتقال', default: true },
+    { key: 'arrestPlace', label: 'مكان الاعتقال', default: true },
+    { key: 'arrestAuthority', label: 'الجهة المسؤولة' },
+    { key: 'arrestReason', label: 'سبب الاعتقال' },
+    { key: 'arrestCauser', label: 'المُسبِّب' },
+    { key: 'releaseDate', label: 'تاريخ الخروج' },
+    { key: 'deathDate', label: 'تاريخ الوفاة' },
+    { key: 'deathPlace', label: 'مكان الوفاة' },
+    { key: 'marital', label: 'الحالة الاجتماعية', default: true },
+    { key: 'spouseName', label: 'اسم الزوج/ة' },
+    { key: 'kidsCount', label: 'عدد الأولاد' },
+    { key: 'kidsUnder18', label: 'أولاد تحت 18' },
+    { key: 'address', label: 'العنوان' },
+    { key: 'housingType', label: 'نوع السكن' },
+    { key: 'employment', label: 'حالة العمل' },
+    { key: 'profession', label: 'المهنة' },
+    { key: 'breadwinner', label: 'المعيل' },
+    { key: 'chronic', label: 'أمراض مزمنة' },
+    { key: 'specialNeeds', label: 'احتياجات خاصة' },
+    { key: 'education', label: 'التحصيل الدراسي' },
+    { key: 'legal', label: 'مشاكل قانونية' },
+    { key: 'officiallyRegistered', label: 'مسجل رسمياً' },
+    { key: 'assoc', label: 'مسجل بجمعية أخرى' },
+    { key: 'notes', label: 'ملاحظات' },
+    { key: 'createdAt', label: 'تاريخ التسجيل' }
+];
+
+let pendingPdfMode = null;
+
+function exportPDF(mode) {
+    pendingPdfMode = mode;
+    renderColPicker();
+    document.getElementById('colPickerModal').classList.add('show');
+}
+
+function renderColPicker() {
+    const grid = document.getElementById('colPickerGrid');
+    grid.innerHTML = PDF_COLUMNS.filter(c => !c.always).map(c => {
+        const checked = c.default ? 'checked' : '';
+        const selClass = c.default ? ' selected' : '';
+        return `<div class="col-picker-item${selClass}" onclick="toggleColItem(this)">
+            <input type="checkbox" id="col_${c.key}" value="${c.key}" ${checked}>
+            <label for="col_${c.key}">${c.label}</label>
+        </div>`;
+    }).join('');
+    updateColPickInfo();
+}
+
+function toggleColItem(el) {
+    const cb = el.querySelector('input[type="checkbox"]');
+    cb.checked = !cb.checked;
+    el.classList.toggle('selected', cb.checked);
+    updateColPickInfo();
+}
+
+function toggleAllCols(state) {
+    document.querySelectorAll('#colPickerGrid .col-picker-item').forEach(el => {
+        const cb = el.querySelector('input[type="checkbox"]');
+        cb.checked = state;
+        el.classList.toggle('selected', state);
+    });
+    updateColPickInfo();
+}
+
+function selectPreset(preset) {
+    const basicKeys = ['fullName', 'nationalId', 'province', 'status', 'phone', 'arrestDate'];
+    const detailedKeys = ['id', 'fullName', 'motherName', 'nationalId', 'province', 'status',
+        'gender', 'birthDate', 'phone', 'bloodType', 'arrestDate', 'arrestPlace',
+        'arrestAuthority', 'marital', 'kidsCount', 'education', 'address', 'employment'];
+    const keys = preset === 'basic' ? basicKeys : detailedKeys;
+    document.querySelectorAll('#colPickerGrid .col-picker-item').forEach(el => {
+        const cb = el.querySelector('input[type="checkbox"]');
+        const selected = keys.includes(cb.value);
+        cb.checked = selected;
+        el.classList.toggle('selected', selected);
+    });
+    updateColPickInfo();
+}
+
+function updateColPickInfo() {
+    const count = document.querySelectorAll('#colPickerGrid input[type="checkbox"]:checked').length;
+    document.getElementById('colPickInfo').textContent = count + ' عمود محدد';
+}
+
+function closeColPicker() {
+    document.getElementById('colPickerModal').classList.remove('show');
+    pendingPdfMode = null;
+}
+
+async function confirmColPicker() {
+    const selectedKeys = ['rowNum'];
+    document.querySelectorAll('#colPickerGrid input[type="checkbox"]:checked').forEach(cb => {
+        selectedKeys.push(cb.value);
+    });
+    if (selectedKeys.length <= 1) {
+        alert('الرجاء تحديد عمود واحد على الأقل');
+        return;
+    }
+    closeColPicker();
+    await generatePDF(pendingPdfMode, selectedKeys);
+}
+
+async function generatePDF(mode, selectedKeys) {
     const params = (mode === 'all') ? new URLSearchParams() : getCurrentFilterParams();
 
     try {
@@ -1867,26 +2050,75 @@ async function exportPDF(mode) {
             return s;
         }
 
-        let tableRows = data.records.map((r, i) => {
-            const name = (r.first_name || '') + ' ' + (r.father_name || '') + ' ' + (r.last_name || '');
-            const statusText = statusMap[r.status] || '';
-            const arrestDate = fmtDate(r.arrest_day, r.arrest_month, r.arrest_year);
-            const birthDate = fmtDate(r.birth_day, r.birth_month, r.birth_year);
-            const statusClass = r.status === 'enforced' ? 'st-enforced' : (r.status === 'survivor' ? 'st-survivor' : (r.status === 'deceased' ? 'st-deceased' : ''));
-            return `<tr>
-                <td class="num">${i + 1}</td>
-                <td class="num">${r.id}</td>
-                <td class="name">${name}</td>
-                <td>${r.mother_name || ''}</td>
-                <td class="num-mono">${r.national_id || ''}</td>
-                <td>${r.province || ''}</td>
-                <td class="${statusClass}">${statusText}</td>
-                <td>${arrestDate}</td>
-                <td>${r.arrest_place || ''}</td>
-                <td>${birthDate}</td>
-                <td>${maritalMap[r.marital] || ''}</td>
-                <td>${r.phone || ''}</td>
-            </tr>`;
+        function getCellValue(r, key, idx) {
+            switch (key) {
+                case 'rowNum': return idx + 1;
+                case 'id': return r.id;
+                case 'fullName': return (r.first_name||'') + ' ' + (r.father_name||'') + ' ' + (r.last_name||'');
+                case 'motherName': return r.mother_name || '';
+                case 'nationalId': return r.national_id || '';
+                case 'province': return r.province || '';
+                case 'status': return statusMap[r.status] || '';
+                case 'gender': return r.gender === 'male' ? 'ذكر' : (r.gender === 'female' ? 'أنثى' : '');
+                case 'birthDate': return fmtDate(r.birth_day, r.birth_month, r.birth_year);
+                case 'phone': return r.phone || '';
+                case 'bloodType': return r.blood_type || '';
+                case 'arrestDate': return fmtDate(r.arrest_day, r.arrest_month, r.arrest_year);
+                case 'arrestPlace': return r.arrest_place || '';
+                case 'arrestAuthority': return r.arrest_authority || '';
+                case 'arrestReason': return r.arrest_reason || '';
+                case 'arrestCauser': return r.arrest_causer || '';
+                case 'releaseDate': return fmtDate(r.release_day, r.release_month, r.release_year);
+                case 'deathDate': return fmtDate(r.death_day, r.death_month, r.death_year);
+                case 'deathPlace': return r.death_place || '';
+                case 'marital': return maritalMap[r.marital] || '';
+                case 'spouseName': return r.spouse_name || r.ex_spouse_name || '';
+                case 'kidsCount': return ((r.kids_count||0) + (r.kids_count_w||0)) || '';
+                case 'kidsUnder18': return r.kids_under_18_count || '';
+                case 'address': return r.address || '';
+                case 'housingType': return r.housing_type || '';
+                case 'employment': return r.employment === 'employed' ? 'يعمل' : (r.employment === 'unemployed' ? 'عاطل' : '');
+                case 'profession': return r.profession || '';
+                case 'breadwinner': return r.breadwinner || '';
+                case 'chronic': return r.chronic === 'yes' ? 'نعم' : (r.chronic === 'no' ? 'لا' : '');
+                case 'specialNeeds': return r.has_special_needs ? 'نعم' : '';
+                case 'education': return r.education || '';
+                case 'legal': return r.legal === 'yes' ? 'نعم' : (r.legal === 'no' ? 'لا' : '');
+                case 'officiallyRegistered': return r.is_officially_registered ? 'نعم' : 'لا';
+                case 'assoc': return r.assoc === 'yes' ? (r.assoc_name || 'نعم') : '';
+                case 'notes': return r.notes || '';
+                case 'createdAt': return r.created_at || '';
+                default: return '';
+            }
+        }
+
+        function getCellClass(key) {
+            if (key === 'rowNum' || key === 'id') return 'num';
+            if (key === 'nationalId') return 'num-mono';
+            if (key === 'fullName') return 'name';
+            if (key === 'status') return 'status-cell';
+            return '';
+        }
+
+        const selectedCols = PDF_COLUMNS.filter(c => selectedKeys.includes(c.key));
+        const colCount = selectedCols.length;
+        const usePortrait = colCount <= 6;
+        const fontSize = colCount > 14 ? '6pt' : (colCount > 10 ? '6.5pt' : '7pt');
+        const cellPad = colCount > 14 ? '2.5px 3px' : (colCount > 10 ? '3px 4px' : '3.5px 5px');
+
+        const thHeaders = selectedCols.map(c => `<th>${c.label}</th>`).join('');
+
+        const tableRows = data.records.map((r, i) => {
+            const cells = selectedCols.map(c => {
+                const val = getCellValue(r, c.key, i);
+                const cls = getCellClass(c.key);
+                let statusCls = '';
+                if (c.key === 'status') {
+                    statusCls = r.status === 'enforced' ? ' st-enforced' : (r.status === 'survivor' ? ' st-survivor' : (r.status === 'deceased' ? ' st-deceased' : ''));
+                }
+                return `<td class="${cls}${statusCls}">${val}</td>`;
+            }).join('');
+            return `<tr>${cells}</tr>`;
         }).join('');
 
         const pdfHtml = `<!DOCTYPE html>
@@ -1895,11 +2127,11 @@ async function exportPDF(mode) {
 <meta charset="UTF-8">
 <title>تقرير سجلات جمعية حقنا</title>
 <style>
-    @page { size: A4 landscape; margin: 12mm 10mm; }
+    @page { size: A4 ${usePortrait ? 'portrait' : 'landscape'}; margin: 12mm 10mm; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
         font-family: 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif;
-        font-size: 7.5pt; color: #1a1a2e; background: #fff;
+        font-size: ${fontSize}; color: #1a1a2e; background: #fff;
         -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
     .report-header {
@@ -1913,9 +2145,7 @@ async function exportPDF(mode) {
     .report-header .title-block h1 {
         font-size: 14pt; font-weight: 900; color: #0a1628; margin-bottom: 1px;
     }
-    .report-header .title-block p {
-        font-size: 7.5pt; color: #555; font-weight: 600;
-    }
+    .report-header .title-block p { font-size: 7.5pt; color: #555; font-weight: 600; }
     .report-header .meta {
         margin-right: auto; text-align: left; font-size: 7pt; color: #666;
     }
@@ -1930,23 +2160,22 @@ async function exportPDF(mode) {
     .filter-line strong { color: #0a1628; }
     table {
         width: 100%; border-collapse: collapse;
-        font-size: 7pt; page-break-inside: auto;
+        font-size: ${fontSize}; page-break-inside: auto;
     }
     thead { display: table-header-group; }
     tr { page-break-inside: avoid; page-break-after: auto; }
     thead th {
-        background: #0a1628; color: #fff; padding: 5px 4px;
-        text-align: right; font-weight: 700; font-size: 7pt;
+        background: #0a1628; color: #fff; padding: ${cellPad};
+        text-align: right; font-weight: 700; font-size: ${fontSize};
         white-space: nowrap; border: 0.5px solid #2d3f65;
     }
     tbody td {
-        padding: 3.5px 4px; border: 0.5px solid #d1d5db;
-        font-size: 7pt; line-height: 1.3; vertical-align: middle;
+        padding: ${cellPad}; border: 0.5px solid #d1d5db;
+        font-size: ${fontSize}; line-height: 1.3; vertical-align: middle;
     }
     tbody tr:nth-child(even) { background: #f8f9fb; }
-    tbody tr:hover { background: #e8f4f8; }
     .num { text-align: center; font-weight: 700; color: #64748b; width: 28px; }
-    .num-mono { font-family: 'Courier New', monospace; direction: ltr; text-align: center; font-size: 7pt; }
+    .num-mono { font-family: 'Courier New', monospace; direction: ltr; text-align: center; }
     .name { font-weight: 700; color: #0a1628; white-space: nowrap; }
     .st-enforced { color: #b45309; font-weight: 700; }
     .st-survivor { color: #047857; font-weight: 700; }
@@ -1974,16 +2203,8 @@ async function exportPDF(mode) {
 </div>
 ${filterSummary !== 'جميع السجلات' ? `<div class="filter-line"><strong>الفلاتر المطبقة:</strong> ${filterSummary}</div>` : ''}
 <table>
-<thead>
-    <tr>
-        <th>#</th><th>ID</th><th>الاسم الكامل</th><th>اسم الأم</th><th>الرقم الوطني</th>
-        <th>المحافظة</th><th>الحالة</th><th>تاريخ الاعتقال</th><th>مكان الاعتقال</th>
-        <th>تاريخ الميلاد</th><th>الحالة الاجتماعية</th><th>الهاتف</th>
-    </tr>
-</thead>
-<tbody>
-${tableRows}
-</tbody>
+<thead><tr>${thHeaders}</tr></thead>
+<tbody>${tableRows}</tbody>
 </table>
 <div class="report-footer">
     جمعية حقنا &mdash; تم إنشاء التقرير بتاريخ ${dateStr} &mdash; إجمالي السجلات: ${totalRecords}
@@ -2008,9 +2229,14 @@ document.getElementById('detailModal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
 });
 
+document.getElementById('colPickerModal').addEventListener('click', function(e) {
+    if (e.target === this) closeColPicker();
+});
+
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        if (document.getElementById('lightbox').classList.contains('show')) closeLightbox();
+        if (document.getElementById('colPickerModal').classList.contains('show')) closeColPicker();
+        else if (document.getElementById('lightbox').classList.contains('show')) closeLightbox();
         else closeModal();
     }
 });
