@@ -1103,7 +1103,7 @@
                 <div class="fg"><label><span class="rq">*</span> المعيل</label><input type="text" name="breadwinner" placeholder="اسم المعيل"></div>
                 <div class="fg">
                     <label><span class="rq">*</span> قرابة المعيل</label>
-                    <select name="breadwinnerRelation">
+                    <select name="breadwinnerRelation" onchange="document.getElementById('breadwinnerRelOtherBox').style.display = this.value==='أخرى' ? 'block' : 'none';">
                         <option value="">-- اختر --</option>
                         <option>أب</option><option>أم</option><option>أخ</option><option>أخت</option>
                         <option>زوج</option><option>زوجة</option><option>ابن</option><option>ابنة</option>
@@ -1111,6 +1111,9 @@
                     </select>
                 </div>
                 <div class="fg"><label><span class="rq">*</span> عمل المعيل</label><input type="text" name="breadwinnerJob" placeholder="مهنة المعيل"></div>
+            </div>
+            <div class="g g1" id="breadwinnerRelOtherBox" style="display:none;">
+                <div class="fg"><label>حدد صلة القرابة</label><input type="text" name="breadwinnerRelationOther" placeholder="أدخل صلة القرابة..."></div>
             </div>
         </div>
     </div>

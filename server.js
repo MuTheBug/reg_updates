@@ -105,7 +105,8 @@ function initDbSchema() {
         { name: 'is_officially_registered', type: 'INTEGER' },
         { name: 'has_special_needs', type: 'INTEGER' },
         { name: 'special_needs_details', type: 'TEXT' },
-        { name: 'breadwinner_relation', type: 'TEXT' }
+        { name: 'breadwinner_relation', type: 'TEXT' },
+        { name: 'breadwinner_relation_other', type: 'TEXT' }
     ];
     for (const col of columnsToAdd) {
         try { db.exec(`ALTER TABLE records ADD COLUMN ${col.name} ${col.type}`); } catch (err) {}
@@ -234,7 +235,8 @@ app.post('/api/records', upload.fields([
                 education, edu_type, edu_specialization, edu_university,
                 legal, legal_details, assoc, assoc_name, service_type, notes, breadwinner_job,
                 rent_amount, has_hypertension, has_diabetes, other_diseases, is_officially_registered,
-                has_special_needs, special_needs_details, breadwinner_relation
+                has_special_needs, special_needs_details, breadwinner_relation,
+                breadwinner_relation_other
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
@@ -242,7 +244,7 @@ app.post('/api/records', upload.fields([
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
         `);
 
@@ -265,7 +267,8 @@ app.post('/api/records', upload.fields([
             b.serviceType || null, b.notes || null, b.breadwinnerJob || null,
             b.rentAmount || null, b.hasHypertension === 'yes' ? 1 : 0, b.hasDiabetes === 'yes' ? 1 : 0, b.otherDiseases || null, b.isOfficiallyRegistered === 'yes' ? 1 : 0,
             b.hasSpecialNeeds === 'yes' ? 1 : 0, b.specialNeedsDetails || null,
-            b.breadwinnerRelation || null
+            b.breadwinnerRelation || null,
+            b.breadwinnerRelationOther || null
         );
         res.json({ success: true, id: result.lastInsertRowid });
     } catch (err) {
@@ -321,19 +324,19 @@ app.get('/api/records', authMiddleware, (req, res) => {
 
         // Has photo filter
         const hasPhoto = req.query.hasPhoto || '';
-        if (hasPhoto === 'yes') { where += ' AND photo_path IS NOT NULL AND photo_path != ""'; }
-        if (hasPhoto === 'no') { where += ' AND (photo_path IS NULL OR photo_path = "")'; }
+        if (hasPhoto === 'yes') { where += " AND photo_path IS NOT NULL AND photo_path != ''"; }
+        if (hasPhoto === 'no') { where += " AND (photo_path IS NULL OR photo_path = '')"; }
 
         // No docs filter
         if (req.query.noDocs === 'true') {
-            where += ' AND (photo_path IS NULL OR photo_path = "") AND (document_path IS NULL OR document_path = "")';
+            where += " AND (photo_path IS NULL OR photo_path = '') AND (document_path IS NULL OR document_path = '')";
         }
         if (req.query.diedInPlace) {
-            where += ' AND status = "deceased" AND death_place = ?';
+            where += " AND status = 'deceased' AND death_place = ?";
             params.push(req.query.diedInPlace);
         }
         if (req.query.survivedInPlace) {
-            where += ' AND status = "survivor" AND arrest_place = ?';
+            where += " AND status = 'survivor' AND arrest_place = ?";
             params.push(req.query.survivedInPlace);
         }
 
@@ -373,8 +376,8 @@ app.get('/api/records', authMiddleware, (req, res) => {
 
         // Has kids filter
         const hasKids = req.query.hasKids || '';
-        if (hasKids === 'yes') { where += ' AND has_kids = "yes"'; }
-        if (hasKids === 'no') { where += ' AND (has_kids = "no" OR has_kids IS NULL)'; }
+        if (hasKids === 'yes') { where += " AND has_kids = 'yes'"; }
+        if (hasKids === 'no') { where += " AND (has_kids = 'no' OR has_kids IS NULL)"; }
 
         // Association filter
         const assoc = req.query.assoc || '';
@@ -390,8 +393,8 @@ app.get('/api/records', authMiddleware, (req, res) => {
 
         // Has document filter
         const hasDocument = req.query.hasDocument || '';
-        if (hasDocument === 'yes') { where += ' AND document_path IS NOT NULL AND document_path != ""'; }
-        if (hasDocument === 'no') { where += ' AND (document_path IS NULL OR document_path = "")'; }
+        if (hasDocument === 'yes') { where += " AND document_path IS NOT NULL AND document_path != ''"; }
+        if (hasDocument === 'no') { where += " AND (document_path IS NULL OR document_path = '')"; }
 
         // Hypertension filter
         const hasHypertension = req.query.hasHypertension || '';
@@ -402,19 +405,28 @@ app.get('/api/records', authMiddleware, (req, res) => {
         if (hasDiabetes === 'yes') { where += ' AND has_diabetes = 1'; }
 
         // Children birth year range filter (at least one child born in range)
+        // Supports both old format (age field) and new format (birthYear field)
         const childBirthYearFrom = req.query.childBirthYearFrom || '';
         const childBirthYearTo = req.query.childBirthYearTo || '';
         if (childBirthYearFrom || childBirthYearTo) {
+            const currentYear = new Date().getFullYear();
+            // COALESCE: use birthYear if present, otherwise calculate from age
+            const byExpr = `COALESCE(
+                NULLIF(CAST(json_extract(value, '$.birthYear') AS INTEGER), 0),
+                CASE WHEN CAST(json_extract(value, '$.age') AS INTEGER) > 0
+                     THEN ${currentYear} - CAST(json_extract(value, '$.age') AS INTEGER)
+                     ELSE NULL END
+            )`;
             let childYearCond = '';
             const yearParts = [];
             if (childBirthYearFrom && childBirthYearTo) {
-                childYearCond = "CAST(json_extract(value, '$.birthYear') AS INTEGER) >= ? AND CAST(json_extract(value, '$.birthYear') AS INTEGER) <= ?";
+                childYearCond = `${byExpr} >= ? AND ${byExpr} <= ?`;
                 yearParts.push(parseInt(childBirthYearFrom), parseInt(childBirthYearTo));
             } else if (childBirthYearFrom) {
-                childYearCond = "CAST(json_extract(value, '$.birthYear') AS INTEGER) >= ?";
+                childYearCond = `${byExpr} >= ?`;
                 yearParts.push(parseInt(childBirthYearFrom));
             } else {
-                childYearCond = "CAST(json_extract(value, '$.birthYear') AS INTEGER) <= ?";
+                childYearCond = `${byExpr} <= ?`;
                 yearParts.push(parseInt(childBirthYearTo));
             }
             where += ` AND (
@@ -500,13 +512,13 @@ app.get('/api/records-print', authMiddleware, (req, res) => {
         if (arrestYearFrom) { where += ' AND arrest_year >= ?'; params.push(parseInt(arrestYearFrom)); }
         if (arrestYearTo) { where += ' AND arrest_year <= ?'; params.push(parseInt(arrestYearTo)); }
         const hasPhoto = req.query.hasPhoto || '';
-        if (hasPhoto === 'yes') { where += ' AND photo_path IS NOT NULL AND photo_path != ""'; }
-        if (hasPhoto === 'no') { where += ' AND (photo_path IS NULL OR photo_path = "")'; }
+        if (hasPhoto === 'yes') { where += " AND photo_path IS NOT NULL AND photo_path != ''"; }
+        if (hasPhoto === 'no') { where += " AND (photo_path IS NULL OR photo_path = '')"; }
         if (req.query.noDocs === 'true') {
-            where += ' AND (photo_path IS NULL OR photo_path = "") AND (document_path IS NULL OR document_path = "")';
+            where += " AND (photo_path IS NULL OR photo_path = '') AND (document_path IS NULL OR document_path = '')";
         }
-        if (req.query.diedInPlace) { where += ' AND status = "deceased" AND death_place = ?'; params.push(req.query.diedInPlace); }
-        if (req.query.survivedInPlace) { where += ' AND status = "survivor" AND arrest_place = ?'; params.push(req.query.survivedInPlace); }
+        if (req.query.diedInPlace) { where += " AND status = 'deceased' AND death_place = ?"; params.push(req.query.diedInPlace); }
+        if (req.query.survivedInPlace) { where += " AND status = 'survivor' AND arrest_place = ?"; params.push(req.query.survivedInPlace); }
         const employment = req.query.employment || '';
         if (employment) { where += ' AND employment = ?'; params.push(employment); }
         const housingType = req.query.housingType || '';
@@ -528,8 +540,8 @@ app.get('/api/records-print', authMiddleware, (req, res) => {
         if (releaseYearFrom) { where += ' AND release_year >= ?'; params.push(parseInt(releaseYearFrom)); }
         if (releaseYearTo) { where += ' AND release_year <= ?'; params.push(parseInt(releaseYearTo)); }
         const hasKids = req.query.hasKids || '';
-        if (hasKids === 'yes') { where += ' AND has_kids = "yes"'; }
-        if (hasKids === 'no') { where += ' AND (has_kids = "no" OR has_kids IS NULL)'; }
+        if (hasKids === 'yes') { where += " AND has_kids = 'yes'"; }
+        if (hasKids === 'no') { where += " AND (has_kids = 'no' OR has_kids IS NULL)"; }
         const assoc = req.query.assoc || '';
         if (assoc) { where += ' AND assoc = ?'; params.push(assoc); }
         const arrestAuthority = req.query.arrestAuthority || '';
@@ -537,27 +549,35 @@ app.get('/api/records-print', authMiddleware, (req, res) => {
         const arrestPlace = req.query.arrestPlace || '';
         if (arrestPlace) { where += ' AND arrest_place = ?'; params.push(arrestPlace); }
         const hasDocument = req.query.hasDocument || '';
-        if (hasDocument === 'yes') { where += ' AND document_path IS NOT NULL AND document_path != ""'; }
-        if (hasDocument === 'no') { where += ' AND (document_path IS NULL OR document_path = "")'; }
+        if (hasDocument === 'yes') { where += " AND document_path IS NOT NULL AND document_path != ''"; }
+        if (hasDocument === 'no') { where += " AND (document_path IS NULL OR document_path = '')"; }
         const hasHypertension = req.query.hasHypertension || '';
         if (hasHypertension === 'yes') { where += ' AND has_hypertension = 1'; }
         const hasDiabetes = req.query.hasDiabetes || '';
         if (hasDiabetes === 'yes') { where += ' AND has_diabetes = 1'; }
 
         // Children birth year range filter (at least one child born in range)
+        // Supports both old format (age field) and new format (birthYear field)
         const childBirthYearFrom = req.query.childBirthYearFrom || '';
         const childBirthYearTo = req.query.childBirthYearTo || '';
         if (childBirthYearFrom || childBirthYearTo) {
+            const currentYear = new Date().getFullYear();
+            const byExpr = `COALESCE(
+                NULLIF(CAST(json_extract(value, '$.birthYear') AS INTEGER), 0),
+                CASE WHEN CAST(json_extract(value, '$.age') AS INTEGER) > 0
+                     THEN ${currentYear} - CAST(json_extract(value, '$.age') AS INTEGER)
+                     ELSE NULL END
+            )`;
             let childYearCond = '';
             const yearParts = [];
             if (childBirthYearFrom && childBirthYearTo) {
-                childYearCond = "CAST(json_extract(value, '$.birthYear') AS INTEGER) >= ? AND CAST(json_extract(value, '$.birthYear') AS INTEGER) <= ?";
+                childYearCond = `${byExpr} >= ? AND ${byExpr} <= ?`;
                 yearParts.push(parseInt(childBirthYearFrom), parseInt(childBirthYearTo));
             } else if (childBirthYearFrom) {
-                childYearCond = "CAST(json_extract(value, '$.birthYear') AS INTEGER) >= ?";
+                childYearCond = `${byExpr} >= ?`;
                 yearParts.push(parseInt(childBirthYearFrom));
             } else {
-                childYearCond = "CAST(json_extract(value, '$.birthYear') AS INTEGER) <= ?";
+                childYearCond = `${byExpr} <= ?`;
                 yearParts.push(parseInt(childBirthYearTo));
             }
             where += ` AND (
@@ -644,7 +664,8 @@ app.put('/api/records/:id', authMiddleware, upload.fields([{ name: 'photo' }, { 
             rentAmount:'rent_amount', hasHypertension:'has_hypertension', hasDiabetes:'has_diabetes',
             otherDiseases:'other_diseases', isOfficiallyRegistered:'is_officially_registered',
             hasSpecialNeeds:'has_special_needs', specialNeedsDetails:'special_needs_details',
-            breadwinnerRelation:'breadwinner_relation'
+            breadwinnerRelation:'breadwinner_relation',
+            breadwinnerRelationOther:'breadwinner_relation_other'
         };
 
         const sets = [];
@@ -757,10 +778,19 @@ app.get('/api/backup/full', authMiddleware, (req, res) => {
         if (fs.existsSync(UPLOAD_DIR)) {
             zip.addLocalFolder(UPLOAD_DIR, 'uploads');
         }
-        const zipBuffer = zip.toBuffer();
+        const tempZipPath = path.join(__dirname, `backup_temp_${Date.now()}.zip`);
+        zip.writeZip(tempZipPath);
+        const stat = fs.statSync(tempZipPath);
         res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Length', stat.size);
         res.setHeader('Content-Disposition', 'attachment; filename=full_backup.zip');
-        res.send(zipBuffer);
+        const stream = fs.createReadStream(tempZipPath);
+        stream.pipe(res);
+        stream.on('end', () => { try { fs.unlinkSync(tempZipPath); } catch(x) {} });
+        stream.on('error', (err) => {
+            try { fs.unlinkSync(tempZipPath); } catch(x) {}
+            if (!res.headersSent) res.status(500).json({ error: err.message });
+        });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

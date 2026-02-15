@@ -552,6 +552,8 @@
 
     <!-- Advanced Filter Panel -->
     <div class="adv-filter-panel" id="advPanel">
+        <!-- Section: Demographics -->
+        <div style="font-weight:800; color:var(--accent); font-size:0.92em; margin-bottom:10px; padding-bottom:6px; border-bottom:2px solid var(--border);">المعلومات الشخصية والديموغرافية</div>
         <div class="adv-grid">
             <div class="filter-group">
                 <label>الجنس</label>
@@ -571,6 +573,14 @@
                     <option value="divorced">مطلق/ة</option>
                 </select>
             </div>
+            <div class="filter-group fg-narrow">
+                <label>سنة الميلاد (من)</label>
+                <input type="number" id="birthYearFrom" placeholder="مثال: 1960" min="1920" max="2025">
+            </div>
+            <div class="filter-group fg-narrow">
+                <label>سنة الميلاد (إلى)</label>
+                <input type="number" id="birthYearTo" placeholder="مثال: 2000" min="1920" max="2025">
+            </div>
             <div class="filter-group">
                 <label>التحصيل الدراسي</label>
                 <select id="educationFilter">
@@ -579,53 +589,6 @@
                     <option>إعدادية</option><option>ثانوية</option><option>معهد</option>
                     <option>بكالوريوس</option><option>ماجستير</option>
                     <option>دكتوراه</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>أمراض مزمنة</label>
-                <select id="chronicFilter">
-                    <option value="">الكل</option>
-                    <option value="yes">نعم</option>
-                    <option value="no">لا</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>زمرة الدم</label>
-                <select id="bloodTypeFilter">
-                    <option value="">الكل</option>
-                    <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
-                    <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
-                </select>
-            </div>
-            <div class="filter-group fg-narrow">
-                <label>سنة الاعتقال (من)</label>
-                <input type="number" id="arrestYearFrom" placeholder="مثال: 2011" min="1940" max="2030">
-            </div>
-            <div class="filter-group fg-narrow">
-                <label>سنة الاعتقال (إلى)</label>
-                <input type="number" id="arrestYearTo" placeholder="مثال: 2024" min="1940" max="2030">
-            </div>
-            <div class="filter-group">
-                <label>صورة شخصية</label>
-                <select id="hasPhotoFilter">
-                    <option value="">الكل</option>
-                    <option value="yes">يوجد صورة</option>
-                    <option value="no">بدون صورة</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>عدد الأولاد (كلي) ≥</label>
-                <input type="number" id="minKidsFilter" placeholder="أكبر من أو يساوي" min="0">
-            </div>
-            <div class="filter-group">
-                <label>عدد الأولاد (تحت 18) ≥</label>
-                <input type="number" id="minUnder18Filter" placeholder="أكبر من أو يساوي" min="0">
-            </div>
-            <div class="filter-group">
-                <label>بدون مستندات</label>
-                <select id="noDocsFilter">
-                    <option value="">الكل</option>
-                    <option value="true">نعم (بدون صورة أو وثيقة)</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -647,61 +610,18 @@
                     <option value="أخرى">أخرى</option>
                 </select>
             </div>
-            <div class="filter-group">
-                <label>ذوي احتياجات خاصة</label>
-                <select id="hasSpecialNeedsFilter">
-                    <option value="">الكل</option>
-                    <option value="yes">نعم</option>
-                    <option value="no">لا</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>مشاكل قانونية</label>
-                <select id="legalFilter">
-                    <option value="">الكل</option>
-                    <option value="yes">نعم</option>
-                    <option value="no">لا</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>مسجل رسمياً</label>
-                <select id="isOfficiallyRegisteredFilter">
-                    <option value="">الكل</option>
-                    <option value="yes">نعم</option>
-                    <option value="no">لا</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>لديه أولاد</label>
-                <select id="hasKidsFilter">
-                    <option value="">الكل</option>
-                    <option value="yes">نعم</option>
-                    <option value="no">لا</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>مسجل في جمعية أخرى</label>
-                <select id="assocFilter">
-                    <option value="">الكل</option>
-                    <option value="yes">نعم</option>
-                    <option value="no">لا</option>
-                </select>
+        </div>
+
+        <!-- Section: Arrest & Detention -->
+        <div style="font-weight:800; color:var(--accent); font-size:0.92em; margin-top:18px; margin-bottom:10px; padding-bottom:6px; border-bottom:2px solid var(--border);">بيانات الاعتقال والاحتجاز</div>
+        <div class="adv-grid">
+            <div class="filter-group fg-narrow">
+                <label>سنة الاعتقال (من)</label>
+                <input type="number" id="arrestYearFrom" placeholder="مثال: 2011" min="1940" max="2030">
             </div>
             <div class="filter-group fg-narrow">
-                <label>سنة الميلاد (من)</label>
-                <input type="number" id="birthYearFrom" placeholder="مثال: 1960" min="1920" max="2025">
-            </div>
-            <div class="filter-group fg-narrow">
-                <label>سنة الميلاد (إلى)</label>
-                <input type="number" id="birthYearTo" placeholder="مثال: 2000" min="1920" max="2025">
-            </div>
-            <div class="filter-group fg-narrow">
-                <label>سنة الإفراج (من)</label>
-                <input type="number" id="releaseYearFrom" placeholder="مثال: 2011" min="1940" max="2030">
-            </div>
-            <div class="filter-group fg-narrow">
-                <label>سنة الإفراج (إلى)</label>
-                <input type="number" id="releaseYearTo" placeholder="مثال: 2024" min="1940" max="2030">
+                <label>سنة الاعتقال (إلى)</label>
+                <input type="number" id="arrestYearTo" placeholder="مثال: 2024" min="1940" max="2030">
             </div>
             <div class="filter-group">
                 <label>مكان الاعتقال</label>
@@ -722,26 +642,16 @@
                 </select>
             </div>
             <div class="filter-group">
-                <label>وثيقة إثبات</label>
-                <select id="hasDocumentFilter">
-                    <option value="">الكل</option>
-                    <option value="yes">يوجد وثيقة</option>
-                    <option value="no">بدون وثيقة</option>
-                </select>
+                <label>الجهة المسؤولة</label>
+                <input type="text" id="arrestAuthorityFilter" placeholder="ابحث بالجهة المسؤولة...">
             </div>
-            <div class="filter-group">
-                <label>ضغط الدم</label>
-                <select id="hasHypertensionFilter">
-                    <option value="">الكل</option>
-                    <option value="yes">نعم</option>
-                </select>
+            <div class="filter-group fg-narrow">
+                <label>سنة الإفراج (من)</label>
+                <input type="number" id="releaseYearFrom" placeholder="مثال: 2011" min="1940" max="2030">
             </div>
-            <div class="filter-group">
-                <label>سكري</label>
-                <select id="hasDiabetesFilter">
-                    <option value="">الكل</option>
-                    <option value="yes">نعم</option>
-                </select>
+            <div class="filter-group fg-narrow">
+                <label>سنة الإفراج (إلى)</label>
+                <input type="number" id="releaseYearTo" placeholder="مثال: 2024" min="1940" max="2030">
             </div>
             <div class="filter-group">
                 <label>توفي في مكان معين</label>
@@ -780,55 +690,163 @@
                 </select>
             </div>
             <div class="filter-group">
-                <label>الجهة المسؤولة</label>
-                <input type="text" id="arrestAuthorityFilter" placeholder="ابحث بالجهة المسؤولة...">
+                <label>مسجل رسمياً</label>
+                <select id="isOfficiallyRegisteredFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                    <option value="no">لا</option>
+                </select>
             </div>
         </div>
-        <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
-            <div style="font-weight:700; color:var(--accent); font-size:0.9em; margin-bottom:10px;">تصفية حسب بيانات الأولاد</div>
-            <div class="adv-grid">
-                <div class="filter-group fg-narrow">
-                    <label>سنة ميلاد الأولاد (من)</label>
-                    <input type="number" id="childBirthYearFrom" placeholder="مثال: 2000" min="1940" max="2030">
-                </div>
-                <div class="filter-group fg-narrow">
-                    <label>سنة ميلاد الأولاد (إلى)</label>
-                    <input type="number" id="childBirthYearTo" placeholder="مثال: 2015" min="1940" max="2030">
-                </div>
-                <div class="filter-group">
-                    <label>الحالة الصحية للأولاد</label>
-                    <select id="childHealthStatusFilter">
-                        <option value="">الكل</option>
-                        <option value="healthy">سليم</option>
-                        <option value="sick">مريض</option>
-                        <option value="special">ذوي احتياجات خاصة</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>جنس الأولاد</label>
-                    <select id="childGenderFilter">
-                        <option value="">الكل</option>
-                        <option value="male">ذكور</option>
-                        <option value="female">إناث</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>تحصيل الأولاد الدراسي</label>
-                    <select id="childEducationFilter">
-                        <option value="">الكل</option>
-                        <option>أمي</option>
-                        <option>ابتدائية</option>
-                        <option>إعدادية</option>
-                        <option>ثانوية</option>
-                        <option>معهد</option>
-                        <option>بكالوريوس</option>
-                        <option>ماجستير</option>
-                        <option>دكتوراه</option>
-                    </select>
-                </div>
+
+        <!-- Section: Health -->
+        <div style="font-weight:800; color:var(--accent); font-size:0.92em; margin-top:18px; margin-bottom:10px; padding-bottom:6px; border-bottom:2px solid var(--border);">الصحة</div>
+        <div class="adv-grid">
+            <div class="filter-group">
+                <label>أمراض مزمنة</label>
+                <select id="chronicFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                    <option value="no">لا</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>زمرة الدم</label>
+                <select id="bloodTypeFilter">
+                    <option value="">الكل</option>
+                    <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                    <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>ضغط الدم</label>
+                <select id="hasHypertensionFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>سكري</label>
+                <select id="hasDiabetesFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>ذوي احتياجات خاصة</label>
+                <select id="hasSpecialNeedsFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                    <option value="no">لا</option>
+                </select>
             </div>
         </div>
-        <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+
+        <!-- Section: Family & Children -->
+        <div style="font-weight:800; color:var(--accent); font-size:0.92em; margin-top:18px; margin-bottom:10px; padding-bottom:6px; border-bottom:2px solid var(--border);">الأسرة والأولاد</div>
+        <div class="adv-grid">
+            <div class="filter-group">
+                <label>لديه أولاد</label>
+                <select id="hasKidsFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                    <option value="no">لا</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>عدد الأولاد (كلي) >=</label>
+                <input type="number" id="minKidsFilter" placeholder="أكبر من أو يساوي" min="0">
+            </div>
+            <div class="filter-group">
+                <label>عدد الأولاد (تحت 18) >=</label>
+                <input type="number" id="minUnder18Filter" placeholder="أكبر من أو يساوي" min="0">
+            </div>
+            <div class="filter-group fg-narrow">
+                <label>سنة ميلاد الأولاد (من)</label>
+                <input type="number" id="childBirthYearFrom" placeholder="مثال: 2000" min="1940" max="2030">
+            </div>
+            <div class="filter-group fg-narrow">
+                <label>سنة ميلاد الأولاد (إلى)</label>
+                <input type="number" id="childBirthYearTo" placeholder="مثال: 2015" min="1940" max="2030">
+            </div>
+            <div class="filter-group">
+                <label>الحالة الصحية للأولاد</label>
+                <select id="childHealthStatusFilter">
+                    <option value="">الكل</option>
+                    <option value="healthy">سليم</option>
+                    <option value="sick">مريض</option>
+                    <option value="special">ذوي احتياجات خاصة</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>جنس الأولاد</label>
+                <select id="childGenderFilter">
+                    <option value="">الكل</option>
+                    <option value="male">ذكور</option>
+                    <option value="female">إناث</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>تحصيل الأولاد الدراسي</label>
+                <select id="childEducationFilter">
+                    <option value="">الكل</option>
+                    <option>أمي</option>
+                    <option>ابتدائية</option>
+                    <option>إعدادية</option>
+                    <option>ثانوية</option>
+                    <option>معهد</option>
+                    <option>بكالوريوس</option>
+                    <option>ماجستير</option>
+                    <option>دكتوراه</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Section: Legal & Documents -->
+        <div style="font-weight:800; color:var(--accent); font-size:0.92em; margin-top:18px; margin-bottom:10px; padding-bottom:6px; border-bottom:2px solid var(--border);">القانون والمستندات والجمعيات</div>
+        <div class="adv-grid">
+            <div class="filter-group">
+                <label>مشاكل قانونية</label>
+                <select id="legalFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                    <option value="no">لا</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>صورة شخصية</label>
+                <select id="hasPhotoFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">يوجد صورة</option>
+                    <option value="no">بدون صورة</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>وثيقة إثبات</label>
+                <select id="hasDocumentFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">يوجد وثيقة</option>
+                    <option value="no">بدون وثيقة</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>بدون مستندات</label>
+                <select id="noDocsFilter">
+                    <option value="">الكل</option>
+                    <option value="true">نعم (بدون صورة أو وثيقة)</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>مسجل في جمعية أخرى</label>
+                <select id="assocFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم</option>
+                    <option value="no">لا</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
             <button class="filter-btn" onclick="loadRecords()">تطبيق التصفية</button>
             <button class="reset-btn" onclick="resetFilters()">مسح جميع الفلاتر</button>
         </div>
@@ -1250,7 +1268,10 @@ async function viewRecord(id) {
             if (r.employer) html += detailRow('جهة العمل', r.employer);
         } else {
             html += detailRow('المعيل', esc(r.breadwinner));
-            html += detailRow('قرابة المعيل', esc(r.breadwinner_relation));
+            const bwRelDisplay = r.breadwinner_relation === 'أخرى' && r.breadwinner_relation_other
+                ? 'أخرى (' + esc(r.breadwinner_relation_other) + ')'
+                : esc(r.breadwinner_relation);
+            html += detailRow('قرابة المعيل', bwRelDisplay);
             html += detailRow('عمل المعيل', esc(r.breadwinner_job));
         }
         let diseaseList = [];
@@ -1607,12 +1628,15 @@ async function editRecord(id) {
                 <div class="filter-group"><label>المعيل</label><input name="breadwinner" value="${esc(r.breadwinner||'')}"></div>
                 <div class="filter-group">
                     <label>قرابة المعيل</label>
-                    <select name="breadwinnerRelation">
+                    <select name="breadwinnerRelation" onchange="document.getElementById('edit_bw_rel_other').style.display = this.value==='أخرى' ? 'flex' : 'none';">
                         <option value="">-- اختر --</option>
                         ${['أب','أم','أخ','أخت','زوج','زوجة','ابن','ابنة','عم / خال','عمة / خالة','أخرى'].map(rel => `<option ${r.breadwinner_relation===rel?'selected':''}>${rel}</option>`).join('')}
                     </select>
                 </div>
                 <div class="filter-group"><label>عمل المعيل</label><input name="breadwinnerJob" value="${esc(r.breadwinner_job||'')}"></div>
+            </div>
+            <div class="adv-grid" id="edit_bw_rel_other" style="display:${r.breadwinner_relation==='أخرى'?'flex':'none'}">
+                <div class="filter-group"><label>حدد صلة القرابة</label><input name="breadwinnerRelationOther" value="${esc(r.breadwinner_relation_other||'')}"></div>
             </div>
 
             <div class="detail-section-title">الحالة الصحية</div>
