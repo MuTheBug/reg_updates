@@ -104,7 +104,8 @@ function initDbSchema() {
         { name: 'other_diseases', type: 'TEXT' },
         { name: 'is_officially_registered', type: 'INTEGER' },
         { name: 'has_special_needs', type: 'INTEGER' },
-        { name: 'special_needs_details', type: 'TEXT' }
+        { name: 'special_needs_details', type: 'TEXT' },
+        { name: 'breadwinner_relation', type: 'TEXT' }
     ];
     for (const col of columnsToAdd) {
         try { db.exec(`ALTER TABLE records ADD COLUMN ${col.name} ${col.type}`); } catch (err) {}
@@ -233,7 +234,7 @@ app.post('/api/records', upload.fields([
                 education, edu_type, edu_specialization, edu_university,
                 legal, legal_details, assoc, assoc_name, service_type, notes, breadwinner_job,
                 rent_amount, has_hypertension, has_diabetes, other_diseases, is_officially_registered,
-                has_special_needs, special_needs_details
+                has_special_needs, special_needs_details, breadwinner_relation
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
@@ -241,7 +242,7 @@ app.post('/api/records', upload.fields([
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?
             )
         `);
 
@@ -263,7 +264,8 @@ app.post('/api/records', upload.fields([
             b.legal || null, b.legal === 'yes' ? collectLegalData(b) : null, b.assoc || null, b.assocName || null,
             b.serviceType || null, b.notes || null, b.breadwinnerJob || null,
             b.rentAmount || null, b.hasHypertension === 'yes' ? 1 : 0, b.hasDiabetes === 'yes' ? 1 : 0, b.otherDiseases || null, b.isOfficiallyRegistered === 'yes' ? 1 : 0,
-            b.hasSpecialNeeds === 'yes' ? 1 : 0, b.specialNeedsDetails || null
+            b.hasSpecialNeeds === 'yes' ? 1 : 0, b.specialNeedsDetails || null,
+            b.breadwinnerRelation || null
         );
         res.json({ success: true, id: result.lastInsertRowid });
     } catch (err) {
@@ -399,6 +401,59 @@ app.get('/api/records', authMiddleware, (req, res) => {
         const hasDiabetes = req.query.hasDiabetes || '';
         if (hasDiabetes === 'yes') { where += ' AND has_diabetes = 1'; }
 
+        // Children birth year range filter (at least one child born in range)
+        const childBirthYearFrom = req.query.childBirthYearFrom || '';
+        const childBirthYearTo = req.query.childBirthYearTo || '';
+        if (childBirthYearFrom || childBirthYearTo) {
+            let childYearCond = '';
+            const yearParts = [];
+            if (childBirthYearFrom && childBirthYearTo) {
+                childYearCond = "CAST(json_extract(value, '$.birthYear') AS INTEGER) >= ? AND CAST(json_extract(value, '$.birthYear') AS INTEGER) <= ?";
+                yearParts.push(parseInt(childBirthYearFrom), parseInt(childBirthYearTo));
+            } else if (childBirthYearFrom) {
+                childYearCond = "CAST(json_extract(value, '$.birthYear') AS INTEGER) >= ?";
+                yearParts.push(parseInt(childBirthYearFrom));
+            } else {
+                childYearCond = "CAST(json_extract(value, '$.birthYear') AS INTEGER) <= ?";
+                yearParts.push(parseInt(childBirthYearTo));
+            }
+            where += ` AND (
+                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE ${childYearCond}))
+                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE ${childYearCond}))
+            )`;
+            params.push(...yearParts, ...yearParts);
+        }
+
+        // Children health status filter
+        const childHealthStatus = req.query.childHealthStatus || '';
+        if (childHealthStatus) {
+            where += ` AND (
+                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.healthStatus') = ?))
+                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.healthStatus') = ?))
+            )`;
+            params.push(childHealthStatus, childHealthStatus);
+        }
+
+        // Children gender filter
+        const childGender = req.query.childGender || '';
+        if (childGender) {
+            where += ` AND (
+                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.gender') = ?))
+                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.gender') = ?))
+            )`;
+            params.push(childGender, childGender);
+        }
+
+        // Children education filter
+        const childEducation = req.query.childEducation || '';
+        if (childEducation) {
+            where += ` AND (
+                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.education') = ?))
+                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.education') = ?))
+            )`;
+            params.push(childEducation, childEducation);
+        }
+
         const total = db.prepare(`SELECT COUNT(*) as count FROM records ${where}`).get(...params).count;
         const records = db.prepare(`SELECT * FROM records ${where} ORDER BY id DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
         res.json({ records, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
@@ -489,6 +544,59 @@ app.get('/api/records-print', authMiddleware, (req, res) => {
         const hasDiabetes = req.query.hasDiabetes || '';
         if (hasDiabetes === 'yes') { where += ' AND has_diabetes = 1'; }
 
+        // Children birth year range filter (at least one child born in range)
+        const childBirthYearFrom = req.query.childBirthYearFrom || '';
+        const childBirthYearTo = req.query.childBirthYearTo || '';
+        if (childBirthYearFrom || childBirthYearTo) {
+            let childYearCond = '';
+            const yearParts = [];
+            if (childBirthYearFrom && childBirthYearTo) {
+                childYearCond = "CAST(json_extract(value, '$.birthYear') AS INTEGER) >= ? AND CAST(json_extract(value, '$.birthYear') AS INTEGER) <= ?";
+                yearParts.push(parseInt(childBirthYearFrom), parseInt(childBirthYearTo));
+            } else if (childBirthYearFrom) {
+                childYearCond = "CAST(json_extract(value, '$.birthYear') AS INTEGER) >= ?";
+                yearParts.push(parseInt(childBirthYearFrom));
+            } else {
+                childYearCond = "CAST(json_extract(value, '$.birthYear') AS INTEGER) <= ?";
+                yearParts.push(parseInt(childBirthYearTo));
+            }
+            where += ` AND (
+                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE ${childYearCond}))
+                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE ${childYearCond}))
+            )`;
+            params.push(...yearParts, ...yearParts);
+        }
+
+        // Children health status filter
+        const childHealthStatus = req.query.childHealthStatus || '';
+        if (childHealthStatus) {
+            where += ` AND (
+                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.healthStatus') = ?))
+                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.healthStatus') = ?))
+            )`;
+            params.push(childHealthStatus, childHealthStatus);
+        }
+
+        // Children gender filter
+        const childGender = req.query.childGender || '';
+        if (childGender) {
+            where += ` AND (
+                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.gender') = ?))
+                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.gender') = ?))
+            )`;
+            params.push(childGender, childGender);
+        }
+
+        // Children education filter
+        const childEducation = req.query.childEducation || '';
+        if (childEducation) {
+            where += ` AND (
+                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.education') = ?))
+                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.education') = ?))
+            )`;
+            params.push(childEducation, childEducation);
+        }
+
         const records = db.prepare(`SELECT * FROM records ${where} ORDER BY id DESC`).all(...params);
         res.json({ records, total: records.length });
     } catch (err) {
@@ -535,7 +643,8 @@ app.put('/api/records/:id', authMiddleware, upload.fields([{ name: 'photo' }, { 
             assoc:'assoc', assocName:'assoc_name', serviceType:'service_type', notes:'notes',
             rentAmount:'rent_amount', hasHypertension:'has_hypertension', hasDiabetes:'has_diabetes',
             otherDiseases:'other_diseases', isOfficiallyRegistered:'is_officially_registered',
-            hasSpecialNeeds:'has_special_needs', specialNeedsDetails:'special_needs_details'
+            hasSpecialNeeds:'has_special_needs', specialNeedsDetails:'special_needs_details',
+            breadwinnerRelation:'breadwinner_relation'
         };
 
         const sets = [];

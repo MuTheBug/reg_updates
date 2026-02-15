@@ -784,6 +784,50 @@
                 <input type="text" id="arrestAuthorityFilter" placeholder="ابحث بالجهة المسؤولة...">
             </div>
         </div>
+        <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
+            <div style="font-weight:700; color:var(--accent); font-size:0.9em; margin-bottom:10px;">تصفية حسب بيانات الأولاد</div>
+            <div class="adv-grid">
+                <div class="filter-group fg-narrow">
+                    <label>سنة ميلاد الأولاد (من)</label>
+                    <input type="number" id="childBirthYearFrom" placeholder="مثال: 2000" min="1940" max="2030">
+                </div>
+                <div class="filter-group fg-narrow">
+                    <label>سنة ميلاد الأولاد (إلى)</label>
+                    <input type="number" id="childBirthYearTo" placeholder="مثال: 2015" min="1940" max="2030">
+                </div>
+                <div class="filter-group">
+                    <label>الحالة الصحية للأولاد</label>
+                    <select id="childHealthStatusFilter">
+                        <option value="">الكل</option>
+                        <option value="healthy">سليم</option>
+                        <option value="sick">مريض</option>
+                        <option value="special">ذوي احتياجات خاصة</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>جنس الأولاد</label>
+                    <select id="childGenderFilter">
+                        <option value="">الكل</option>
+                        <option value="male">ذكور</option>
+                        <option value="female">إناث</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>تحصيل الأولاد الدراسي</label>
+                    <select id="childEducationFilter">
+                        <option value="">الكل</option>
+                        <option>أمي</option>
+                        <option>ابتدائية</option>
+                        <option>إعدادية</option>
+                        <option>ثانوية</option>
+                        <option>معهد</option>
+                        <option>بكالوريوس</option>
+                        <option>ماجستير</option>
+                        <option>دكتوراه</option>
+                    </select>
+                </div>
+            </div>
+        </div>
         <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
             <button class="filter-btn" onclick="loadRecords()">تطبيق التصفية</button>
             <button class="reset-btn" onclick="resetFilters()">مسح جميع الفلاتر</button>
@@ -973,14 +1017,32 @@ async function loadRecords(page) {
     if (hasDiabetesVal) params.set('hasDiabetes', hasDiabetesVal);
     if (arrestAuthority) params.set('arrestAuthority', arrestAuthority);
 
+    // Children filters
+    const childBirthYearFrom = document.getElementById('childBirthYearFrom').value;
+    const childBirthYearTo = document.getElementById('childBirthYearTo').value;
+    const childHealthStatus = document.getElementById('childHealthStatusFilter').value;
+    const childGenderVal = document.getElementById('childGenderFilter').value;
+    const childEducation = document.getElementById('childEducationFilter').value;
+    if (childBirthYearFrom) params.set('childBirthYearFrom', childBirthYearFrom);
+    if (childBirthYearTo) params.set('childBirthYearTo', childBirthYearTo);
+    if (childHealthStatus) params.set('childHealthStatus', childHealthStatus);
+    if (childGenderVal) params.set('childGender', childGenderVal);
+    if (childEducation) params.set('childEducation', childEducation);
+
     try {
         const res = await fetch('/api/records?' + params);
         const data = await res.json();
-        renderTable(data.records);
-        renderPagination(data.pagination);
+        if (data.error) {
+            document.getElementById('tableBody').innerHTML =
+                `<tr><td colspan="8"><div class="empty-state"><div class="icon">⚠️</div><p>خطأ من الخادم: ${esc(data.error)}</p></div></td></tr>`;
+            return;
+        }
+        renderTable(data.records || []);
+        renderPagination(data.pagination || { page: 1, limit: LIMIT, total: 0, pages: 0 });
     } catch (e) {
+        console.error('Load records error:', e);
         document.getElementById('tableBody').innerHTML =
-            '<tr><td colspan="8"><div class="empty-state"><div class="icon">⚠️</div><p>خطأ في الاتصال بالخادم</p></div></td></tr>';
+            '<tr><td colspan="8"><div class="empty-state"><div class="icon">⚠️</div><p>خطأ في الاتصال بالخادم. تأكد من تشغيل السيرفر.</p></div></td></tr>';
     }
 }
 
@@ -1188,6 +1250,7 @@ async function viewRecord(id) {
             if (r.employer) html += detailRow('جهة العمل', r.employer);
         } else {
             html += detailRow('المعيل', esc(r.breadwinner));
+            html += detailRow('قرابة المعيل', esc(r.breadwinner_relation));
             html += detailRow('عمل المعيل', esc(r.breadwinner_job));
         }
         let diseaseList = [];
@@ -1542,6 +1605,13 @@ async function editRecord(id) {
             </div>
             <div class="adv-grid">
                 <div class="filter-group"><label>المعيل</label><input name="breadwinner" value="${esc(r.breadwinner||'')}"></div>
+                <div class="filter-group">
+                    <label>قرابة المعيل</label>
+                    <select name="breadwinnerRelation">
+                        <option value="">-- اختر --</option>
+                        ${['أب','أم','أخ','أخت','زوج','زوجة','ابن','ابنة','عم / خال','عمة / خالة','أخرى'].map(rel => `<option ${r.breadwinner_relation===rel?'selected':''}>${rel}</option>`).join('')}
+                    </select>
+                </div>
                 <div class="filter-group"><label>عمل المعيل</label><input name="breadwinnerJob" value="${esc(r.breadwinner_job||'')}"></div>
             </div>
 
@@ -1806,6 +1876,11 @@ function resetFilters() {
     document.getElementById('hasHypertensionFilter').value = '';
     document.getElementById('hasDiabetesFilter').value = '';
     document.getElementById('arrestAuthorityFilter').value = '';
+    document.getElementById('childBirthYearFrom').value = '';
+    document.getElementById('childBirthYearTo').value = '';
+    document.getElementById('childHealthStatusFilter').value = '';
+    document.getElementById('childGenderFilter').value = '';
+    document.getElementById('childEducationFilter').value = '';
     currentPage = 1;
     loadRecords();
 }
@@ -1872,7 +1947,10 @@ function getCurrentFilterParams() {
         'birthYearTo': 'birthYearTo', 'releaseYearFrom': 'releaseYearFrom', 'releaseYearTo': 'releaseYearTo',
         'arrestPlaceFilter': 'arrestPlace', 'hasDocumentFilter': 'hasDocument',
         'hasHypertensionFilter': 'hasHypertension', 'hasDiabetesFilter': 'hasDiabetes',
-        'arrestAuthorityFilter': 'arrestAuthority'
+        'arrestAuthorityFilter': 'arrestAuthority',
+        'childBirthYearFrom': 'childBirthYearFrom', 'childBirthYearTo': 'childBirthYearTo',
+        'childHealthStatusFilter': 'childHealthStatus', 'childGenderFilter': 'childGender',
+        'childEducationFilter': 'childEducation'
     };
     for (const [elemId, paramName] of Object.entries(filterMap)) {
         const el = document.getElementById(elemId);
@@ -1893,7 +1971,9 @@ function getActiveFilterSummary() {
         assoc: 'مسجل بجمعية', birthYearFrom: 'سنة الميلاد من', birthYearTo: 'سنة الميلاد إلى',
         releaseYearFrom: 'سنة الإفراج من', releaseYearTo: 'سنة الإفراج إلى',
         arrestPlace: 'مكان الاعتقال', hasDocument: 'وثيقة إثبات',
-        hasHypertension: 'ضغط الدم', hasDiabetes: 'سكري', arrestAuthority: 'الجهة المسؤولة'
+        hasHypertension: 'ضغط الدم', hasDiabetes: 'سكري', arrestAuthority: 'الجهة المسؤولة',
+        childBirthYearFrom: 'ميلاد الأولاد من', childBirthYearTo: 'ميلاد الأولاد إلى',
+        childHealthStatus: 'صحة الأولاد', childGender: 'جنس الأولاد', childEducation: 'تعليم الأولاد'
     };
     const statusLabels = { enforced: 'مغيّب قسري', survivor: 'ناجي', deceased: 'متوفى' };
     const params = getCurrentFilterParams();
@@ -1936,6 +2016,7 @@ const PDF_COLUMNS = [
     { key: 'employment', label: 'حالة العمل' },
     { key: 'profession', label: 'المهنة' },
     { key: 'breadwinner', label: 'المعيل' },
+    { key: 'breadwinnerRelation', label: 'قرابة المعيل' },
     { key: 'chronic', label: 'أمراض مزمنة' },
     { key: 'specialNeeds', label: 'احتياجات خاصة' },
     { key: 'education', label: 'التحصيل الدراسي' },
@@ -2080,6 +2161,7 @@ async function generatePDF(mode, selectedKeys) {
                 case 'employment': return r.employment === 'employed' ? 'يعمل' : (r.employment === 'unemployed' ? 'عاطل' : '');
                 case 'profession': return r.profession || '';
                 case 'breadwinner': return r.breadwinner || '';
+                case 'breadwinnerRelation': return r.breadwinner_relation || '';
                 case 'chronic': return r.chronic === 'yes' ? 'نعم' : (r.chronic === 'no' ? 'لا' : '');
                 case 'specialNeeds': return r.has_special_needs ? 'نعم' : '';
                 case 'education': return r.education || '';
