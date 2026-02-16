@@ -430,8 +430,8 @@ app.get('/api/records', authMiddleware, (req, res) => {
                 yearParts.push(parseInt(childBirthYearTo));
             }
             where += ` AND (
-                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE ${childYearCond}))
-                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE ${childYearCond}))
+                (json_valid(children_data) AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE ${childYearCond}))
+                OR (json_valid(children_data_w) AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE ${childYearCond}))
             )`;
             params.push(...yearParts, ...yearParts);
         }
@@ -440,8 +440,8 @@ app.get('/api/records', authMiddleware, (req, res) => {
         const childHealthStatus = req.query.childHealthStatus || '';
         if (childHealthStatus) {
             where += ` AND (
-                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.healthStatus') = ?))
-                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.healthStatus') = ?))
+                (json_valid(children_data) AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.healthStatus') = ?))
+                OR (json_valid(children_data_w) AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.healthStatus') = ?))
             )`;
             params.push(childHealthStatus, childHealthStatus);
         }
@@ -450,8 +450,8 @@ app.get('/api/records', authMiddleware, (req, res) => {
         const childGender = req.query.childGender || '';
         if (childGender) {
             where += ` AND (
-                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.gender') = ?))
-                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.gender') = ?))
+                (json_valid(children_data) AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.gender') = ?))
+                OR (json_valid(children_data_w) AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.gender') = ?))
             )`;
             params.push(childGender, childGender);
         }
@@ -460,8 +460,8 @@ app.get('/api/records', authMiddleware, (req, res) => {
         const childEducation = req.query.childEducation || '';
         if (childEducation) {
             where += ` AND (
-                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.education') = ?))
-                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.education') = ?))
+                (json_valid(children_data) AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.education') = ?))
+                OR (json_valid(children_data_w) AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.education') = ?))
             )`;
             params.push(childEducation, childEducation);
         }
@@ -581,8 +581,8 @@ app.get('/api/records-print', authMiddleware, (req, res) => {
                 yearParts.push(parseInt(childBirthYearTo));
             }
             where += ` AND (
-                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE ${childYearCond}))
-                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE ${childYearCond}))
+                (json_valid(children_data) AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE ${childYearCond}))
+                OR (json_valid(children_data_w) AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE ${childYearCond}))
             )`;
             params.push(...yearParts, ...yearParts);
         }
@@ -591,8 +591,8 @@ app.get('/api/records-print', authMiddleware, (req, res) => {
         const childHealthStatus = req.query.childHealthStatus || '';
         if (childHealthStatus) {
             where += ` AND (
-                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.healthStatus') = ?))
-                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.healthStatus') = ?))
+                (json_valid(children_data) AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.healthStatus') = ?))
+                OR (json_valid(children_data_w) AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.healthStatus') = ?))
             )`;
             params.push(childHealthStatus, childHealthStatus);
         }
@@ -601,8 +601,8 @@ app.get('/api/records-print', authMiddleware, (req, res) => {
         const childGender = req.query.childGender || '';
         if (childGender) {
             where += ` AND (
-                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.gender') = ?))
-                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.gender') = ?))
+                (json_valid(children_data) AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.gender') = ?))
+                OR (json_valid(children_data_w) AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.gender') = ?))
             )`;
             params.push(childGender, childGender);
         }
@@ -611,8 +611,8 @@ app.get('/api/records-print', authMiddleware, (req, res) => {
         const childEducation = req.query.childEducation || '';
         if (childEducation) {
             where += ` AND (
-                (children_data IS NOT NULL AND children_data != '' AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.education') = ?))
-                OR (children_data_w IS NOT NULL AND children_data_w != '' AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.education') = ?))
+                (json_valid(children_data) AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.education') = ?))
+                OR (json_valid(children_data_w) AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.education') = ?))
             )`;
             params.push(childEducation, childEducation);
         }
