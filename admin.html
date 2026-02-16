@@ -864,6 +864,10 @@
         <button class="print-btn" onclick="exportPDF('all')" style="border-color:var(--amber);color:var(--amber);">PDF جميع السجلات</button>
     </div>
 
+    <!-- Children count info banner -->
+    <div id="childrenCountBanner" style="display:none; background:linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15)); border:1px solid rgba(99,102,241,0.3); border-radius:12px; padding:12px 18px; margin-bottom:12px; color:var(--text); font-size:0.95em; direction:rtl;">
+    </div>
+
     <!-- Table -->
     <div class="table-container" id="tableContainer">
         <div class="table-scroll">
@@ -1057,6 +1061,21 @@ async function loadRecords(page) {
         }
         renderTable(data.records || []);
         renderPagination(data.pagination || { page: 1, limit: LIMIT, total: 0, pages: 0 });
+
+        // Show children count banner if available
+        const banner = document.getElementById('childrenCountBanner');
+        if (data.matchingChildrenCount !== null && data.matchingChildrenCount !== undefined) {
+            const from = document.getElementById('childBirthYearFrom').value;
+            const to = document.getElementById('childBirthYearTo').value;
+            let rangeText = '';
+            if (from && to) rangeText = `من ${from} إلى ${to}`;
+            else if (from) rangeText = `من ${from} فما فوق`;
+            else if (to) rangeText = `حتى ${to}`;
+            banner.innerHTML = `<strong>عدد الأولاد في النطاق العمري (${rangeText}):</strong> ${data.matchingChildrenCount} طفل — ضمن ${data.pagination.total} سجل`;
+            banner.style.display = 'block';
+        } else {
+            banner.style.display = 'none';
+        }
     } catch (e) {
         console.error('Load records error:', e);
         document.getElementById('tableBody').innerHTML =
@@ -1102,8 +1121,9 @@ function renderTable(records) {
         return;
     }
     tbody.innerHTML = records.map(r => {
-        const photo = r.photo_path
-            ? `<img class="photo-thumb" src="/uploads/photos/${r.photo_path}" alt="صورة" onclick="viewRecord(${r.id})">`
+        const photoFile = r.photo_path ? r.photo_path.replace(/^.*[\/\\]/, '') : '';
+        const photo = photoFile
+            ? `<img class="photo-thumb" src="/uploads/photos/${photoFile}" alt="صورة" onclick="viewRecord(${r.id})" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\\'color:var(--text-dim);font-size:0.7em;\\'>لا صورة</span>')">`
             : '<span style="color:var(--text-dim);font-size:0.8em;">—</span>';
         const name = `${r.first_name} ${r.father_name} ${r.last_name}`;
         return `<tr>
@@ -1147,9 +1167,11 @@ async function viewRecord(id) {
 
         // Photo
         if (r.photo_path) {
+            const pFile = r.photo_path.replace(/^.*[\/\\]/, '');
             html += `<div style="text-align:center;">
-                <img class="modal-photo" src="/uploads/photos/${r.photo_path}" alt="صورة شخصية"
-                     onclick="openLightbox('/uploads/photos/${r.photo_path}')">
+                <img class="modal-photo" src="/uploads/photos/${pFile}" alt="صورة شخصية"
+                     onclick="openLightbox('/uploads/photos/${pFile}')"
+                     onerror="this.style.display='none';this.nextElementSibling.textContent='الصورة غير متوفرة';">
                 <p style="font-size:0.8em;color:var(--text-dim);margin-top:4px;">اضغط على الصورة لتكبيرها</p>
             </div>`;
         }
@@ -1324,20 +1346,23 @@ async function viewRecord(id) {
         // Document viewer
         html += `<div class="detail-section-title">المرفقات</div>`;
         if (r.photo_path) {
+            const pFileAtt = r.photo_path.replace(/^.*[\/\\]/, '');
             html += `<div class="doc-viewer">
-                <a href="/uploads/photos/${r.photo_path}" target="_blank">فتح الصورة الشخصية في نافذة جديدة</a>
+                <a href="/uploads/photos/${pFileAtt}" target="_blank">فتح الصورة الشخصية في نافذة جديدة</a>
             </div>`;
         }
         if (r.document_path) {
-            const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(r.document_path);
-            const isPdf = /\.pdf$/i.test(r.document_path);
+            const dFile = r.document_path.replace(/^.*[\/\\]/, '');
+            const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(dFile);
+            const isPdf = /\.pdf$/i.test(dFile);
             html += `<div class="doc-viewer" style="margin-top:8px;">
-                <a href="/uploads/documents/${r.document_path}" target="_blank">فتح وثيقة الإثبات</a>`;
+                <a href="/uploads/documents/${dFile}" target="_blank">فتح وثيقة الإثبات</a>`;
             if (isImage) {
-                html += `<br><img class="doc-preview" src="/uploads/documents/${r.document_path}" alt="وثيقة"
-                          onclick="openLightbox('/uploads/documents/${r.document_path}')">`;
+                html += `<br><img class="doc-preview" src="/uploads/documents/${dFile}" alt="وثيقة"
+                          onclick="openLightbox('/uploads/documents/${dFile}')"
+                          onerror="this.style.display='none';">`;
             } else if (isPdf) {
-                html += `<br><iframe src="/uploads/documents/${r.document_path}" style="width:100%;height:400px;border:none;border-radius:8px;margin-top:8px;"></iframe>`;
+                html += `<br><iframe src="/uploads/documents/${dFile}" style="width:100%;height:400px;border:none;border-radius:8px;margin-top:8px;"></iframe>`;
             }
             html += `</div>`;
         }
@@ -1360,7 +1385,15 @@ function closeModal() {
 }
 
 function openLightbox(src) {
-    document.getElementById('lightboxImg').src = src;
+    const img = document.getElementById('lightboxImg');
+    img.onerror = function() {
+        this.alt = 'الصورة غير متوفرة';
+        this.style.background = 'rgba(255,255,255,0.1)';
+        this.style.padding = '40px';
+        this.style.fontSize = '1.2em';
+        this.style.color = '#fff';
+    };
+    img.src = src;
     document.getElementById('lightbox').classList.add('show');
 }
 
@@ -1757,7 +1790,7 @@ async function editRecord(id) {
             <div class="adv-grid">
                 <div class="filter-group">
                     <label>الصورة الشخصية ${r.photo_path ? '(يوجد صورة حالية)' : '(لا يوجد صورة)'}</label>
-                    ${r.photo_path ? `<div style="margin:6px 0;"><img src="/uploads/photos/${r.photo_path}" style="width:60px;height:60px;border-radius:10px;object-fit:cover;border:2px solid var(--border);"></div>` : ''}
+                    ${r.photo_path ? `<div style="margin:6px 0;"><img src="/uploads/photos/${r.photo_path.replace(/^.*[\\/\\\\]/, '')}" style="width:60px;height:60px;border-radius:10px;object-fit:cover;border:2px solid var(--border);" onerror="this.style.display='none';"></div>` : ''}
                     <input type="file" name="photo" accept="image/*" style="padding:8px; background:var(--bg-input); border:2px solid var(--border); border-radius:10px; color:var(--text);">
                     <span style="font-size:0.75em;color:var(--text-dim);">اتركه فارغاً للاحتفاظ بالصورة الحالية</span>
                 </div>

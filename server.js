@@ -408,6 +408,8 @@ app.get('/api/records', authMiddleware, (req, res) => {
         // Supports both old format (age field) and new format (birthYear field)
         const childBirthYearFrom = req.query.childBirthYearFrom || '';
         const childBirthYearTo = req.query.childBirthYearTo || '';
+        let childYearCondForCount = null;
+        let childYearPartsForCount = [];
         if (childBirthYearFrom || childBirthYearTo) {
             const currentYear = new Date().getFullYear();
             // COALESCE: use birthYear if present, otherwise calculate from age
@@ -434,6 +436,8 @@ app.get('/api/records', authMiddleware, (req, res) => {
                 OR (json_valid(children_data_w) AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE ${childYearCond}))
             )`;
             params.push(...yearParts, ...yearParts);
+            childYearCondForCount = childYearCond;
+            childYearPartsForCount = [...yearParts];
         }
 
         // Children health status filter
@@ -468,7 +472,24 @@ app.get('/api/records', authMiddleware, (req, res) => {
 
         const total = db.prepare(`SELECT COUNT(*) as count FROM records ${where}`).get(...params).count;
         const records = db.prepare(`SELECT * FROM records ${where} ORDER BY id DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
-        res.json({ records, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
+
+        // Count matching children if birth year filter is active
+        let matchingChildrenCount = null;
+        if (childYearCondForCount) {
+            const countSql = `SELECT COALESCE(SUM(
+                CASE WHEN json_valid(children_data) THEN
+                    (SELECT COUNT(*) FROM json_each(children_data) WHERE ${childYearCondForCount})
+                ELSE 0 END
+                +
+                CASE WHEN json_valid(children_data_w) THEN
+                    (SELECT COUNT(*) FROM json_each(children_data_w) WHERE ${childYearCondForCount})
+                ELSE 0 END
+            ), 0) as total FROM records ${where}`;
+            const countParams = [...childYearPartsForCount, ...childYearPartsForCount, ...params];
+            matchingChildrenCount = db.prepare(countSql).get(...countParams).total;
+        }
+
+        res.json({ records, pagination: { page, limit, total, pages: Math.ceil(total / limit) }, matchingChildrenCount });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
