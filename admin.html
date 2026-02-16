@@ -761,6 +761,20 @@
                 <label>عدد الأولاد (تحت 18) >=</label>
                 <input type="number" id="minUnder18Filter" placeholder="أكبر من أو يساوي" min="0">
             </div>
+            <div class="filter-group" style="grid-column: span 2;">
+                <label>حالة الشخص (الأب/الأم)</label>
+                <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:4px;">
+                    <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-size:0.88em; font-weight:600;">
+                        <input type="checkbox" id="parentStatusEnforced" value="enforced" style="accent-color:var(--accent); width:15px; height:15px;"> مغيّب قسري
+                    </label>
+                    <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-size:0.88em; font-weight:600;">
+                        <input type="checkbox" id="parentStatusDeceased" value="deceased" style="accent-color:var(--accent); width:15px; height:15px;"> متوفى
+                    </label>
+                    <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-size:0.88em; font-weight:600;">
+                        <input type="checkbox" id="parentStatusSurvivor" value="survivor" style="accent-color:var(--accent); width:15px; height:15px;"> ناجي
+                    </label>
+                </div>
+            </div>
             <div class="filter-group fg-narrow">
                 <label>سنة ميلاد الأولاد (من)</label>
                 <input type="number" id="childBirthYearFrom" placeholder="مثال: 2000" min="1940" max="2030">
@@ -1038,6 +1052,13 @@ async function loadRecords(page) {
     if (hasHypertensionVal) params.set('hasHypertension', hasHypertensionVal);
     if (hasDiabetesVal) params.set('hasDiabetes', hasDiabetesVal);
     if (arrestAuthority) params.set('arrestAuthority', arrestAuthority);
+
+    // Parent status filter (multi-select checkboxes)
+    const parentStatuses = [];
+    if (document.getElementById('parentStatusEnforced').checked) parentStatuses.push('enforced');
+    if (document.getElementById('parentStatusDeceased').checked) parentStatuses.push('deceased');
+    if (document.getElementById('parentStatusSurvivor').checked) parentStatuses.push('survivor');
+    if (parentStatuses.length > 0) params.set('parentStatuses', parentStatuses.join(','));
 
     // Children filters
     const childBirthYearFrom = document.getElementById('childBirthYearFrom').value;
@@ -1933,6 +1954,9 @@ function resetFilters() {
     document.getElementById('hasHypertensionFilter').value = '';
     document.getElementById('hasDiabetesFilter').value = '';
     document.getElementById('arrestAuthorityFilter').value = '';
+    document.getElementById('parentStatusEnforced').checked = false;
+    document.getElementById('parentStatusDeceased').checked = false;
+    document.getElementById('parentStatusSurvivor').checked = false;
     document.getElementById('childBirthYearFrom').value = '';
     document.getElementById('childBirthYearTo').value = '';
     document.getElementById('childHealthStatusFilter').value = '';
@@ -2013,6 +2037,12 @@ function getCurrentFilterParams() {
         const el = document.getElementById(elemId);
         if (el && el.value) params.set(paramName, el.value);
     }
+    // Parent status multi-select checkboxes
+    const ps = [];
+    if (document.getElementById('parentStatusEnforced').checked) ps.push('enforced');
+    if (document.getElementById('parentStatusDeceased').checked) ps.push('deceased');
+    if (document.getElementById('parentStatusSurvivor').checked) ps.push('survivor');
+    if (ps.length > 0) params.set('parentStatuses', ps.join(','));
     return params;
 }
 
@@ -2036,6 +2066,11 @@ function getActiveFilterSummary() {
     const params = getCurrentFilterParams();
     const parts = [];
     for (const [key, val] of params.entries()) {
+        if (key === 'parentStatuses') {
+            const psLabels = val.split(',').map(s => statusLabels[s] || s).join(' / ');
+            parts.push(`حالة الشخص: ${psLabels}`);
+            continue;
+        }
         const label = labels[key] || key;
         const displayVal = statusLabels[val] || val;
         parts.push(`${label}: ${displayVal}`);

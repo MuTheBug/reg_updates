@@ -296,6 +296,16 @@ app.get('/api/records', authMiddleware, (req, res) => {
         if (status) { where += ' AND status = ?'; params.push(status); }
         if (province) { where += ' AND province = ?'; params.push(province); }
 
+        // Parent status multi-select filter
+        const parentStatuses = req.query.parentStatuses || '';
+        if (parentStatuses) {
+            const statusArr = parentStatuses.split(',').filter(s => ['enforced', 'survivor', 'deceased'].includes(s));
+            if (statusArr.length > 0) {
+                where += ` AND status IN (${statusArr.map(() => '?').join(',')})`;
+                params.push(...statusArr);
+            }
+        }
+
         const gender = req.query.gender || '';
         const marital = req.query.marital || '';
         const education = req.query.education || '';
@@ -511,6 +521,16 @@ app.get('/api/records-print', authMiddleware, (req, res) => {
         }
         if (status) { where += ' AND status = ?'; params.push(status); }
         if (province) { where += ' AND province = ?'; params.push(province); }
+
+        // Parent status multi-select filter
+        const parentStatuses = req.query.parentStatuses || '';
+        if (parentStatuses) {
+            const statusArr = parentStatuses.split(',').filter(s => ['enforced', 'survivor', 'deceased'].includes(s));
+            if (statusArr.length > 0) {
+                where += ` AND status IN (${statusArr.map(() => '?').join(',')})`;
+                params.push(...statusArr);
+            }
+        }
 
         const gender = req.query.gender || '';
         const marital = req.query.marital || '';
