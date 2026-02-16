@@ -2068,6 +2068,7 @@ const PDF_COLUMNS = [
     { key: 'spouseName', label: 'اسم الزوج/ة' },
     { key: 'kidsCount', label: 'عدد الأولاد' },
     { key: 'kidsUnder18', label: 'أولاد تحت 18' },
+    { key: 'matchingKidsCount', label: 'أولاد في النطاق العمري' },
     { key: 'address', label: 'العنوان' },
     { key: 'housingType', label: 'نوع السكن' },
     { key: 'employment', label: 'حالة العمل' },
@@ -2188,6 +2189,37 @@ async function generatePDF(mode, selectedKeys) {
             return s;
         }
 
+        // Children in age range counting
+        const pdfChildFromYear = parseInt(document.getElementById('childBirthYearFrom').value) || 0;
+        const pdfChildToYear = parseInt(document.getElementById('childBirthYearTo').value) || 0;
+        const curYear = new Date().getFullYear();
+
+        function countMatchingKids(r) {
+            if (!pdfChildFromYear && !pdfChildToYear) return 0;
+            let count = 0;
+            ['children_data', 'children_data_w'].forEach(field => {
+                try {
+                    const children = JSON.parse(r[field]);
+                    if (!Array.isArray(children)) return;
+                    children.forEach(c => {
+                        let by = parseInt(c.birthYear) || 0;
+                        if (!by && parseInt(c.age) > 0) by = curYear - parseInt(c.age);
+                        if (!by) return;
+                        if (pdfChildFromYear && by < pdfChildFromYear) return;
+                        if (pdfChildToYear && by > pdfChildToYear) return;
+                        count++;
+                    });
+                } catch(e) {}
+            });
+            return count;
+        }
+
+        // Compute total matching children across all records
+        let totalMatchingKids = 0;
+        if (pdfChildFromYear || pdfChildToYear) {
+            data.records.forEach(r => { totalMatchingKids += countMatchingKids(r); });
+        }
+
         function getCellValue(r, key, idx) {
             switch (key) {
                 case 'rowNum': return idx + 1;
@@ -2213,6 +2245,7 @@ async function generatePDF(mode, selectedKeys) {
                 case 'spouseName': return r.spouse_name || r.ex_spouse_name || '';
                 case 'kidsCount': return ((r.kids_count||0) + (r.kids_count_w||0)) || '';
                 case 'kidsUnder18': return r.kids_under_18_count || '';
+                case 'matchingKidsCount': return countMatchingKids(r) || '';
                 case 'address': return r.address || '';
                 case 'housingType': return r.housing_type || '';
                 case 'employment': return r.employment === 'employed' ? 'يعمل' : (r.employment === 'unemployed' ? 'عاطل' : '');
@@ -2232,7 +2265,7 @@ async function generatePDF(mode, selectedKeys) {
         }
 
         function getCellClass(key) {
-            if (key === 'rowNum' || key === 'id') return 'num';
+            if (key === 'rowNum' || key === 'id' || key === 'matchingKidsCount') return 'num';
             if (key === 'nationalId') return 'num-mono';
             if (key === 'fullName') return 'name';
             if (key === 'status') return 'status-cell';
@@ -2341,6 +2374,7 @@ async function generatePDF(mode, selectedKeys) {
     </div>
 </div>
 ${filterSummary !== 'جميع السجلات' ? `<div class="filter-line"><strong>الفلاتر المطبقة:</strong> ${filterSummary}</div>` : ''}
+${(selectedKeys.includes('matchingKidsCount') && totalMatchingKids > 0) ? `<div class="filter-line" style="border-right-color:#8b5cf6; background:#f5f0ff;"><strong>إجمالي الأولاد في النطاق العمري${pdfChildFromYear && pdfChildToYear ? ' (' + pdfChildFromYear + ' - ' + pdfChildToYear + ')' : (pdfChildFromYear ? ' (من ' + pdfChildFromYear + ')' : ' (حتى ' + pdfChildToYear + ')')}:</strong> ${totalMatchingKids} طفل — ضمن ${totalRecords} سجل</div>` : ''}
 <table>
 <thead><tr>${thHeaders}</tr></thead>
 <tbody>${tableRows}</tbody>
