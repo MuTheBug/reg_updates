@@ -1017,7 +1017,7 @@
             </div>
             <div class="cond branch branch-purple" id="sec_kids">
                 <div class="g g2" style="margin-bottom:15px;">
-                    <div class="fg"><label>عدد الأولاد</label><input type="number" name="kidsCount" id="kidsCount" min="1" max="20" placeholder="العدد" onchange="buildKids('kidsBox',this.value)"></div>
+                    <div class="fg"><label>عدد الأولاد</label><input type="number" name="kidsCount" id="kidsCount" min="1" max="20" placeholder="العدد" oninput="buildKids('kidsBox',this.value)"></div>
                 </div>
                 <div id="kidsBox"></div>
             </div>
@@ -1038,7 +1038,7 @@
             </div>
             <div class="cond branch branch-purple" id="sec_kidsW">
                 <div class="g g2" style="margin-bottom:15px;">
-                    <div class="fg"><label>عدد الأولاد</label><input type="number" name="kidsCountW" id="kidsCountW" min="1" max="20" placeholder="العدد" onchange="buildKids('kidsBoxW',this.value)"></div>
+                    <div class="fg"><label>عدد الأولاد</label><input type="number" name="kidsCountW" id="kidsCountW" min="1" max="20" placeholder="العدد" oninput="buildKids('kidsBoxW',this.value)"></div>
                 </div>
                 <div id="kidsBoxW"></div>
             </div>
@@ -1103,7 +1103,7 @@
                 <div class="fg"><label><span class="rq">*</span> المعيل</label><input type="text" name="breadwinner" placeholder="اسم المعيل"></div>
                 <div class="fg">
                     <label><span class="rq">*</span> قرابة المعيل</label>
-                    <select name="breadwinnerRelation" onchange="document.getElementById('breadwinnerRelOtherBox').style.display = this.value==='أخرى' ? 'block' : 'none';">
+                    <select name="breadwinnerRelation" onchange="document.getElementById('breadwinnerRelOtherBox').style.display = this.value==='أخرى' ? 'grid' : 'none';">
                         <option value="">-- اختر --</option>
                         <option>أب</option><option>أم</option><option>أخ</option><option>أخت</option>
                         <option>زوج</option><option>زوجة</option><option>ابن</option><option>ابنة</option>
