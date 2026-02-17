@@ -1361,8 +1361,6 @@ function populateDates() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', populateDates);
-
 // ══════════════ LOGO ══════════════
 function loadLogo(inp) {
     if (inp.files && inp.files[0]) {
@@ -1490,12 +1488,14 @@ function addOtherDiseaseTag() {
     if (val && !otherDiseasesList.includes(val)) {
         otherDiseasesList.push(val);
         renderOtherDiseaseTags();
+        saveFormData();
     }
     inp.value = ''; inp.focus();
 }
 function removeOtherDiseaseTag(i) {
     otherDiseasesList.splice(i, 1);
     renderOtherDiseaseTags();
+    saveFormData();
 }
 function renderOtherDiseaseTags() {
     const box = document.getElementById('otherDiseasesTags');
@@ -1523,11 +1523,11 @@ function toggleLegal() {
 function addLegalTag() {
     const inp = document.getElementById('legalInp');
     const val = inp.value.trim();
-    if (val && !legalTags.includes(val)) { legalTags.push(val); renderLegalTags(); }
+    if (val && !legalTags.includes(val)) { legalTags.push(val); renderLegalTags(); saveFormData(); }
     inp.value = ''; inp.focus();
 }
 
-function removeLegalTag(i) { legalTags.splice(i, 1); renderLegalTags(); }
+function removeLegalTag(i) { legalTags.splice(i, 1); renderLegalTags(); saveFormData(); }
 
 function renderLegalTags() {
     const box = document.getElementById('legalTagBox');
@@ -1685,6 +1685,7 @@ function addChildDisease(uid) {
     if (!childDiseases[uid].includes(val)) {
         childDiseases[uid].push(val);
         renderChildDiseases(uid);
+        saveFormData();
     }
     inp.value = '';
     inp.focus();
@@ -1693,6 +1694,7 @@ function addChildDisease(uid) {
 function removeChildDisease(uid, idx) {
     childDiseases[uid].splice(idx, 1);
     renderChildDiseases(uid);
+    saveFormData();
 }
 
 function renderChildDiseases(uid) {
@@ -1724,7 +1726,177 @@ function resetAll() {
     });
     ['cl_photo', 'cl_doc'].forEach(id => document.getElementById(id).style.display = 'none');
     document.getElementById('logoImg').style.display = 'block';
+    localStorage.removeItem('haquna_form_data');
 }
+
+// ══════════════ LOCALSTORAGE PERSISTENCE ══════════════
+const FORM_STORAGE_KEY = 'haquna_form_data';
+
+function saveFormData() {
+    const form = document.getElementById('mainForm');
+    const data = { fields: {}, radios: {}, checkboxes: {} };
+
+    for (const el of form.elements) {
+        if (!el.name || el.type === 'file' || el.type === 'submit' || el.type === 'button' || el.type === 'hidden') continue;
+        if (el.type === 'radio') {
+            if (el.checked) data.radios[el.name] = el.value;
+        } else if (el.type === 'checkbox') {
+            data.checkboxes[el.name] = el.checked;
+        } else {
+            data.fields[el.name] = el.value;
+        }
+    }
+
+    // Save "other" text fields that may not have names in the form
+    const otherAP = document.getElementById('otherArrestPlace');
+    const otherDP = document.getElementById('otherDeathPlace');
+    if (otherAP) data.otherArrestPlace = otherAP.value;
+    if (otherDP) data.otherDeathPlace = otherDP.value;
+
+    // Save dynamic arrays
+    data.legalTags = legalTags;
+    data.otherDiseasesList = otherDiseasesList;
+    data.childDiseases = childDiseases;
+
+    localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(data));
+}
+
+function restoreFormData() {
+    const raw = localStorage.getItem(FORM_STORAGE_KEY);
+    if (!raw) return;
+
+    try {
+        const data = JSON.parse(raw);
+        const form = document.getElementById('mainForm');
+
+        // Step 1: Restore radios (toggle functions depend on them)
+        if (data.radios) {
+            for (const [name, val] of Object.entries(data.radios)) {
+                const radio = form.querySelector(`[name="${name}"][value="${val}"]`);
+                if (radio) radio.checked = true;
+            }
+        }
+
+        // Step 2: Trigger all toggle functions to show/hide conditional sections
+        toggleStatus();
+        toggleMarital();
+        if (data.radios?.hasKids) toggleKids();
+        if (data.radios?.hasKidsW) toggleKidsW();
+        if (data.radios?.employment) toggleEmp();
+        if (data.radios?.chronic) toggleChronic();
+        if (data.radios?.legal) toggleLegal();
+        if (data.radios?.assoc) toggleAssoc();
+
+        // Step 3: Restore simple fields (skip child fields for now)
+        if (data.fields) {
+            for (const [name, val] of Object.entries(data.fields)) {
+                if (name.match(/^c[A-Z].*_kidsBox/)) continue; // child fields - restore after buildKids
+                const el = form.elements[name];
+                if (el && el.type !== 'file') el.value = val;
+            }
+        }
+
+        // Step 4: Restore checkboxes
+        if (data.checkboxes) {
+            for (const [name, checked] of Object.entries(data.checkboxes)) {
+                if (name.match(/^c.*_kidsBox/)) continue;
+                const el = form.elements[name];
+                if (el) el.checked = checked;
+            }
+        }
+
+        // Step 5: Trigger field-value-dependent toggles
+        toggleHousing();
+        toggleEducation();
+        if (data.checkboxes?.hasSpecialNeeds) toggleSpecialNeeds();
+        // Breadwinner relation "other" box
+        const bwRel = form.elements['breadwinnerRelation'];
+        if (bwRel && bwRel.value === 'أخرى') {
+            document.getElementById('breadwinnerRelOtherBox').style.display = 'grid';
+        }
+
+        // Step 6: Rebuild kids and restore child field values
+        const kidsCount = data.fields?.kidsCount || '';
+        const kidsCountW = data.fields?.kidsCountW || '';
+        if (kidsCount) {
+            buildKids('kidsBox', kidsCount);
+        }
+        if (kidsCountW) {
+            buildKids('kidsBoxW', kidsCountW);
+        }
+
+        // Restore child field values after buildKids created the DOM
+        if (data.fields) {
+            for (const [name, val] of Object.entries(data.fields)) {
+                if (name.match(/^c[A-Z].*_kidsBox/)) {
+                    const el = form.elements[name];
+                    if (el) el.value = val;
+                }
+            }
+        }
+
+        // Trigger child-specific toggles (education and health)
+        if (kidsCount) {
+            for (let i = 1; i <= parseInt(kidsCount); i++) {
+                const uid = 'kidsBox_' + i;
+                const eduSel = form.elements['cEdu_' + uid];
+                if (eduSel && eduSel.value) toggleChildEdu(eduSel, uid);
+                const hpSel = form.elements['cHP_' + uid];
+                if (hpSel && hpSel.value) toggleChildHP(hpSel, uid);
+            }
+        }
+        if (kidsCountW) {
+            for (let i = 1; i <= parseInt(kidsCountW); i++) {
+                const uid = 'kidsBoxW_' + i;
+                const eduSel = form.elements['cEdu_' + uid];
+                if (eduSel && eduSel.value) toggleChildEdu(eduSel, uid);
+                const hpSel = form.elements['cHP_' + uid];
+                if (hpSel && hpSel.value) toggleChildHP(hpSel, uid);
+            }
+        }
+
+        // Step 7: Restore dynamic arrays
+        if (data.legalTags && data.legalTags.length) {
+            legalTags = data.legalTags;
+            renderLegalTags();
+        }
+        if (data.otherDiseasesList && data.otherDiseasesList.length) {
+            otherDiseasesList = data.otherDiseasesList;
+            renderOtherDiseaseTags();
+        }
+        if (data.childDiseases && Object.keys(data.childDiseases).length) {
+            childDiseases = data.childDiseases;
+            for (const uid of Object.keys(childDiseases)) {
+                if (document.getElementById(`cDiseasesTags_${uid}`)) {
+                    renderChildDiseases(uid);
+                }
+            }
+        }
+
+        // Step 8: Restore "other" text fields
+        if (data.otherArrestPlace) {
+            const el = document.getElementById('otherArrestPlace');
+            if (el) { el.value = data.otherArrestPlace; el.parentElement.style.display = 'block'; }
+        }
+        if (data.otherDeathPlace) {
+            const el = document.getElementById('otherDeathPlace');
+            if (el) { el.value = data.otherDeathPlace; el.parentElement.style.display = 'block'; }
+        }
+
+    } catch(e) {
+        console.error('Error restoring form data:', e);
+    }
+}
+
+// Auto-save on any form change
+document.getElementById('mainForm').addEventListener('input', saveFormData);
+document.getElementById('mainForm').addEventListener('change', saveFormData);
+
+// Restore data after date selects are populated
+document.addEventListener('DOMContentLoaded', function() {
+    populateDates();
+    restoreFormData();
+});
 
 // ══════════════ NOTIFICATION ══════════════
 function showNotification(msg, type) {
