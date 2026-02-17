@@ -2134,6 +2134,7 @@ const PDF_COLUMNS = [
     { key: 'kidsCount', label: 'عدد الأولاد' },
     { key: 'kidsUnder18', label: 'أولاد تحت 18' },
     { key: 'matchingKidsCount', label: 'أولاد في النطاق العمري' },
+    { key: 'kidsDetails', label: 'تفاصيل الأولاد (اسم، عمر، تعليم)' },
     { key: 'address', label: 'العنوان' },
     { key: 'housingType', label: 'نوع السكن' },
     { key: 'employment', label: 'حالة العمل' },
@@ -2259,6 +2260,30 @@ async function generatePDF(mode, selectedKeys) {
         const pdfChildToYear = parseInt(document.getElementById('childBirthYearTo').value) || 0;
         const curYear = new Date().getFullYear();
 
+        function formatKidsDetails(r) {
+            const kids = [];
+            ['children_data', 'children_data_w'].forEach(field => {
+                try {
+                    const children = JSON.parse(r[field]);
+                    if (!Array.isArray(children)) return;
+                    children.forEach(c => {
+                        const name = c.name || '—';
+                        let age = '';
+                        const by = parseInt(c.birthYear) || 0;
+                        const cAge = parseInt(c.age) || 0;
+                        if (by) age = (curYear - by) + ' سنة';
+                        else if (cAge) age = cAge + ' سنة';
+                        const edu = c.education || '';
+                        let parts = [name];
+                        if (age) parts.push(age);
+                        if (edu) parts.push(edu);
+                        kids.push(parts.join(' - '));
+                    });
+                } catch(e) {}
+            });
+            return kids.join(' | ');
+        }
+
         function countMatchingKids(r) {
             if (!pdfChildFromYear && !pdfChildToYear) return 0;
             let count = 0;
@@ -2311,6 +2336,7 @@ async function generatePDF(mode, selectedKeys) {
                 case 'kidsCount': return ((r.kids_count||0) + (r.kids_count_w||0)) || '';
                 case 'kidsUnder18': return r.kids_under_18_count || '';
                 case 'matchingKidsCount': return countMatchingKids(r) || '';
+                case 'kidsDetails': return formatKidsDetails(r);
                 case 'address': return r.address || '';
                 case 'housingType': return r.housing_type || '';
                 case 'employment': return r.employment === 'employed' ? 'يعمل' : (r.employment === 'unemployed' ? 'عاطل' : '');
@@ -2334,6 +2360,7 @@ async function generatePDF(mode, selectedKeys) {
             if (key === 'nationalId') return 'num-mono';
             if (key === 'fullName') return 'name';
             if (key === 'status') return 'status-cell';
+            if (key === 'kidsDetails') return 'kids-detail';
             return '';
         }
 
@@ -2414,6 +2441,7 @@ async function generatePDF(mode, selectedKeys) {
     .num { text-align: center; font-weight: 700; color: #64748b; width: 28px; }
     .num-mono { font-family: 'Courier New', monospace; direction: ltr; text-align: center; }
     .name { font-weight: 700; color: #0a1628; white-space: nowrap; }
+    .kids-detail { font-size: 6pt; line-height: 1.5; max-width: 280px; word-break: break-word; }
     .st-enforced { color: #b45309; font-weight: 700; }
     .st-survivor { color: #047857; font-weight: 700; }
     .st-deceased { color: #dc2626; font-weight: 700; }
