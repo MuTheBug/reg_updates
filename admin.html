@@ -1811,13 +1811,23 @@ async function editRecord(id) {
             <div class="adv-grid">
                 <div class="filter-group">
                     <label>الصورة الشخصية ${r.photo_path ? '(يوجد صورة حالية)' : '(لا يوجد صورة)'}</label>
-                    ${r.photo_path ? `<div style="margin:6px 0;"><img src="/uploads/photos/${r.photo_path.replace(/^.*[\\/\\\\]/, '')}" style="width:60px;height:60px;border-radius:10px;object-fit:cover;border:2px solid var(--border);" onerror="this.style.display='none';"></div>` : ''}
+                    ${r.photo_path ? `<div style="margin:6px 0; display:flex; align-items:center; gap:8px;">
+                        <img src="/uploads/photos/${r.photo_path.replace(/^.*[\\/\\\\]/, '')}" style="width:60px;height:60px;border-radius:10px;object-fit:cover;border:2px solid var(--border);" onerror="this.style.display='none';">
+                        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.82em;color:var(--red);font-weight:600;">
+                            <input type="checkbox" name="deletePhoto" value="yes" style="accent-color:#ef4444;"> حذف الصورة
+                        </label>
+                    </div>` : ''}
                     <input type="file" name="photo" accept="image/*" style="padding:8px; background:var(--bg-input); border:2px solid var(--border); border-radius:10px; color:var(--text);">
                     <span style="font-size:0.75em;color:var(--text-dim);">اتركه فارغاً للاحتفاظ بالصورة الحالية</span>
                 </div>
                 <div class="filter-group">
                     <label>وثيقة الإثبات ${r.document_path ? '(يوجد وثيقة حالية)' : '(لا يوجد وثيقة)'}</label>
-                    ${r.document_path ? `<div style="margin:6px 0;"><a href="/uploads/documents/${r.document_path}" target="_blank" style="color:var(--accent);font-size:0.85em;">عرض الوثيقة الحالية</a></div>` : ''}
+                    ${r.document_path ? `<div style="margin:6px 0; display:flex; align-items:center; gap:8px;">
+                        <a href="/uploads/documents/${r.document_path.replace(/^.*[\\/\\\\]/, '')}" target="_blank" style="color:var(--accent);font-size:0.85em;">عرض الوثيقة الحالية</a>
+                        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.82em;color:var(--red);font-weight:600;">
+                            <input type="checkbox" name="deleteDocument" value="yes" style="accent-color:#ef4444;"> حذف الوثيقة
+                        </label>
+                    </div>` : ''}
                     <input type="file" name="document" accept="image/*,.pdf" style="padding:8px; background:var(--bg-input); border:2px solid var(--border); border-radius:10px; color:var(--text);">
                     <span style="font-size:0.75em;color:var(--text-dim);">اتركه فارغاً للاحتفاظ بالوثيقة الحالية</span>
                 </div>

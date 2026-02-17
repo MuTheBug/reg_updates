@@ -531,6 +531,31 @@
             background: var(--green-glow);
         }
 
+        .file-clear-btn {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: none;
+            background: var(--red);
+            color: #fff;
+            font-size: 0.85em;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(239,68,68,0.4);
+        }
+        .file-clear-btn:hover {
+            transform: scale(1.15);
+            background: #b91c1c;
+        }
+
         /* ═══════════ TAGS ═══════════ */
         .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 
@@ -824,16 +849,22 @@
             </div>
             <div class="fg">
                 <label>صورة شخصية</label>
-                <div class="fbox">
-                    <div class="flbl" id="fl_photo">📷 اختر صورة</div>
-                    <input type="file" name="photo" accept="image/*" onchange="markFile(this,'fl_photo')">
+                <div style="position:relative;">
+                    <div class="fbox">
+                        <div class="flbl" id="fl_photo">📷 اختر صورة</div>
+                        <input type="file" name="photo" id="inp_photo" accept="image/*" onchange="markFile(this,'fl_photo')">
+                    </div>
+                    <button type="button" class="file-clear-btn" id="cl_photo" onclick="clearFile('inp_photo','fl_photo','📷 اختر صورة')" style="display:none;">✕</button>
                 </div>
             </div>
             <div class="fg">
                 <label>وثيقة إثبات</label>
-                <div class="fbox">
-                    <div class="flbl" id="fl_doc">📄 ارفق وثيقة</div>
-                    <input type="file" name="document" accept="image/*,.pdf" onchange="markFile(this,'fl_doc')">
+                <div style="position:relative;">
+                    <div class="fbox">
+                        <div class="flbl" id="fl_doc">📄 ارفق وثيقة</div>
+                        <input type="file" name="document" id="inp_doc" accept="image/*,.pdf" onchange="markFile(this,'fl_doc')">
+                    </div>
+                    <button type="button" class="file-clear-btn" id="cl_doc" onclick="clearFile('inp_doc','fl_doc','📄 ارفق وثيقة')" style="display:none;">✕</button>
                 </div>
             </div>
         </div>
@@ -1351,7 +1382,20 @@ function markFile(inp, id) {
     if (inp.files.length) {
         lbl.textContent = '✅ ' + inp.files[0].name;
         lbl.classList.add('done');
+        // Show the clear button
+        const clId = id === 'fl_photo' ? 'cl_photo' : 'cl_doc';
+        document.getElementById(clId).style.display = 'flex';
     }
+}
+
+function clearFile(inputId, labelId, defaultText) {
+    const inp = document.getElementById(inputId);
+    inp.value = '';
+    const lbl = document.getElementById(labelId);
+    lbl.textContent = defaultText;
+    lbl.classList.remove('done');
+    const clId = labelId === 'fl_photo' ? 'cl_photo' : 'cl_doc';
+    document.getElementById(clId).style.display = 'none';
 }
 
 // ══════════════ TOGGLE HELPERS ══════════════
@@ -1678,6 +1722,7 @@ function resetAll() {
         el.textContent = id === 'fl_photo' ? '📷 اختر صورة' : '📄 ارفق وثيقة';
         el.classList.remove('done');
     });
+    ['cl_photo', 'cl_doc'].forEach(id => document.getElementById(id).style.display = 'none');
     document.getElementById('logoImg').style.display = 'block';
 }
 
@@ -1753,7 +1798,6 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
 
         if (resp.ok) {
             showNotification('تم حفظ البيانات بنجاح! رقم السجل: ' + result.id, 'success');
-            resetAll();
         } else {
             showNotification('خطأ: ' + (result.error || 'فشل في حفظ البيانات'), 'error');
         }

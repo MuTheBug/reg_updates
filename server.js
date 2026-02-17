@@ -679,9 +679,27 @@ app.put('/api/records/:id', authMiddleware, upload.fields([{ name: 'photo' }, { 
         if (!old) return res.status(404).json({ error: 'Not found' });
 
         let pPath = old.photo_path;
-        if (req.files?.photo) pPath = req.files.photo[0].filename;
+        if (b.deletePhoto === 'yes') {
+            // Delete the photo file from disk
+            if (old.photo_path) {
+                const photoFile = path.join(UPLOAD_DIR, 'photos', old.photo_path);
+                try { fs.unlinkSync(photoFile); } catch(e) {}
+            }
+            pPath = null;
+        } else if (req.files?.photo) {
+            pPath = req.files.photo[0].filename;
+        }
         let dPath = old.document_path;
-        if (req.files?.document) dPath = req.files.document[0].filename;
+        if (b.deleteDocument === 'yes') {
+            // Delete the document file from disk
+            if (old.document_path) {
+                const docFile = path.join(UPLOAD_DIR, 'documents', old.document_path);
+                try { fs.unlinkSync(docFile); } catch(e) {}
+            }
+            dPath = null;
+        } else if (req.files?.document) {
+            dPath = req.files.document[0].filename;
+        }
 
         const map = {
             firstName:'first_name', fatherName:'father_name', lastName:'last_name', gender:'gender', motherName:'mother_name',
