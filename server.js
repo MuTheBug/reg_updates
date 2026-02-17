@@ -357,6 +357,8 @@ app.get('/api/records', authMiddleware, (req, res) => {
         // Housing type filter
         const housingType = req.query.housingType || '';
         if (housingType) { where += ' AND housing_type = ?'; params.push(housingType); }
+        const addressSearch = req.query.addressSearch || '';
+        if (addressSearch) { where += ' AND address LIKE ?'; params.push(`%${addressSearch}%`); }
 
         // Special needs filter
         const hasSpecialNeeds = req.query.hasSpecialNeeds || '';
@@ -564,6 +566,8 @@ app.get('/api/records-print', authMiddleware, (req, res) => {
         if (employment) { where += ' AND employment = ?'; params.push(employment); }
         const housingType = req.query.housingType || '';
         if (housingType) { where += ' AND housing_type = ?'; params.push(housingType); }
+        const addressSearch = req.query.addressSearch || '';
+        if (addressSearch) { where += ' AND address LIKE ?'; params.push(`%${addressSearch}%`); }
         const hasSpecialNeeds = req.query.hasSpecialNeeds || '';
         if (hasSpecialNeeds === 'yes') { where += ' AND has_special_needs = 1'; }
         if (hasSpecialNeeds === 'no') { where += ' AND (has_special_needs IS NULL OR has_special_needs = 0)'; }

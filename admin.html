@@ -610,6 +610,10 @@
                     <option value="أخرى">أخرى</option>
                 </select>
             </div>
+            <div class="filter-group">
+                <label>بحث في العنوان</label>
+                <input type="text" id="addressSearchFilter" placeholder="ابحث في العنوان...">
+            </div>
         </div>
 
         <!-- Section: Arrest & Detention -->
@@ -1038,6 +1042,8 @@ async function loadRecords(page) {
 
     if (employment) params.set('employment', employment);
     if (housingType) params.set('housingType', housingType);
+    const addressSearch = document.getElementById('addressSearchFilter').value;
+    if (addressSearch) params.set('addressSearch', addressSearch);
     if (hasSpecialNeeds) params.set('hasSpecialNeeds', hasSpecialNeeds);
     if (legal) params.set('legal', legal);
     if (isOfficiallyRegistered) params.set('isOfficiallyRegistered', isOfficiallyRegistered);
@@ -1950,6 +1956,7 @@ function resetFilters() {
     document.getElementById('survivedInPlaceFilter').value = '';
     document.getElementById('employmentFilter').value = '';
     document.getElementById('housingTypeFilter').value = '';
+    document.getElementById('addressSearchFilter').value = '';
     document.getElementById('hasSpecialNeedsFilter').value = '';
     document.getElementById('legalFilter').value = '';
     document.getElementById('isOfficiallyRegisteredFilter').value = '';
@@ -2032,7 +2039,8 @@ function getCurrentFilterParams() {
         'arrestYearTo': 'arrestYearTo', 'hasPhotoFilter': 'hasPhoto', 'minKidsFilter': 'minKids',
         'minUnder18Filter': 'minUnder18', 'noDocsFilter': 'noDocs', 'diedInPlaceFilter': 'diedInPlace',
         'survivedInPlaceFilter': 'survivedInPlace', 'employmentFilter': 'employment',
-        'housingTypeFilter': 'housingType', 'hasSpecialNeedsFilter': 'hasSpecialNeeds',
+        'housingTypeFilter': 'housingType', 'addressSearchFilter': 'addressSearch',
+        'hasSpecialNeedsFilter': 'hasSpecialNeeds',
         'legalFilter': 'legal', 'isOfficiallyRegisteredFilter': 'isOfficiallyRegistered',
         'hasKidsFilter': 'hasKids', 'assocFilter': 'assoc', 'birthYearFrom': 'birthYearFrom',
         'birthYearTo': 'birthYearTo', 'releaseYearFrom': 'releaseYearFrom', 'releaseYearTo': 'releaseYearTo',
@@ -2063,7 +2071,8 @@ function getActiveFilterSummary() {
         bloodType: 'زمرة الدم', arrestYearFrom: 'سنة الاعتقال من', arrestYearTo: 'سنة الاعتقال إلى',
         hasPhoto: 'صورة شخصية', minKids: 'عدد الأولاد >=', minUnder18: 'أولاد تحت 18 >=',
         noDocs: 'بدون مستندات', diedInPlace: 'توفي في', survivedInPlace: 'نجا من',
-        employment: 'حالة العمل', housingType: 'نوع السكن', hasSpecialNeeds: 'احتياجات خاصة',
+        employment: 'حالة العمل', housingType: 'نوع السكن', addressSearch: 'العنوان',
+        hasSpecialNeeds: 'احتياجات خاصة',
         legal: 'مشاكل قانونية', isOfficiallyRegistered: 'مسجل رسمياً', hasKids: 'لديه أولاد',
         assoc: 'مسجل بجمعية', birthYearFrom: 'سنة الميلاد من', birthYearTo: 'سنة الميلاد إلى',
         releaseYearFrom: 'سنة الإفراج من', releaseYearTo: 'سنة الإفراج إلى',
