@@ -358,7 +358,16 @@ app.get('/api/records', authMiddleware, (req, res) => {
         const housingType = req.query.housingType || '';
         if (housingType) { where += ' AND housing_type = ?'; params.push(housingType); }
         const addressSearch = req.query.addressSearch || '';
-        if (addressSearch) { where += ' AND address LIKE ?'; params.push(`%${addressSearch}%`); }
+        if (addressSearch) {
+            const terms = addressSearch.split(',').map(t => t.trim()).filter(Boolean);
+            if (terms.length === 1) {
+                where += ' AND address LIKE ?';
+                params.push(`%${terms[0]}%`);
+            } else if (terms.length > 1) {
+                where += ` AND (${terms.map(() => 'address LIKE ?').join(' OR ')})`;
+                terms.forEach(t => params.push(`%${t}%`));
+            }
+        }
 
         // Special needs filter
         const hasSpecialNeeds = req.query.hasSpecialNeeds || '';
@@ -577,7 +586,16 @@ app.get('/api/records-print', authMiddleware, (req, res) => {
         const housingType = req.query.housingType || '';
         if (housingType) { where += ' AND housing_type = ?'; params.push(housingType); }
         const addressSearch = req.query.addressSearch || '';
-        if (addressSearch) { where += ' AND address LIKE ?'; params.push(`%${addressSearch}%`); }
+        if (addressSearch) {
+            const terms = addressSearch.split(',').map(t => t.trim()).filter(Boolean);
+            if (terms.length === 1) {
+                where += ' AND address LIKE ?';
+                params.push(`%${terms[0]}%`);
+            } else if (terms.length > 1) {
+                where += ` AND (${terms.map(() => 'address LIKE ?').join(' OR ')})`;
+                terms.forEach(t => params.push(`%${t}%`));
+            }
+        }
         const hasSpecialNeeds = req.query.hasSpecialNeeds || '';
         if (hasSpecialNeeds === 'yes') { where += ' AND has_special_needs = 1'; }
         if (hasSpecialNeeds === 'no') { where += ' AND (has_special_needs IS NULL OR has_special_needs = 0)'; }
