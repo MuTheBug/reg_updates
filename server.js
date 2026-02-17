@@ -472,14 +472,24 @@ app.get('/api/records', authMiddleware, (req, res) => {
             params.push(childGender, childGender);
         }
 
-        // Children education filter
+        // Children education filter (with "and above" support)
         const childEducation = req.query.childEducation || '';
+        const childEducationAbove = req.query.childEducationAbove === 'true';
         if (childEducation) {
+            const eduLevels = ['أمي', 'ابتدائية', 'إعدادية', 'ثانوية', 'معهد', 'بكالوريوس', 'ماجستير', 'دكتوراه'];
+            let eduValues;
+            if (childEducationAbove) {
+                const idx = eduLevels.indexOf(childEducation);
+                eduValues = idx >= 0 ? eduLevels.slice(idx) : [childEducation];
+            } else {
+                eduValues = [childEducation];
+            }
+            const eduPlaceholders = eduValues.map(() => '?').join(',');
             where += ` AND (
-                (json_valid(children_data) AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.education') = ?))
-                OR (json_valid(children_data_w) AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.education') = ?))
+                (json_valid(children_data) AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.education') IN (${eduPlaceholders})))
+                OR (json_valid(children_data_w) AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.education') IN (${eduPlaceholders})))
             )`;
-            params.push(childEducation, childEducation);
+            params.push(...eduValues, ...eduValues);
         }
 
         const total = db.prepare(`SELECT COUNT(*) as count FROM records ${where}`).get(...params).count;
@@ -652,14 +662,24 @@ app.get('/api/records-print', authMiddleware, (req, res) => {
             params.push(childGender, childGender);
         }
 
-        // Children education filter
+        // Children education filter (with "and above" support)
         const childEducation = req.query.childEducation || '';
+        const childEducationAbove = req.query.childEducationAbove === 'true';
         if (childEducation) {
+            const eduLevels = ['أمي', 'ابتدائية', 'إعدادية', 'ثانوية', 'معهد', 'بكالوريوس', 'ماجستير', 'دكتوراه'];
+            let eduValues;
+            if (childEducationAbove) {
+                const idx = eduLevels.indexOf(childEducation);
+                eduValues = idx >= 0 ? eduLevels.slice(idx) : [childEducation];
+            } else {
+                eduValues = [childEducation];
+            }
+            const eduPlaceholders = eduValues.map(() => '?').join(',');
             where += ` AND (
-                (json_valid(children_data) AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.education') = ?))
-                OR (json_valid(children_data_w) AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.education') = ?))
+                (json_valid(children_data) AND EXISTS (SELECT 1 FROM json_each(children_data) WHERE json_extract(value, '$.education') IN (${eduPlaceholders})))
+                OR (json_valid(children_data_w) AND EXISTS (SELECT 1 FROM json_each(children_data_w) WHERE json_extract(value, '$.education') IN (${eduPlaceholders})))
             )`;
-            params.push(childEducation, childEducation);
+            params.push(...eduValues, ...eduValues);
         }
 
         const records = db.prepare(`SELECT * FROM records ${where} ORDER BY id DESC`).all(...params);

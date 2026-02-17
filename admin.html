@@ -817,6 +817,9 @@
                     <option>ماجستير</option>
                     <option>دكتوراه</option>
                 </select>
+                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.82em;font-weight:600;margin-top:5px;">
+                    <input type="checkbox" id="childEducationAbove" style="accent-color:var(--accent);width:15px;height:15px;"> فما فوق
+                </label>
             </div>
         </div>
 
@@ -1076,7 +1079,10 @@ async function loadRecords(page) {
     if (childBirthYearTo) params.set('childBirthYearTo', childBirthYearTo);
     if (childHealthStatus) params.set('childHealthStatus', childHealthStatus);
     if (childGenderVal) params.set('childGender', childGenderVal);
-    if (childEducation) params.set('childEducation', childEducation);
+    if (childEducation) {
+        params.set('childEducation', childEducation);
+        if (document.getElementById('childEducationAbove').checked) params.set('childEducationAbove', 'true');
+    }
 
     try {
         const res = await fetch('/api/records?' + params);
@@ -1979,6 +1985,7 @@ function resetFilters() {
     document.getElementById('childHealthStatusFilter').value = '';
     document.getElementById('childGenderFilter').value = '';
     document.getElementById('childEducationFilter').value = '';
+    document.getElementById('childEducationAbove').checked = false;
     currentPage = 1;
     loadRecords();
 }
@@ -2054,6 +2061,10 @@ function getCurrentFilterParams() {
     for (const [elemId, paramName] of Object.entries(filterMap)) {
         const el = document.getElementById(elemId);
         if (el && el.value) params.set(paramName, el.value);
+    }
+    // Child education "and above" checkbox
+    if (document.getElementById('childEducationAbove').checked && params.get('childEducation')) {
+        params.set('childEducationAbove', 'true');
     }
     // Parent status multi-select checkboxes
     const ps = [];
