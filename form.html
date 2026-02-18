@@ -950,6 +950,35 @@
                     </div>
                 </div>
             </div>
+            <div style="margin-top:14px; border-top:1px dashed var(--border); padding-top:12px;">
+                <label style="font-weight:700; color:var(--accent); font-size:0.92em;">السيرة الذاتية للناجي (CV)</label>
+                <div class="pills" style="margin-top:6px;">
+                    <div class="pill p-green" style="flex:1;">
+                        <input type="radio" name="survivorCvType" id="sCvPdf" value="pdf" onchange="toggleSurvivorCv()">
+                        <label for="sCvPdf">ملف PDF</label>
+                    </div>
+                    <div class="pill p-amber" style="flex:1;">
+                        <input type="radio" name="survivorCvType" id="sCvText" value="text" onchange="toggleSurvivorCv()">
+                        <label for="sCvText">كتابة نصية</label>
+                    </div>
+                </div>
+                <div id="survivorCvPdfBox" style="display:none; margin-top:8px;">
+                    <div class="fbox">
+                        <div class="flbl" id="fl_survivorCv">ارفق ملف CV (PDF)</div>
+                        <input type="file" name="survivorCv" accept=".pdf" onchange="markFile(this,'fl_survivorCv')">
+                    </div>
+                </div>
+                <div id="survivorCvTextBox" style="display:none; margin-top:8px;">
+                    <textarea name="survivorCvText" rows="4" placeholder="اكتب السيرة الذاتية هنا..." style="width:100%;"></textarea>
+                    <div style="margin-top:8px;">
+                        <label style="font-size:0.88em; color:var(--text-label);">صورة مرفقة مع السيرة الذاتية</label>
+                        <div class="fbox" style="margin-top:4px;">
+                            <div class="flbl" id="fl_survivorCvPhoto">ارفق صورة</div>
+                            <input type="file" name="survivorCvPhoto" accept="image/*" onchange="markFile(this,'fl_survivorCvPhoto')">
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="cond branch" id="sec_official_registration" style="margin-top:15px; border-right-color:var(--amber);">
@@ -1401,6 +1430,12 @@ function show(id) { document.getElementById(id).classList.add('show'); }
 function hide(id) { document.getElementById(id).classList.remove('show'); }
 
 // STATUS
+function toggleSurvivorCv() {
+    const v = document.querySelector('[name="survivorCvType"]:checked')?.value;
+    document.getElementById('survivorCvPdfBox').style.display = (v === 'pdf') ? 'block' : 'none';
+    document.getElementById('survivorCvTextBox').style.display = (v === 'text') ? 'block' : 'none';
+}
+
 function toggleStatus() {
     const v = document.querySelector('[name=status]:checked')?.value;
     hide('sec_survivor'); hide('sec_dead'); hide('sec_official_registration');
@@ -1651,9 +1686,44 @@ function buildKids(boxId, count) {
                     <label>شرح الحالة / نوع الاحتياج</label>
                     <textarea name="cHPD_${uid}" placeholder="اشرح حالة ذوي الاحتياجات الخاصة..."></textarea>
                 </div>
+                <div class="fg spanall" style="margin-top:10px; border-top:1px dashed var(--border); padding-top:12px;">
+                    <label style="font-weight:700; color:var(--accent); font-size:0.92em;">السيرة الذاتية (CV)</label>
+                    <div class="pills" style="margin-top:6px;">
+                        <div class="pill p-green" style="flex:1;">
+                            <input type="radio" name="cCvType_${uid}" id="cCvPdf_${uid}" value="pdf" onchange="toggleChildCv('${uid}')">
+                            <label for="cCvPdf_${uid}">ملف PDF</label>
+                        </div>
+                        <div class="pill p-amber" style="flex:1;">
+                            <input type="radio" name="cCvType_${uid}" id="cCvText_${uid}" value="text" onchange="toggleChildCv('${uid}')">
+                            <label for="cCvText_${uid}">كتابة نصية</label>
+                        </div>
+                    </div>
+                    <div id="cCvPdfBox_${uid}" style="display:none; margin-top:8px;">
+                        <div class="fbox">
+                            <div class="flbl" id="fl_cv_${uid}">ارفق ملف CV (PDF)</div>
+                            <input type="file" name="cv_${uid}" accept=".pdf" onchange="markFile(this,'fl_cv_${uid}')">
+                        </div>
+                    </div>
+                    <div id="cCvTextBox_${uid}" style="display:none; margin-top:8px;">
+                        <textarea name="cCvText_${uid}" rows="4" placeholder="اكتب السيرة الذاتية هنا..." style="width:100%;"></textarea>
+                        <div style="margin-top:8px;">
+                            <label style="font-size:0.88em; color:var(--text-label);">صورة مرفقة مع السيرة الذاتية</label>
+                            <div class="fbox" style="margin-top:4px;">
+                                <div class="flbl" id="fl_cvPhoto_${uid}">ارفق صورة</div>
+                                <input type="file" name="cvPhoto_${uid}" accept="image/*" onchange="markFile(this,'fl_cvPhoto_${uid}')">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>`;
     }
+}
+
+function toggleChildCv(uid) {
+    const v = document.querySelector(`[name="cCvType_${uid}"]:checked`)?.value;
+    document.getElementById(`cCvPdfBox_${uid}`).style.display = (v === 'pdf') ? 'block' : 'none';
+    document.getElementById(`cCvTextBox_${uid}`).style.display = (v === 'text') ? 'block' : 'none';
 }
 
 function toggleChildEdu(sel, uid) {

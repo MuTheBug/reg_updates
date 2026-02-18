@@ -106,7 +106,10 @@ function initDbSchema() {
         { name: 'has_special_needs', type: 'INTEGER' },
         { name: 'special_needs_details', type: 'TEXT' },
         { name: 'breadwinner_relation', type: 'TEXT' },
-        { name: 'breadwinner_relation_other', type: 'TEXT' }
+        { name: 'breadwinner_relation_other', type: 'TEXT' },
+        { name: 'survivor_cv_path', type: 'TEXT' },
+        { name: 'survivor_cv_text', type: 'TEXT' },
+        { name: 'survivor_cv_photo_path', type: 'TEXT' }
     ];
     for (const col of columnsToAdd) {
         try { db.exec(`ALTER TABLE records ADD COLUMN ${col.name} ${col.type}`); } catch (err) {}
@@ -116,7 +119,10 @@ initDbSchema();
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const subdir = file.fieldname === 'photo' ? 'photos' : 'documents';
+        let subdir = 'documents';
+        if (file.fieldname === 'photo') subdir = 'photos';
+        else if (file.fieldname === 'survivorCvPhoto' || file.fieldname.startsWith('cvPhoto_')) subdir = 'cv_photos';
+        else if (file.fieldname === 'survivorCv' || file.fieldname.startsWith('cv_')) subdir = 'cvs';
         const dir = path.join(UPLOAD_DIR, subdir);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         cb(null, dir);
@@ -129,7 +135,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
     storage,
-    limits: { fileSize: 10 * 1024 * 1024, files: 2 }
+    limits: { fileSize: 10 * 1024 * 1024, files: 50 }
 });
 
 // Separate multer for backup restore (no size limit for large backups)
@@ -170,7 +176,7 @@ app.get('/api/logout', (req, res) => {
     res.redirect('/login');
 });
 
-function collectChildrenData(body, prefix) {
+function collectChildrenData(body, prefix, filesMap) {
     const children = [];
     let under18Count = 0;
     const currentYear = new Date().getFullYear();
@@ -180,18 +186,22 @@ function collectChildrenData(body, prefix) {
             const birthYearVal = body[`cBirthYear_${prefix}_${i}`];
             const birthYear = parseInt(birthYearVal);
             if (!isNaN(birthYear) && (currentYear - birthYear) < 18) under18Count++;
+            const uid = `${prefix}_${i}`;
             children.push({
                 name: body[key],
-                gender: body[`cGender_${prefix}_${i}`] || '',
+                gender: body[`cGender_${uid}`] || '',
                 birthYear: birthYearVal || '',
-                education: body[`cEdu_${prefix}_${i}`] || '',
-                eduType: body[`cEduType_${prefix}_${i}`] || '',
-                specialization: body[`cSpec_${prefix}_${i}`] || '',
-                university: body[`cUniv_${prefix}_${i}`] || '',
-                job: body[`cJob_${prefix}_${i}`] || '',
-                healthStatus: body[`cHP_${prefix}_${i}`] || '',
-                healthDetails: body[`cHPD_${prefix}_${i}`] || '',
-                diseases: body[`cDiseases_${prefix}_${i}`] ? JSON.parse(body[`cDiseases_${prefix}_${i}`]) : []
+                education: body[`cEdu_${uid}`] || '',
+                eduType: body[`cEduType_${uid}`] || '',
+                specialization: body[`cSpec_${uid}`] || '',
+                university: body[`cUniv_${uid}`] || '',
+                job: body[`cJob_${uid}`] || '',
+                healthStatus: body[`cHP_${uid}`] || '',
+                healthDetails: body[`cHPD_${uid}`] || '',
+                diseases: body[`cDiseases_${uid}`] ? JSON.parse(body[`cDiseases_${uid}`]) : [],
+                cv_path: (filesMap && filesMap[`cv_${uid}`]) || '',
+                cv_text: body[`cCvText_${uid}`] || '',
+                cv_photo_path: (filesMap && filesMap[`cvPhoto_${uid}`]) || ''
             });
         }
     }
@@ -207,16 +217,17 @@ function collectLegalData(body) {
     return problems.length > 0 ? JSON.stringify(problems) : null;
 }
 
-app.post('/api/records', upload.fields([
-    { name: 'photo', maxCount: 1 },
-    { name: 'document', maxCount: 1 }
-]), (req, res) => {
+app.post('/api/records', upload.any(), (req, res) => {
     try {
         const b = req.body;
-        const photoPath = req.files?.photo?.[0]?.filename || null;
-        const docPath = req.files?.document?.[0]?.filename || null;
-        const { data: c1, under18Count: u1 } = collectChildrenData(b, 'kidsBox');
-        const { data: c2, under18Count: u2 } = collectChildrenData(b, 'kidsBoxW');
+        const filesMap = {};
+        (req.files || []).forEach(f => { filesMap[f.fieldname] = f.filename; });
+        const photoPath = filesMap['photo'] || null;
+        const docPath = filesMap['document'] || null;
+        const { data: c1, under18Count: u1 } = collectChildrenData(b, 'kidsBox', filesMap);
+        const { data: c2, under18Count: u2 } = collectChildrenData(b, 'kidsBoxW', filesMap);
+        const survivorCvPath = filesMap['survivorCv'] || null;
+        const survivorCvPhotoPath = filesMap['survivorCvPhoto'] || null;
 
         const stmt = db.prepare(`
             INSERT INTO records (
@@ -236,7 +247,8 @@ app.post('/api/records', upload.fields([
                 legal, legal_details, assoc, assoc_name, service_type, notes, breadwinner_job,
                 rent_amount, has_hypertension, has_diabetes, other_diseases, is_officially_registered,
                 has_special_needs, special_needs_details, breadwinner_relation,
-                breadwinner_relation_other
+                breadwinner_relation_other,
+                survivor_cv_path, survivor_cv_text, survivor_cv_photo_path
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
@@ -244,7 +256,8 @@ app.post('/api/records', upload.fields([
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?
             )
         `);
 
@@ -268,7 +281,8 @@ app.post('/api/records', upload.fields([
             b.rentAmount || null, b.hasHypertension === 'yes' ? 1 : 0, b.hasDiabetes === 'yes' ? 1 : 0, b.otherDiseases || null, b.isOfficiallyRegistered === 'yes' ? 1 : 0,
             b.hasSpecialNeeds === 'yes' ? 1 : 0, b.specialNeedsDetails || null,
             b.breadwinnerRelation || null,
-            b.breadwinnerRelationOther || null
+            b.breadwinnerRelationOther || null,
+            survivorCvPath, b.survivorCvText || null, survivorCvPhotoPath
         );
         res.json({ success: true, id: result.lastInsertRowid });
     } catch (err) {
@@ -713,34 +727,35 @@ app.get('/api/records/:id', authMiddleware, (req, res) => {
     res.json(r);
 });
 
-app.put('/api/records/:id', authMiddleware, upload.fields([{ name: 'photo' }, { name: 'document' }]), (req, res) => {
+app.put('/api/records/:id', authMiddleware, upload.any(), (req, res) => {
     try {
         const b = req.body;
         const id = req.params.id;
         const old = db.prepare('SELECT * FROM records WHERE id = ?').get(id);
         if (!old) return res.status(404).json({ error: 'Not found' });
 
+        const filesMap = {};
+        (req.files || []).forEach(f => { filesMap[f.fieldname] = f.filename; });
+
         let pPath = old.photo_path;
         if (b.deletePhoto === 'yes') {
-            // Delete the photo file from disk
             if (old.photo_path) {
                 const photoFile = path.join(UPLOAD_DIR, 'photos', old.photo_path);
                 try { fs.unlinkSync(photoFile); } catch(e) {}
             }
             pPath = null;
-        } else if (req.files?.photo) {
-            pPath = req.files.photo[0].filename;
+        } else if (filesMap['photo']) {
+            pPath = filesMap['photo'];
         }
         let dPath = old.document_path;
         if (b.deleteDocument === 'yes') {
-            // Delete the document file from disk
             if (old.document_path) {
                 const docFile = path.join(UPLOAD_DIR, 'documents', old.document_path);
                 try { fs.unlinkSync(docFile); } catch(e) {}
             }
             dPath = null;
-        } else if (req.files?.document) {
-            dPath = req.files.document[0].filename;
+        } else if (filesMap['document']) {
+            dPath = filesMap['document'];
         }
 
         const map = {
@@ -766,7 +781,8 @@ app.put('/api/records/:id', authMiddleware, upload.fields([{ name: 'photo' }, { 
             otherDiseases:'other_diseases', isOfficiallyRegistered:'is_officially_registered',
             hasSpecialNeeds:'has_special_needs', specialNeedsDetails:'special_needs_details',
             breadwinnerRelation:'breadwinner_relation',
-            breadwinnerRelationOther:'breadwinner_relation_other'
+            breadwinnerRelationOther:'breadwinner_relation_other',
+            survivorCvText:'survivor_cv_text'
         };
 
         const sets = [];
@@ -789,7 +805,7 @@ app.put('/api/records/:id', authMiddleware, upload.fields([{ name: 'photo' }, { 
         }
 
         if (b.kidsBox_present === 'true') {
-            const { data, under18Count } = collectChildrenData(b, 'kidsBox');
+            const { data, under18Count } = collectChildrenData(b, 'kidsBox', filesMap);
             sets.push('children_data = ?', 'kids_under_18_count = ?');
             vals.push(data ? JSON.stringify(data) : null, under18Count);
         }
@@ -797,6 +813,28 @@ app.put('/api/records/:id', authMiddleware, upload.fields([{ name: 'photo' }, { 
             sets.push('legal_details = ?');
             vals.push(b.legal === 'yes' ? collectLegalData(b) : null);
         }
+
+        // Survivor CV file handling
+        let sCvPath = old.survivor_cv_path;
+        if (b.deleteSurvivorCv === 'yes') {
+            if (old.survivor_cv_path) {
+                try { fs.unlinkSync(path.join(UPLOAD_DIR, 'cvs', old.survivor_cv_path)); } catch(e) {}
+            }
+            sCvPath = null;
+        } else if (filesMap['survivorCv']) {
+            sCvPath = filesMap['survivorCv'];
+        }
+        let sCvPhotoPath = old.survivor_cv_photo_path;
+        if (b.deleteSurvivorCvPhoto === 'yes') {
+            if (old.survivor_cv_photo_path) {
+                try { fs.unlinkSync(path.join(UPLOAD_DIR, 'cv_photos', old.survivor_cv_photo_path)); } catch(e) {}
+            }
+            sCvPhotoPath = null;
+        } else if (filesMap['survivorCvPhoto']) {
+            sCvPhotoPath = filesMap['survivorCvPhoto'];
+        }
+        sets.push('survivor_cv_path = ?', 'survivor_cv_photo_path = ?');
+        vals.push(sCvPath, sCvPhotoPath);
 
         sets.push('photo_path = ?', 'document_path = ?');
         vals.push(pPath, dPath);

@@ -1271,9 +1271,20 @@ async function viewRecord(id) {
                         const birthYearStr = c.birthYear || c.age || '—';
                         const birthLabel = c.birthYear ? 'سنة الميلاد' : 'العمر';
 
+                        let cvHtml = '';
+                        if (c.cv_path) {
+                            cvHtml = ` | CV: <a href="/uploads/cvs/${c.cv_path}" target="_blank" style="color:var(--accent);">تحميل PDF</a>`;
+                        } else if (c.cv_text) {
+                            cvHtml = ` | CV: <span style="color:var(--green);">نص مكتوب</span>`;
+                            if (c.cv_photo_path) cvHtml += ` <a href="/uploads/cv_photos/${c.cv_photo_path}" target="_blank" style="color:var(--accent);">(عرض الصورة)</a>`;
+                        }
+
                         html += `<div style="padding:6px 12px;margin:4px 0;background:var(--bg-input);border-radius:8px;font-size:0.88em;">
-                            <strong>${i+1}.</strong> ${esc(c.name) || '—'} | الجنس: ${genderStr} | ${birthLabel}: ${birthYearStr} | التعليم: ${esc(cEduStr)} | المهنة: ${esc(c.job) || '—'} | الصحة: ${esc(cHPStr)}
+                            <strong>${i+1}.</strong> ${esc(c.name) || '—'} | الجنس: ${genderStr} | ${birthLabel}: ${birthYearStr} | التعليم: ${esc(cEduStr)} | المهنة: ${esc(c.job) || '—'} | الصحة: ${esc(cHPStr)}${cvHtml}
                         </div>`;
+                        if (c.cv_text) {
+                            html += `<div style="padding:6px 16px;margin:0 0 4px 0;background:var(--bg-card);border-radius:0 0 8px 8px;font-size:0.82em;color:var(--text-dim);border-right:3px solid var(--accent);white-space:pre-wrap;">${esc(c.cv_text)}</div>`;
+                        }
                     });
                 }
             } catch(e) {}
@@ -1303,9 +1314,20 @@ async function viewRecord(id) {
                         const birthYearStr = c.birthYear || c.age || '—';
                         const birthLabel = c.birthYear ? 'سنة الميلاد' : 'العمر';
 
+                        let cvHtml = '';
+                        if (c.cv_path) {
+                            cvHtml = ` | CV: <a href="/uploads/cvs/${c.cv_path}" target="_blank" style="color:var(--accent);">تحميل PDF</a>`;
+                        } else if (c.cv_text) {
+                            cvHtml = ` | CV: <span style="color:var(--green);">نص مكتوب</span>`;
+                            if (c.cv_photo_path) cvHtml += ` <a href="/uploads/cv_photos/${c.cv_photo_path}" target="_blank" style="color:var(--accent);">(عرض الصورة)</a>`;
+                        }
+
                         html += `<div style="padding:6px 12px;margin:4px 0;background:var(--bg-input);border-radius:8px;font-size:0.88em;">
-                            <strong>${i+1}.</strong> ${esc(c.name) || '—'} | الجنس: ${genderStr} | ${birthLabel}: ${birthYearStr} | التعليم: ${esc(cEduStr)} | المهنة: ${esc(c.job) || '—'} | الصحة: ${esc(cHPStr)}
+                            <strong>${i+1}.</strong> ${esc(c.name) || '—'} | الجنس: ${genderStr} | ${birthLabel}: ${birthYearStr} | التعليم: ${esc(cEduStr)} | المهنة: ${esc(c.job) || '—'} | الصحة: ${esc(cHPStr)}${cvHtml}
                         </div>`;
+                        if (c.cv_text) {
+                            html += `<div style="padding:6px 16px;margin:0 0 4px 0;background:var(--bg-card);border-radius:0 0 8px 8px;font-size:0.82em;color:var(--text-dim);border-right:3px solid var(--accent);white-space:pre-wrap;">${esc(c.cv_text)}</div>`;
+                        }
                     });
                 }
             } catch(e) {}
@@ -1321,6 +1343,18 @@ async function viewRecord(id) {
             html += detailRow('حالة العمل', r.employment === 'employed' ? 'يعمل' : (r.employment === 'unemployed' ? 'عاطل عن العمل' : '—'));
             if (r.profession) html += detailRow('المهنة', r.profession);
             if (r.employer) html += detailRow('جهة العمل', r.employer);
+            // Survivor CV
+            if (r.survivor_cv_path) {
+                const cvFile = r.survivor_cv_path.replace(/^.*[\/\\]/, '');
+                html += detailRow('CV الناجي', `<a href="/uploads/cvs/${cvFile}" target="_blank" style="color:var(--accent);">تحميل ملف PDF</a>`);
+            } else if (r.survivor_cv_text) {
+                html += detailRow('CV الناجي', '<span style="color:var(--green);">نص مكتوب</span>');
+                html += `<div style="padding:8px 16px;margin:4px 0;background:var(--bg-card);border-radius:8px;font-size:0.85em;color:var(--text-dim);border-right:3px solid var(--accent);white-space:pre-wrap;">${esc(r.survivor_cv_text)}</div>`;
+                if (r.survivor_cv_photo_path) {
+                    const cvPhotoFile = r.survivor_cv_photo_path.replace(/^.*[\/\\]/, '');
+                    html += `<div style="margin:4px 0;"><a href="/uploads/cv_photos/${cvPhotoFile}" target="_blank" style="color:var(--accent);">عرض صورة CV</a></div>`;
+                }
+            }
         } else {
             html += detailRow('المعيل', esc(r.breadwinner));
             const bwRelDisplay = r.breadwinner_relation === 'أخرى' && r.breadwinner_relation_other
@@ -1575,6 +1609,33 @@ async function editRecord(id) {
                 <div class="filter-group">
                     <label>السنة</label>
                     <select name="releaseYear">${buildDateOptions('year', r.release_year)}</select>
+                </div>
+            </div>
+            <div id="edit_survivor_cv_box" style="display:${r.status==='survivor'?'block':'none'}; margin-top:8px;">
+                <div class="filter-group">
+                    <label style="font-weight:700;">CV الناجي</label>
+                    ${r.survivor_cv_path ? `<div style="margin:6px 0; display:flex; align-items:center; gap:8px;">
+                        <a href="/uploads/cvs/${(r.survivor_cv_path||'').replace(/^.*[\\/\\\\]/, '')}" target="_blank" style="color:var(--accent);font-size:0.85em;">عرض CV الحالي (PDF)</a>
+                        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.82em;color:var(--red);font-weight:600;">
+                            <input type="checkbox" name="deleteSurvivorCv" value="yes" style="accent-color:#ef4444;"> حذف
+                        </label>
+                    </div>` : ''}
+                    <input type="file" name="survivorCv" accept=".pdf" style="padding:8px; background:var(--bg-input); border:2px solid var(--border); border-radius:10px; color:var(--text);">
+                    <span style="font-size:0.75em;color:var(--text-dim);">ارفق ملف PDF للسيرة الذاتية</span>
+                </div>
+                <div class="filter-group" style="margin-top:8px;">
+                    <label>أو اكتب السيرة الذاتية نصياً</label>
+                    <textarea name="survivorCvText" rows="3" style="background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:10px;">${esc(r.survivor_cv_text||'')}</textarea>
+                </div>
+                <div class="filter-group" style="margin-top:8px;">
+                    <label>صورة مرفقة مع CV النصي ${r.survivor_cv_photo_path ? '(يوجد صورة حالية)' : ''}</label>
+                    ${r.survivor_cv_photo_path ? `<div style="margin:6px 0; display:flex; align-items:center; gap:8px;">
+                        <img src="/uploads/cv_photos/${(r.survivor_cv_photo_path||'').replace(/^.*[\\/\\\\]/, '')}" style="width:60px;height:60px;border-radius:10px;object-fit:cover;border:2px solid var(--border);" onerror="this.style.display='none';">
+                        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.82em;color:var(--red);font-weight:600;">
+                            <input type="checkbox" name="deleteSurvivorCvPhoto" value="yes" style="accent-color:#ef4444;"> حذف الصورة
+                        </label>
+                    </div>` : ''}
+                    <input type="file" name="survivorCvPhoto" accept="image/*" style="padding:8px; background:var(--bg-input); border:2px solid var(--border); border-radius:10px; color:var(--text);">
                 </div>
             </div>
             <div class="adv-grid" id="edit_death_box" style="display:${r.status==='deceased'?'flex':'none'}">
@@ -1865,6 +1926,7 @@ function toggleEditEdu() {
 function toggleEditStatus() {
     const v = document.getElementById('edit_status').value;
     document.getElementById('edit_release_box').style.display = (v === 'survivor') ? 'flex' : 'none';
+    document.getElementById('edit_survivor_cv_box').style.display = (v === 'survivor') ? 'block' : 'none';
     document.getElementById('edit_death_box').style.display = (v === 'deceased') ? 'flex' : 'none';
 }
 
@@ -1902,6 +1964,10 @@ async function saveEdit(e) {
     if (photoFile && photoFile.size === 0) formData.delete('photo');
     const docFile = formData.get('document');
     if (docFile && docFile.size === 0) formData.delete('document');
+    const sCvFile = formData.get('survivorCv');
+    if (sCvFile && sCvFile.size === 0) formData.delete('survivorCv');
+    const sCvPhotoFile = formData.get('survivorCvPhoto');
+    if (sCvPhotoFile && sCvPhotoFile.size === 0) formData.delete('survivorCvPhoto');
 
     try {
         const res = await fetch('/api/records/' + currentRecordId, {
