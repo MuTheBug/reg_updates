@@ -176,10 +176,11 @@ app.get('/api/logout', (req, res) => {
     res.redirect('/login');
 });
 
-function collectChildrenData(body, prefix, filesMap) {
+function collectChildrenData(body, prefix, filesMap, existingChildren) {
     const children = [];
     let under18Count = 0;
     const currentYear = new Date().getFullYear();
+    const existing = existingChildren || [];
     for (let i = 1; i <= 20; i++) {
         const key = `cName_${prefix}_${i}`;
         if (body[key]) {
@@ -187,6 +188,7 @@ function collectChildrenData(body, prefix, filesMap) {
             const birthYear = parseInt(birthYearVal);
             if (!isNaN(birthYear) && (currentYear - birthYear) < 18) under18Count++;
             const uid = `${prefix}_${i}`;
+            const oldChild = existing[i - 1] || {};
             children.push({
                 name: body[key],
                 gender: body[`cGender_${uid}`] || '',
@@ -199,9 +201,9 @@ function collectChildrenData(body, prefix, filesMap) {
                 healthStatus: body[`cHP_${uid}`] || '',
                 healthDetails: body[`cHPD_${uid}`] || '',
                 diseases: body[`cDiseases_${uid}`] ? JSON.parse(body[`cDiseases_${uid}`]) : [],
-                cv_path: (filesMap && filesMap[`cv_${uid}`]) || '',
+                cv_path: (filesMap && filesMap[`cv_${uid}`]) || oldChild.cv_path || '',
                 cv_text: body[`cCvText_${uid}`] || '',
-                cv_photo_path: (filesMap && filesMap[`cvPhoto_${uid}`]) || ''
+                cv_photo_path: (filesMap && filesMap[`cvPhoto_${uid}`]) || oldChild.cv_photo_path || ''
             });
         }
     }
@@ -805,9 +807,28 @@ app.put('/api/records/:id', authMiddleware, upload.any(), (req, res) => {
         }
 
         if (b.kidsBox_present === 'true') {
-            const { data, under18Count } = collectChildrenData(b, 'kidsBox', filesMap);
+            let existingC1 = [];
+            try { existingC1 = JSON.parse(old.children_data || '[]'); } catch(e) {}
+            const { data, under18Count: u1 } = collectChildrenData(b, 'kidsBox', filesMap, existingC1);
+            const u2existing = b.kidsBoxW_present === 'true' ? 0 : (() => {
+                try { const cw = JSON.parse(old.children_data_w || '[]'); const cy = new Date().getFullYear(); return cw.filter(c => { const by = parseInt(c.birthYear); return !isNaN(by) && (cy - by) < 18; }).length; } catch(e) { return 0; }
+            })();
             sets.push('children_data = ?', 'kids_under_18_count = ?');
-            vals.push(data ? JSON.stringify(data) : null, under18Count);
+            vals.push(data ? JSON.stringify(data) : null, u1 + u2existing);
+        }
+        if (b.kidsBoxW_present === 'true') {
+            let existingC2 = [];
+            try { existingC2 = JSON.parse(old.children_data_w || '[]'); } catch(e) {}
+            const { data, under18Count: u2 } = collectChildrenData(b, 'kidsBoxW', filesMap, existingC2);
+            const u1existing = b.kidsBox_present === 'true' ? 0 : (() => {
+                try { const c1 = JSON.parse(old.children_data || '[]'); const cy = new Date().getFullYear(); return c1.filter(c => { const by = parseInt(c.birthYear); return !isNaN(by) && (cy - by) < 18; }).length; } catch(e) { return 0; }
+            })();
+            sets.push('children_data_w = ?');
+            vals.push(data ? JSON.stringify(data) : null);
+            if (b.kidsBox_present !== 'true') {
+                sets.push('kids_under_18_count = ?');
+                vals.push(u1existing + u2);
+            }
         }
         if (b.legal_present === 'true') {
             sets.push('legal_details = ?');

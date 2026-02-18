@@ -1699,7 +1699,10 @@ async function editRecord(id) {
                         <option value="no" ${r.has_kids==='no'?'selected':''}>لا</option>
                     </select>
                 </div>
-                <div class="filter-group"><label>عدد الأولاد (من الزواج الحالي)</label><input type="number" name="kidsCount" value="${r.kids_count||0}" min="0"></div>
+                <div class="filter-group">
+                    <label>عدد الأولاد (من الزواج الحالي)</label>
+                    <input type="number" id="edit_kidsCount" name="kidsCount" value="${r.kids_count||0}" min="0" onchange="buildEditKids('edit_kidsBox', this.value, editChildrenData)">
+                </div>
                 <div class="filter-group">
                     <label>هل لديه أولاد من زواج سابق؟</label>
                     <select name="hasKidsW">
@@ -1708,19 +1711,15 @@ async function editRecord(id) {
                         <option value="no" ${r.has_kids_w==='no'?'selected':''}>لا</option>
                     </select>
                 </div>
-                <div class="filter-group"><label>عدد الأولاد (من زواج سابق)</label><input type="number" name="kidsCountW" value="${r.kids_count_w||0}" min="0"></div>
+                <div class="filter-group">
+                    <label>عدد الأولاد (من زواج سابق)</label>
+                    <input type="number" id="edit_kidsCountW" name="kidsCountW" value="${r.kids_count_w||0}" min="0" onchange="buildEditKids('edit_kidsBoxW', this.value, editChildrenDataW)">
+                </div>
             </div>
-            <div class="adv-grid">
-                <div class="filter-group"><label>عدد الأولاد تحت 18</label><input type="number" name="kids_under_18_count" value="${r.kids_under_18_count||0}" min="0"></div>
-            </div>
-            <div class="filter-group">
-                <label>بيانات الأطفال (JSON)</label>
-                <textarea name="children_data" rows="4" style="font-family:monospace; font-size:0.85em; background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:12px; direction:ltr; text-align:left;">${esc(r.children_data||'')}</textarea>
-            </div>
-            <div class="filter-group">
-                <label>بيانات أطفال الزواج السابق (JSON)</label>
-                <textarea name="children_data_w" rows="4" style="font-family:monospace; font-size:0.85em; background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:12px; direction:ltr; text-align:left;">${esc(r.children_data_w||'')}</textarea>
-            </div>
+            <input type="hidden" name="kidsBox_present" value="true">
+            <input type="hidden" name="kidsBoxW_present" value="true">
+            <div id="edit_kidsBox"></div>
+            <div id="edit_kidsBoxW" style="margin-top:10px;"></div>
 
             <div class="detail-section-title">السكن والعنوان</div>
             <div class="adv-grid">
@@ -1914,6 +1913,21 @@ async function editRecord(id) {
 
         document.getElementById('modalBody').innerHTML = html;
         document.getElementById('detailModal').classList.add('show');
+
+        // Build interactive children cards
+        try { editChildrenData = JSON.parse(r.children_data || '[]'); } catch(e) { editChildrenData = []; }
+        try { editChildrenDataW = JSON.parse(r.children_data_w || '[]'); } catch(e) { editChildrenDataW = []; }
+        editChildDiseases = {};
+        const kc = parseInt(r.kids_count) || editChildrenData.length || 0;
+        const kcw = parseInt(r.kids_count_w) || editChildrenDataW.length || 0;
+        if (kc > 0) {
+            document.getElementById('edit_kidsCount').value = kc;
+            buildEditKids('edit_kidsBox', kc, editChildrenData);
+        }
+        if (kcw > 0) {
+            document.getElementById('edit_kidsCountW').value = kcw;
+            buildEditKids('edit_kidsBoxW', kcw, editChildrenDataW);
+        }
     } catch (e) { console.error(e); alert('خطأ في تحميل السجل'); }
 }
 
@@ -1942,6 +1956,172 @@ function toggleEditHousing() {
     document.getElementById('edit_rent_box').style.display = (v === 'إيجار') ? 'block' : 'none';
 }
 
+// ══════════════ INTERACTIVE CHILDREN EDITOR ══════════════
+let editChildrenData = [];
+let editChildrenDataW = [];
+let editChildDiseases = {};
+
+function buildEditKids(boxId, count, existingData) {
+    const box = document.getElementById(boxId);
+    if (!box) return;
+    box.innerHTML = '';
+    const n = parseInt(count) || 0;
+    if (n === 0) return;
+    const prefix = boxId === 'edit_kidsBox' ? 'kidsBox' : 'kidsBoxW';
+    const label = boxId === 'edit_kidsBox' ? 'الأولاد' : 'الأولاد من زواج سابق';
+    const eduOptions = ['أمي', 'ابتدائية', 'إعدادية', 'ثانوية', 'معهد', 'بكالوريوس', 'ماجستير', 'دكتوراه'];
+    const eduTypeOptions = ['علمي','ادبي','شريعة','صناعة وفنون','تجارة','معلوماتية'];
+    const currentYear = new Date().getFullYear();
+    let yearOpts = '<option value="">-- السنة --</option>';
+    for (let y = currentYear; y >= 1940; y--) yearOpts += `<option value="${y}">${y}</option>`;
+
+    let cardsHtml = `<div style="margin-top:10px;font-weight:700;color:var(--accent);font-size:0.9em;margin-bottom:6px;">${label} (${n}):</div>`;
+    for (let i = 1; i <= n; i++) {
+        const uid = `${prefix}_${i}`;
+        const c = (existingData && existingData[i-1]) || {};
+        const hasCvPdf = !!c.cv_path;
+        const hasCvText = !!c.cv_text;
+        editChildDiseases[uid] = (c.diseases && Array.isArray(c.diseases)) ? [...c.diseases] : [];
+
+        cardsHtml += `<div style="background:var(--bg-input);border-radius:12px;padding:12px;margin:6px 0;border-right:3px solid var(--accent);">
+            <div style="font-weight:700;color:var(--accent);font-size:0.88em;margin-bottom:8px;">ولد ${i}</div>
+            <div class="adv-grid">
+                <div class="filter-group"><label>الاسم</label><input name="cName_${uid}" value="${esc(c.name||'')}"></div>
+                <div class="filter-group">
+                    <label>الجنس</label>
+                    <select name="cGender_${uid}">
+                        <option value="">-- اختر --</option>
+                        <option value="male" ${c.gender==='male'?'selected':''}>ذكر</option>
+                        <option value="female" ${c.gender==='female'?'selected':''}>أنثى</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>سنة الميلاد</label>
+                    <select name="cBirthYear_${uid}">${yearOpts.replace(`value="${c.birthYear||''}"`, `value="${c.birthYear||''}" selected`)}</select>
+                </div>
+                <div class="filter-group">
+                    <label>التحصيل العلمي</label>
+                    <select name="cEdu_${uid}" onchange="toggleEditChildEdu(this, '${uid}')">
+                        <option value="">-- اختر --</option>
+                        ${eduOptions.map(opt => `<option ${c.education===opt?'selected':''}>${opt}</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+            <div class="adv-grid" id="eChildEduTypeBox_${uid}" style="display:${c.education==='ثانوية'?'flex':'none'}">
+                <div class="filter-group">
+                    <label>نوع الثانوية</label>
+                    <select name="cEduType_${uid}">
+                        <option value="">-- اختر --</option>
+                        ${eduTypeOptions.map(et => `<option ${c.eduType===et?'selected':''}>${et}</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+            <div class="adv-grid" id="eChildHigherBox_${uid}" style="display:${['معهد','بكالوريوس','ماجستير','دكتوراه'].includes(c.education)?'flex':'none'}">
+                <div class="filter-group"><label>الاختصاص</label><input name="cSpec_${uid}" value="${esc(c.specialization||'')}"></div>
+                <div class="filter-group"><label>الجامعة</label><input name="cUniv_${uid}" value="${esc(c.university||'')}"></div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group"><label>المهنة</label><input name="cJob_${uid}" value="${esc(c.job||'')}"></div>
+                <div class="filter-group">
+                    <label>الحالة الصحية</label>
+                    <select name="cHP_${uid}" onchange="toggleEditChildHP(this, '${uid}')">
+                        <option value="">-- اختر --</option>
+                        <option value="healthy" ${c.healthStatus==='healthy'?'selected':''}>سليم</option>
+                        <option value="sick" ${c.healthStatus==='sick'?'selected':''}>مريض</option>
+                        <option value="special" ${c.healthStatus==='special'?'selected':''}>ذوي احتياجات خاصة</option>
+                    </select>
+                </div>
+            </div>
+            <div id="eChildSickBox_${uid}" style="display:${c.healthStatus==='sick'?'block':'none'}; margin-top:6px;">
+                <label style="font-weight:600;font-size:0.82em;color:var(--text-label);">الأمراض:</label>
+                <div id="eChildDiseasesTags_${uid}" style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0;"></div>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <input type="text" id="eChildDiseaseInp_${uid}" placeholder="اكتب اسم المرض..."
+                           style="flex:1;padding:6px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.82em;"
+                           onkeypress="if(event.key==='Enter'){event.preventDefault();addEditChildDisease('${uid}');}">
+                    <button type="button" onclick="addEditChildDisease('${uid}')" style="padding:4px 10px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.82em;">+ إضافة</button>
+                </div>
+                <input type="hidden" name="cDiseases_${uid}" id="eChildDiseasesVal_${uid}">
+            </div>
+            <div id="eChildSpecialBox_${uid}" style="display:${c.healthStatus==='special'?'block':'none'}; margin-top:6px;">
+                <label style="font-size:0.82em;">شرح الحالة</label>
+                <textarea name="cHPD_${uid}" rows="2" style="width:100%;background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:0.82em;">${esc(c.healthDetails||'')}</textarea>
+            </div>
+            <div style="margin-top:8px; border-top:1px dashed var(--border); padding-top:8px;">
+                <label style="font-weight:600;font-size:0.82em;color:var(--accent);">السيرة الذاتية (CV)</label>
+                ${hasCvPdf ? `<div style="margin:4px 0;font-size:0.82em;"><a href="/uploads/cvs/${c.cv_path}" target="_blank" style="color:var(--accent);">CV حالي (PDF)</a></div>` : ''}
+                ${hasCvText ? `<div style="margin:4px 0;font-size:0.82em;color:var(--green);">يوجد CV نصي حالي</div>` : ''}
+                <div style="margin-top:4px;">
+                    <label style="font-size:0.78em;color:var(--text-dim);">رفع CV جديد (PDF):</label>
+                    <input type="file" name="cv_${uid}" accept=".pdf" style="padding:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.8em;width:100%;">
+                </div>
+                <div style="margin-top:4px;">
+                    <label style="font-size:0.78em;color:var(--text-dim);">أو اكتب CV نصي:</label>
+                    <textarea name="cCvText_${uid}" rows="2" style="width:100%;background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px;font-size:0.82em;">${esc(c.cv_text||'')}</textarea>
+                </div>
+                <div style="margin-top:4px;">
+                    <label style="font-size:0.78em;color:var(--text-dim);">صورة مع CV النصي:${c.cv_photo_path ? ' (يوجد صورة حالية)' : ''}</label>
+                    <input type="file" name="cvPhoto_${uid}" accept="image/*" style="padding:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.8em;width:100%;">
+                </div>
+            </div>
+        </div>`;
+    }
+    box.innerHTML = cardsHtml;
+    // Render disease tags for each child
+    for (let i = 1; i <= n; i++) {
+        const uid = `${prefix}_${i}`;
+        renderEditChildDiseases(uid);
+    }
+}
+
+function toggleEditChildEdu(sel, uid) {
+    const v = sel.value;
+    const typeBox = document.getElementById(`eChildEduTypeBox_${uid}`);
+    const higherBox = document.getElementById(`eChildHigherBox_${uid}`);
+    if (typeBox) typeBox.style.display = (v === 'ثانوية') ? 'flex' : 'none';
+    if (higherBox) higherBox.style.display = (['معهد','بكالوريوس','ماجستير','دكتوراه'].includes(v)) ? 'flex' : 'none';
+}
+
+function toggleEditChildHP(sel, uid) {
+    const v = sel.value;
+    const sickBox = document.getElementById(`eChildSickBox_${uid}`);
+    const specialBox = document.getElementById(`eChildSpecialBox_${uid}`);
+    if (sickBox) sickBox.style.display = (v === 'sick') ? 'block' : 'none';
+    if (specialBox) specialBox.style.display = (v === 'special') ? 'block' : 'none';
+}
+
+function renderEditChildDiseases(uid) {
+    const container = document.getElementById(`eChildDiseasesTags_${uid}`);
+    const hidden = document.getElementById(`eChildDiseasesVal_${uid}`);
+    if (!container || !hidden) return;
+    const diseases = editChildDiseases[uid] || [];
+    container.innerHTML = diseases.map((d, i) =>
+        `<span style="background:var(--red);color:#fff;padding:2px 8px;border-radius:12px;font-size:0.78em;display:inline-flex;align-items:center;gap:4px;">
+            ${esc(d)} <span onclick="removeEditChildDisease('${uid}',${i})" style="cursor:pointer;font-weight:700;">&times;</span>
+        </span>`
+    ).join('');
+    hidden.value = JSON.stringify(diseases);
+}
+
+function addEditChildDisease(uid) {
+    const inp = document.getElementById(`eChildDiseaseInp_${uid}`);
+    if (!inp) return;
+    const val = inp.value.trim();
+    if (!val) return;
+    if (!editChildDiseases[uid]) editChildDiseases[uid] = [];
+    if (!editChildDiseases[uid].includes(val)) {
+        editChildDiseases[uid].push(val);
+        renderEditChildDiseases(uid);
+    }
+    inp.value = '';
+}
+
+function removeEditChildDisease(uid, idx) {
+    if (!editChildDiseases[uid]) return;
+    editChildDiseases[uid].splice(idx, 1);
+    renderEditChildDiseases(uid);
+}
+
 async function saveEdit(e) {
     e.preventDefault();
     const formEl = e.target;
@@ -1968,6 +2148,13 @@ async function saveEdit(e) {
     if (sCvFile && sCvFile.size === 0) formData.delete('survivorCv');
     const sCvPhotoFile = formData.get('survivorCvPhoto');
     if (sCvPhotoFile && sCvPhotoFile.size === 0) formData.delete('survivorCvPhoto');
+
+    // Remove empty child CV file inputs
+    for (const [key, val] of [...formData.entries()]) {
+        if ((key.startsWith('cv_') || key.startsWith('cvPhoto_')) && val instanceof File && val.size === 0) {
+            formData.delete(key);
+        }
+    }
 
     try {
         const res = await fetch('/api/records/' + currentRecordId, {
