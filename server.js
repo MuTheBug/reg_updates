@@ -104,7 +104,18 @@ function initDbSchema() {
         { name: 'other_diseases', type: 'TEXT' },
         { name: 'is_officially_registered', type: 'INTEGER' },
         { name: 'has_special_needs', type: 'INTEGER' },
-        { name: 'special_needs_details', type: 'TEXT' }
+        { name: 'special_needs_details', type: 'TEXT' },
+        // Berkeley Protocol fields
+        { name: 'bp_collector_name', type: 'TEXT' },
+        { name: 'bp_collection_date', type: 'TEXT' },
+        { name: 'bp_collection_method', type: 'TEXT' },
+        { name: 'bp_source_type', type: 'TEXT' },
+        { name: 'bp_source_reliability', type: 'TEXT' },
+        { name: 'bp_corroboration_status', type: 'TEXT' },
+        { name: 'bp_corroboration_sources', type: 'INTEGER' },
+        { name: 'bp_consent_obtained', type: 'TEXT' },
+        { name: 'bp_confidentiality_level', type: 'TEXT' },
+        { name: 'bp_verification_notes', type: 'TEXT' }
     ];
     for (const col of columnsToAdd) {
         try { db.exec(`ALTER TABLE records ADD COLUMN ${col.name} ${col.type}`); } catch (err) {}
@@ -187,6 +198,19 @@ function collectChildrenData(body, prefix) {
         }
     }
     return { data: children.length > 0 ? children : null, under18Count };
+}
+
+// Berkeley Protocol compliance helpers
+const BP_REQUIRED_FIELDS = [
+    'bp_collector_name', 'bp_collection_method', 'bp_source_type',
+    'bp_source_reliability', 'bp_corroboration_status',
+    'bp_consent_obtained', 'bp_confidentiality_level'
+];
+const BP_NONCOMPLIANT_SQL = BP_REQUIRED_FIELDS.map(f => `(${f} IS NULL OR ${f} = '')`).join(' OR ');
+const BP_COMPLIANT_SQL = BP_REQUIRED_FIELDS.map(f => `(${f} IS NOT NULL AND ${f} != '')`).join(' AND ');
+
+function isBpCompliant(r) {
+    return BP_REQUIRED_FIELDS.every(f => r[f]);
 }
 
 function collectLegalData(body) {
@@ -308,9 +332,17 @@ app.get('/api/records', authMiddleware, (req, res) => {
             params.push(req.query.survivedInPlace);
         }
 
+        const bpCompliant = req.query.bpCompliant || '';
+        if (bpCompliant === 'no') {
+            where += ` AND (${BP_NONCOMPLIANT_SQL})`;
+        } else if (bpCompliant === 'yes') {
+            where += ` AND (${BP_COMPLIANT_SQL})`;
+        }
+
         const total = db.prepare(`SELECT COUNT(*) as count FROM records ${where}`).get(...params).count;
         const records = db.prepare(`SELECT * FROM records ${where} ORDER BY id DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
-        res.json({ records, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
+        const enriched = records.map(r => ({ ...r, bp_compliant: isBpCompliant(r) }));
+        res.json({ records: enriched, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -353,7 +385,13 @@ app.put('/api/records/:id', authMiddleware, upload.fields([{ name: 'photo' }, { 
             assoc:'assoc', assocName:'assoc_name', serviceType:'service_type', notes:'notes',
             rentAmount:'rent_amount', hasHypertension:'has_hypertension', hasDiabetes:'has_diabetes',
             otherDiseases:'other_diseases', isOfficiallyRegistered:'is_officially_registered',
-            hasSpecialNeeds:'has_special_needs', specialNeedsDetails:'special_needs_details'
+            hasSpecialNeeds:'has_special_needs', specialNeedsDetails:'special_needs_details',
+            // Berkeley Protocol fields
+            bpCollectorName:'bp_collector_name', bpCollectionDate:'bp_collection_date',
+            bpCollectionMethod:'bp_collection_method', bpSourceType:'bp_source_type',
+            bpSourceReliability:'bp_source_reliability', bpCorroborationStatus:'bp_corroboration_status',
+            bpCorroborationSources:'bp_corroboration_sources', bpConsentObtained:'bp_consent_obtained',
+            bpConfidentialityLevel:'bp_confidentiality_level', bpVerificationNotes:'bp_verification_notes'
         };
 
         const sets = [];
@@ -409,7 +447,8 @@ app.get('/api/stats', authMiddleware, (req, res) => {
     const enforced = db.prepare("SELECT COUNT(*) as count FROM records WHERE status = 'enforced'").get().count;
     const survivors = db.prepare("SELECT COUNT(*) as count FROM records WHERE status = 'survivor'").get().count;
     const deceased = db.prepare("SELECT COUNT(*) as count FROM records WHERE status = 'deceased'").get().count;
-    res.json({ total, enforced, survivors, deceased });
+    const nonCompliant = db.prepare(`SELECT COUNT(*) as count FROM records WHERE (${BP_NONCOMPLIANT_SQL})`).get().count;
+    res.json({ total, enforced, survivors, deceased, nonCompliant });
 });
 
 app.get('/api/export', authMiddleware, (req, res) => {

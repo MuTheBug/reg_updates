@@ -102,7 +102,7 @@
 
         /* Stats */
         .stats-grid {
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px;
         }
         .stat-card {
             background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
@@ -193,7 +193,7 @@
             overflow: hidden;
         }
         .table-scroll { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1050px; }
         thead th {
             background: rgba(6, 182, 212, 0.06); padding: 14px 16px;
             text-align: right; font-weight: 700; font-size: 0.88em;
@@ -214,6 +214,28 @@
         .badge-enforced { background: var(--amber-glow); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
         .badge-survivor { background: var(--green-glow); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
         .badge-deceased { background: var(--red-glow); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+        .badge-bp-compliant { background: var(--green-glow); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+        .badge-bp-noncompliant {
+            background: var(--red-glow); color: var(--red); border: 1px solid rgba(239,68,68,0.5);
+            cursor: pointer; animation: bpPulse 2.5s ease-in-out infinite;
+        }
+        .badge-bp-noncompliant:hover { background: rgba(239,68,68,0.25); }
+        @keyframes bpPulse {
+            0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+            50% { box-shadow: 0 0 0 4px rgba(239,68,68,0.2); }
+        }
+        .stat-bp .stat-number { color: var(--red); }
+        .bp-section {
+            background: rgba(6,182,212,0.04); border: 2px solid rgba(6,182,212,0.25);
+            border-radius: 12px; padding: 16px; margin-top: 4px;
+        }
+        .bp-section-title {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .bp-badge-inline {
+            display: inline-block; padding: 2px 8px; border-radius: 6px;
+            font-size: 0.78em; font-weight: 700; vertical-align: middle; margin-right: 4px;
+        }
 
         .photo-thumb {
             width: 40px; height: 40px; border-radius: 10px; object-fit: cover;
@@ -374,7 +396,7 @@
 
         /* Responsive */
         @media (max-width: 768px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .stats-grid { grid-template-columns: repeat(3, 1fr); }
             .filter-bar { flex-direction: column; }
             .filter-group, .filter-group.fg-wide, .filter-group.fg-narrow { min-width: auto; flex: auto; }
             .header-inner { padding: 10px 14px; gap: 12px; }
@@ -386,6 +408,7 @@
 
         @media (max-width: 480px) {
             .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .stat-bp { grid-column: span 2; }
             .stat-card { padding: 14px; }
             .stat-number { font-size: 1.6em; }
         }
@@ -441,6 +464,10 @@
         <div class="stat-card stat-deceased">
             <div class="stat-number" id="statDeceased">-</div>
             <div class="stat-label">متوفى</div>
+        </div>
+        <div class="stat-card stat-bp" style="cursor:pointer;" onclick="filterByBpCompliance('no')" title="اضغط لعرض السجلات غير المطابقة">
+            <div class="stat-number" id="statNonCompliant">-</div>
+            <div class="stat-label">غير مطابق لبروتوكول بيركلي</div>
         </div>
     </div>
 
@@ -595,6 +622,14 @@
                     <option value="السجن المدني">السجن المدني</option>
                 </select>
             </div>
+            <div class="filter-group" style="border-right:3px solid rgba(6,182,212,0.4); padding-right:12px;">
+                <label style="color:var(--accent);">مطابقة بروتوكول بيركلي</label>
+                <select id="bpCompliantFilter">
+                    <option value="">الكل</option>
+                    <option value="no">غير مطابق فقط</option>
+                    <option value="yes">مطابق فقط</option>
+                </select>
+            </div>
         </div>
         <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
             <button class="filter-btn" onclick="loadRecords()">تطبيق التصفية</button>
@@ -624,12 +659,13 @@
                         <th>المحافظة</th>
                         <th>الرقم الوطني</th>
                         <th>الحالة</th>
+                        <th style="color:var(--accent);">بروتوكول بيركلي</th>
                         <th>تاريخ التسجيل</th>
                         <th>إجراءات</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="8"><div class="empty-state"><div class="icon">📂</div><p>جاري التحميل...</p></div></td></tr>
+                    <tr><td colspan="9"><div class="empty-state"><div class="icon">📂</div><p>جاري التحميل...</p></div></td></tr>
                 </tbody>
             </table>
         </div>
@@ -678,7 +714,19 @@ async function loadStats() {
         document.getElementById('statEnforced').textContent = s.enforced;
         document.getElementById('statSurvivors').textContent = s.survivors;
         document.getElementById('statDeceased').textContent = s.deceased;
+        document.getElementById('statNonCompliant').textContent = s.nonCompliant;
     } catch (e) { console.error('Stats error:', e); }
+}
+
+function filterByBpCompliance(val) {
+    document.getElementById('bpCompliantFilter').value = val;
+    const panel = document.getElementById('advPanel');
+    const arrow = document.getElementById('advArrow');
+    if (!panel.classList.contains('show')) {
+        panel.classList.add('show');
+        arrow.classList.add('open');
+    }
+    loadRecords(1);
 }
 
 // ══════════════ LOAD RECORDS ══════════════
@@ -720,9 +768,11 @@ async function loadRecords(page) {
     const noDocs = document.getElementById('noDocsFilter').value;
     const diedInPlace = document.getElementById('diedInPlaceFilter').value;
     const survivedInPlace = document.getElementById('survivedInPlaceFilter').value;
+    const bpCompliant = document.getElementById('bpCompliantFilter').value;
     if (noDocs) params.set('noDocs', noDocs);
     if (diedInPlace) params.set('diedInPlace', diedInPlace);
     if (survivedInPlace) params.set('survivedInPlace', survivedInPlace);
+    if (bpCompliant) params.set('bpCompliant', bpCompliant);
 
     try {
         const res = await fetch('/api/records?' + params);
@@ -731,7 +781,7 @@ async function loadRecords(page) {
         renderPagination(data.pagination);
     } catch (e) {
         document.getElementById('tableBody').innerHTML =
-            '<tr><td colspan="8"><div class="empty-state"><div class="icon">⚠️</div><p>خطأ في الاتصال بالخادم</p></div></td></tr>';
+            '<tr><td colspan="9"><div class="empty-state"><div class="icon">⚠️</div><p>خطأ في الاتصال بالخادم</p></div></td></tr>';
     }
 }
 
@@ -766,10 +816,17 @@ function detailRow(label, value) {
 }
 
 // ══════════════ RENDER TABLE ══════════════
+function bpComplianceCell(r) {
+    if (r.bp_compliant) {
+        return `<span class="status-badge badge-bp-compliant" title="مطابق لبروتوكول بيركلي للتوثيق">✓ مطابق</span>`;
+    }
+    return `<span class="status-badge badge-bp-noncompliant" onclick="editRecord(${r.id})" title="غير مطابق — اضغط لتحديث بيانات البروتوكول">⚠ غير مطابق</span>`;
+}
+
 function renderTable(records) {
     const tbody = document.getElementById('tableBody');
     if (!records.length) {
-        tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="icon">📭</div><p>لا توجد سجلات</p></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="icon">📭</div><p>لا توجد سجلات</p></div></td></tr>';
         return;
     }
     tbody.innerHTML = records.map(r => {
@@ -784,6 +841,7 @@ function renderTable(records) {
             <td>${r.province || '—'}</td>
             <td style="font-family:monospace;direction:ltr;text-align:right;">${r.national_id || '—'}</td>
             <td>${statusLabel(r.status)}</td>
+            <td>${bpComplianceCell(r)}</td>
             <td style="color:var(--text-dim);font-size:0.85em;">${r.created_at || '—'}</td>
             <td>
                 <div class="action-btns">
@@ -979,6 +1037,35 @@ async function viewRecord(id) {
             html += `<div class="detail-section-title">ملاحظات</div>`;
             html += detailRow('', r.notes);
         }
+
+        // Berkeley Protocol section
+        const bpMethodLabels = { interview:'مقابلة شخصية', phone_interview:'مقابلة هاتفية', documentary:'مستندات ووثائق', witness_testimony:'شهادة شاهد', official_record:'سجلات رسمية', other:'أخرى' };
+        const bpSourceTypeLabels = { primary_witness:'شاهد مباشر (أولي)', secondary_source:'مصدر ثانوي', documentary:'وثائق', official_record:'سجلات رسمية', ngo:'منظمة غير حكومية' };
+        const bpReliabilityLabels = { A:'أ - موثوق جداً', B:'ب - موثوق عادةً', C:'ج - موثوق نسبياً', D:'د - غير موثوق عادةً', E:'هـ - غير موثوق', F:'و - لا يمكن التقييم' };
+        const bpCorroborationLabels = { corroborated:'محقق', partially_corroborated:'محقق جزئياً', uncorroborated:'غير محقق', pending:'قيد التحقق' };
+        const bpConsentLabels = { yes:'نعم - تم الحصول على الموافقة', no:'لا', not_applicable:'لا ينطبق' };
+        const bpConfidentialityLabels = { public:'عام', restricted:'مقيد', confidential:'سري' };
+
+        const bpOk = r.bp_collector_name && r.bp_collection_method && r.bp_source_type && r.bp_source_reliability && r.bp_corroboration_status && r.bp_consent_obtained && r.bp_confidentiality_level;
+        const bpStatusHtml = bpOk
+            ? `<span class="bp-badge-inline badge-bp-compliant">✓ مطابق</span>`
+            : `<span class="bp-badge-inline badge-bp-noncompliant">⚠ غير مطابق</span>`;
+        html += `<div class="detail-section-title">بروتوكول بيركلي للتوثيق ${bpStatusHtml}</div>`;
+        if (!bpOk) {
+            html += `<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px;margin-bottom:8px;font-size:0.9em;color:var(--red);">
+                هذا السجل غير مكتمل وفق معايير بروتوكول بيركلي للتوثيق الرقمي. يُرجى تحديث الحقول المطلوبة عبر زر "تعديل".
+            </div>`;
+        }
+        html += detailRow('اسم المسجّل', esc(r.bp_collector_name));
+        html += detailRow('تاريخ جمع المعلومات', esc(r.bp_collection_date));
+        html += detailRow('طريقة الجمع', bpMethodLabels[r.bp_collection_method] || esc(r.bp_collection_method));
+        html += detailRow('نوع المصدر', bpSourceTypeLabels[r.bp_source_type] || esc(r.bp_source_type));
+        html += detailRow('موثوقية المصدر', bpReliabilityLabels[r.bp_source_reliability] || esc(r.bp_source_reliability));
+        html += detailRow('حالة التحقق', bpCorroborationLabels[r.bp_corroboration_status] || esc(r.bp_corroboration_status));
+        if (r.bp_corroboration_sources) html += detailRow('عدد مصادر التحقق', r.bp_corroboration_sources);
+        html += detailRow('الموافقة المسبقة', bpConsentLabels[r.bp_consent_obtained] || esc(r.bp_consent_obtained));
+        html += detailRow('مستوى السرية', bpConfidentialityLabels[r.bp_confidentiality_level] || esc(r.bp_confidentiality_level));
+        if (r.bp_verification_notes) html += detailRow('ملاحظات التحقق', esc(r.bp_verification_notes));
 
         // Document viewer
         html += `<div class="detail-section-title">المرفقات</div>`;
@@ -1189,6 +1276,101 @@ async function editRecord(id) {
                 <div class="filter-group"><label>الجامعة</label><input name="eduUniversity" value="${esc(r.edu_university)}"></div>
             </div>
 
+            <div class="detail-section-title" style="color:var(--accent);">بروتوكول بيركلي للتوثيق
+                ${(r.bp_collector_name && r.bp_collection_method && r.bp_source_type && r.bp_source_reliability && r.bp_corroboration_status && r.bp_consent_obtained && r.bp_confidentiality_level)
+                    ? '<span class="bp-badge-inline badge-bp-compliant">✓ مطابق</span>'
+                    : '<span class="bp-badge-inline badge-bp-noncompliant">⚠ يُرجى استكمال الحقول المطلوبة (*)</span>'}
+            </div>
+            <div class="bp-section">
+                <div class="adv-grid">
+                    <div class="filter-group">
+                        <label>اسم المسجّل *</label>
+                        <input name="bpCollectorName" value="${esc(r.bp_collector_name||'')}" placeholder="الاسم الكامل للشخص الذي وثّق هذا السجل">
+                    </div>
+                    <div class="filter-group">
+                        <label>تاريخ جمع المعلومات</label>
+                        <input type="date" name="bpCollectionDate" value="${r.bp_collection_date||''}">
+                    </div>
+                </div>
+                <div class="adv-grid">
+                    <div class="filter-group">
+                        <label>طريقة الجمع *</label>
+                        <select name="bpCollectionMethod">
+                            <option value="">-- اختر --</option>
+                            <option value="interview" ${r.bp_collection_method==='interview'?'selected':''}>مقابلة شخصية</option>
+                            <option value="phone_interview" ${r.bp_collection_method==='phone_interview'?'selected':''}>مقابلة هاتفية</option>
+                            <option value="documentary" ${r.bp_collection_method==='documentary'?'selected':''}>مستندات ووثائق</option>
+                            <option value="witness_testimony" ${r.bp_collection_method==='witness_testimony'?'selected':''}>شهادة شاهد</option>
+                            <option value="official_record" ${r.bp_collection_method==='official_record'?'selected':''}>سجلات رسمية</option>
+                            <option value="other" ${r.bp_collection_method==='other'?'selected':''}>أخرى</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>نوع المصدر *</label>
+                        <select name="bpSourceType">
+                            <option value="">-- اختر --</option>
+                            <option value="primary_witness" ${r.bp_source_type==='primary_witness'?'selected':''}>شاهد مباشر (أولي)</option>
+                            <option value="secondary_source" ${r.bp_source_type==='secondary_source'?'selected':''}>مصدر ثانوي</option>
+                            <option value="documentary" ${r.bp_source_type==='documentary'?'selected':''}>وثائق</option>
+                            <option value="official_record" ${r.bp_source_type==='official_record'?'selected':''}>سجلات رسمية</option>
+                            <option value="ngo" ${r.bp_source_type==='ngo'?'selected':''}>منظمة غير حكومية</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>موثوقية المصدر *</label>
+                        <select name="bpSourceReliability">
+                            <option value="">-- اختر --</option>
+                            <option value="A" ${r.bp_source_reliability==='A'?'selected':''}>أ — موثوق جداً</option>
+                            <option value="B" ${r.bp_source_reliability==='B'?'selected':''}>ب — موثوق عادةً</option>
+                            <option value="C" ${r.bp_source_reliability==='C'?'selected':''}>ج — موثوق نسبياً</option>
+                            <option value="D" ${r.bp_source_reliability==='D'?'selected':''}>د — غير موثوق عادةً</option>
+                            <option value="E" ${r.bp_source_reliability==='E'?'selected':''}>هـ — غير موثوق</option>
+                            <option value="F" ${r.bp_source_reliability==='F'?'selected':''}>و — لا يمكن التقييم</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="adv-grid">
+                    <div class="filter-group">
+                        <label>حالة التحقق *</label>
+                        <select name="bpCorroborationStatus">
+                            <option value="">-- اختر --</option>
+                            <option value="corroborated" ${r.bp_corroboration_status==='corroborated'?'selected':''}>محقق من مصادر متعددة</option>
+                            <option value="partially_corroborated" ${r.bp_corroboration_status==='partially_corroborated'?'selected':''}>محقق جزئياً</option>
+                            <option value="uncorroborated" ${r.bp_corroboration_status==='uncorroborated'?'selected':''}>غير محقق</option>
+                            <option value="pending" ${r.bp_corroboration_status==='pending'?'selected':''}>قيد التحقق</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>عدد مصادر التحقق</label>
+                        <input type="number" name="bpCorroborationSources" value="${r.bp_corroboration_sources||''}" min="0" placeholder="0">
+                    </div>
+                </div>
+                <div class="adv-grid">
+                    <div class="filter-group">
+                        <label>الموافقة المسبقة *</label>
+                        <select name="bpConsentObtained">
+                            <option value="">-- اختر --</option>
+                            <option value="yes" ${r.bp_consent_obtained==='yes'?'selected':''}>نعم — تم الحصول على الموافقة</option>
+                            <option value="no" ${r.bp_consent_obtained==='no'?'selected':''}>لا</option>
+                            <option value="not_applicable" ${r.bp_consent_obtained==='not_applicable'?'selected':''}>لا ينطبق</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>مستوى السرية *</label>
+                        <select name="bpConfidentialityLevel">
+                            <option value="">-- اختر --</option>
+                            <option value="public" ${r.bp_confidentiality_level==='public'?'selected':''}>عام</option>
+                            <option value="restricted" ${r.bp_confidentiality_level==='restricted'?'selected':''}>مقيّد (للاستخدام الداخلي)</option>
+                            <option value="confidential" ${r.bp_confidentiality_level==='confidential'?'selected':''}>سري</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-group" style="margin-top:8px;">
+                    <label>ملاحظات التحقق والتوثيق</label>
+                    <textarea name="bpVerificationNotes" rows="3" style="background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:10px; width:100%; font-family:'Tajawal',sans-serif; font-size:0.9em;">${esc(r.bp_verification_notes||'')}</textarea>
+                </div>
+            </div>
+
             <div class="detail-section-title">بيانات متقدمة (JSON)</div>
             <div class="filter-group">
                 <label>بيانات الأطفال</label>
@@ -1292,6 +1474,7 @@ function resetFilters() {
     document.getElementById('noDocsFilter').value = '';
     document.getElementById('diedInPlaceFilter').value = '';
     document.getElementById('survivedInPlaceFilter').value = '';
+    document.getElementById('bpCompliantFilter').value = '';
     currentPage = 1;
     loadRecords();
 }
