@@ -305,9 +305,23 @@ app.get('/api/records', authMiddleware, (req, res) => {
         let where = 'WHERE 1=1';
         const params = [];
         if (search) {
-            where += ' AND (first_name LIKE ? OR last_name LIKE ? OR father_name LIKE ? OR national_id LIKE ? OR phone LIKE ? OR mother_name LIKE ?)';
-            const s = `%${search}%`;
-            params.push(s, s, s, s, s, s);
+            const words = search.trim().split(/\s+/).filter(Boolean);
+            if (words.length === 1) {
+                where += ' AND (first_name LIKE ? OR last_name LIKE ? OR father_name LIKE ? OR national_id LIKE ? OR phone LIKE ? OR mother_name LIKE ?)';
+                const s = `%${words[0]}%`;
+                params.push(s, s, s, s, s, s);
+            } else if (words.length === 2) {
+                where += ` AND (
+                    (first_name LIKE ? AND last_name LIKE ?)
+                    OR (first_name LIKE ? AND father_name LIKE ?)
+                    OR (father_name LIKE ? AND last_name LIKE ?)
+                    OR national_id LIKE ?
+                )`;
+                params.push(`%${words[0]}%`, `%${words[1]}%`, `%${words[0]}%`, `%${words[1]}%`, `%${words[0]}%`, `%${words[1]}%`, `%${search}%`);
+            } else {
+                where += ' AND (first_name LIKE ? AND father_name LIKE ? AND last_name LIKE ?)';
+                params.push(`%${words[0]}%`, `%${words[1]}%`, `%${words[2]}%`);
+            }
         }
         if (status) { where += ' AND status = ?'; params.push(status); }
         if (province) { where += ' AND province = ?'; params.push(province); }
@@ -552,9 +566,23 @@ app.get('/api/records-print', authMiddleware, (req, res) => {
         let where = 'WHERE 1=1';
         const params = [];
         if (search) {
-            where += ' AND (first_name LIKE ? OR last_name LIKE ? OR father_name LIKE ? OR national_id LIKE ? OR phone LIKE ? OR mother_name LIKE ?)';
-            const s = `%${search}%`;
-            params.push(s, s, s, s, s, s);
+            const words = search.trim().split(/\s+/).filter(Boolean);
+            if (words.length === 1) {
+                where += ' AND (first_name LIKE ? OR last_name LIKE ? OR father_name LIKE ? OR national_id LIKE ? OR phone LIKE ? OR mother_name LIKE ?)';
+                const s = `%${words[0]}%`;
+                params.push(s, s, s, s, s, s);
+            } else if (words.length === 2) {
+                where += ` AND (
+                    (first_name LIKE ? AND last_name LIKE ?)
+                    OR (first_name LIKE ? AND father_name LIKE ?)
+                    OR (father_name LIKE ? AND last_name LIKE ?)
+                    OR national_id LIKE ?
+                )`;
+                params.push(`%${words[0]}%`, `%${words[1]}%`, `%${words[0]}%`, `%${words[1]}%`, `%${words[0]}%`, `%${words[1]}%`, `%${search}%`);
+            } else {
+                where += ' AND (first_name LIKE ? AND father_name LIKE ? AND last_name LIKE ?)';
+                params.push(`%${words[0]}%`, `%${words[1]}%`, `%${words[2]}%`);
+            }
         }
         if (status) { where += ' AND status = ?'; params.push(status); }
         if (province) { where += ' AND province = ?'; params.push(province); }

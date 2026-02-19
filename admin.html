@@ -517,7 +517,7 @@
     <div class="filter-bar">
         <div class="filter-group fg-wide">
             <label>البحث</label>
-            <input type="text" id="searchInput" placeholder="ابحث بالاسم، اسم الأم، الرقم الوطني، الهاتف..." onkeypress="if(event.key==='Enter') loadRecords()">
+            <input type="text" id="searchInput" placeholder="ابحث: اسم، اسم أب كنية، رقم وطني، هاتف..." onkeypress="if(event.key==='Enter') loadRecords()">
         </div>
         <div class="filter-group">
             <label>الحالة</label>
@@ -1245,47 +1245,77 @@ async function viewRecord(id) {
         if (r.guardian_relation) html += detailRow('صلة القرابة', r.guardian_relation);
         if (r.guardian_phone) html += detailRow('هاتف ولي الأمر', r.guardian_phone);
 
+        // Get active child filters for display filtering
+        const activeChildEdu = document.getElementById('childEducationFilter')?.value || '';
+        const activeChildEduAbove = document.getElementById('childEducationAbove')?.checked || false;
+        const activeChildGender = document.getElementById('childGenderFilter')?.value || '';
+        const activeChildHP = document.getElementById('childHealthStatusFilter')?.value || '';
+        const eduLevels = ['أمي', 'ابتدائية', 'إعدادية', 'ثانوية', 'معهد', 'بكالوريوس', 'ماجستير', 'دكتوراه'];
+        const hasChildFilter = !!(activeChildEdu || activeChildGender || activeChildHP);
+        let matchEduSet = null;
+        if (activeChildEdu) {
+            if (activeChildEduAbove) {
+                const idx = eduLevels.indexOf(activeChildEdu);
+                matchEduSet = idx >= 0 ? eduLevels.slice(idx) : [activeChildEdu];
+            } else {
+                matchEduSet = [activeChildEdu];
+            }
+        }
+
+        function childMatchesFilter(c) {
+            if (matchEduSet && !matchEduSet.includes(c.education)) return false;
+            if (activeChildGender && c.gender !== activeChildGender) return false;
+            if (activeChildHP && c.healthStatus !== activeChildHP) return false;
+            return true;
+        }
+
+        function renderChildCard(c, idx, isMatch) {
+            let cEduStr = c.education || '—';
+            if (c.eduType) cEduStr += ` (${c.eduType})`;
+            if (c.specialization) cEduStr += ` - ${c.specialization}`;
+            if (c.university) cEduStr += ` (${c.university})`;
+            let cHPStr = '—';
+            if (c.healthStatus === 'healthy') cHPStr = 'سليم';
+            else if (c.healthStatus === 'sick') {
+                cHPStr = 'مريض';
+                if (c.diseases && c.diseases.length) cHPStr += ` (${c.diseases.join('، ')})`;
+            } else if (c.healthStatus === 'special') {
+                cHPStr = 'ذوي احتياجات خاصة';
+                if (c.healthDetails) cHPStr += ` (${c.healthDetails})`;
+            }
+            const genderStr = c.gender === 'male' ? 'ذكر' : (c.gender === 'female' ? 'أنثى' : '—');
+            const birthYearStr = c.birthYear || c.age || '—';
+            const birthLabel = c.birthYear ? 'سنة الميلاد' : 'العمر';
+            let cvHtml = '';
+            if (c.cv_path) {
+                cvHtml = ` | CV: <a href="/uploads/cvs/${c.cv_path}" target="_blank" style="color:var(--accent);">تحميل PDF</a>`;
+            } else if (c.cv_text) {
+                cvHtml = ` | CV: <span style="color:var(--green);">نص مكتوب</span>`;
+                if (c.cv_photo_path) cvHtml += ` <a href="/uploads/cv_photos/${c.cv_photo_path}" target="_blank" style="color:var(--accent);">(عرض الصورة)</a>`;
+            }
+            const highlightStyle = (hasChildFilter && isMatch) ? 'border-right:3px solid var(--green);' : '';
+            let cardHtml = `<div style="padding:6px 12px;margin:4px 0;background:var(--bg-input);border-radius:8px;font-size:0.88em;${highlightStyle}">
+                <strong>${idx+1}.</strong> ${esc(c.name) || '—'} | الجنس: ${genderStr} | ${birthLabel}: ${birthYearStr} | التعليم: ${esc(cEduStr)} | المهنة: ${esc(c.job) || '—'} | الصحة: ${esc(cHPStr)}${cvHtml}
+            </div>`;
+            if (c.cv_text) {
+                cardHtml += `<div style="padding:6px 16px;margin:0 0 4px 0;background:var(--bg-card);border-radius:0 0 8px 8px;font-size:0.82em;color:var(--text-dim);border-right:3px solid var(--accent);white-space:pre-wrap;">${esc(c.cv_text)}</div>`;
+            }
+            return cardHtml;
+        }
+
         // Children data
         if (r.children_data) {
             try {
                 const children = JSON.parse(r.children_data);
                 if (children.length) {
-                    html += `<div style="margin-top:10px;font-weight:700;color:var(--accent);font-size:0.9em;">الأولاد (${children.length}):</div>`;
-                    children.forEach((c, i) => {
-                        let cEduStr = c.education || '—';
-                        if (c.eduType) cEduStr += ` (${c.eduType})`;
-                        if (c.specialization) cEduStr += ` - ${c.specialization}`;
-                        if (c.university) cEduStr += ` (${c.university})`;
-
-                        let cHPStr = '—';
-                        if (c.healthStatus === 'healthy') cHPStr = 'سليم';
-                        else if (c.healthStatus === 'sick') {
-                            cHPStr = 'مريض';
-                            if (c.diseases && c.diseases.length) cHPStr += ` (${c.diseases.join('، ')})`;
-                        } else if (c.healthStatus === 'special') {
-                            cHPStr = 'ذوي احتياجات خاصة';
-                            if (c.healthDetails) cHPStr += ` (${c.healthDetails})`;
-                        }
-
-                        const genderStr = c.gender === 'male' ? 'ذكر' : (c.gender === 'female' ? 'أنثى' : '—');
-                        const birthYearStr = c.birthYear || c.age || '—';
-                        const birthLabel = c.birthYear ? 'سنة الميلاد' : 'العمر';
-
-                        let cvHtml = '';
-                        if (c.cv_path) {
-                            cvHtml = ` | CV: <a href="/uploads/cvs/${c.cv_path}" target="_blank" style="color:var(--accent);">تحميل PDF</a>`;
-                        } else if (c.cv_text) {
-                            cvHtml = ` | CV: <span style="color:var(--green);">نص مكتوب</span>`;
-                            if (c.cv_photo_path) cvHtml += ` <a href="/uploads/cv_photos/${c.cv_photo_path}" target="_blank" style="color:var(--accent);">(عرض الصورة)</a>`;
-                        }
-
-                        html += `<div style="padding:6px 12px;margin:4px 0;background:var(--bg-input);border-radius:8px;font-size:0.88em;">
-                            <strong>${i+1}.</strong> ${esc(c.name) || '—'} | الجنس: ${genderStr} | ${birthLabel}: ${birthYearStr} | التعليم: ${esc(cEduStr)} | المهنة: ${esc(c.job) || '—'} | الصحة: ${esc(cHPStr)}${cvHtml}
-                        </div>`;
-                        if (c.cv_text) {
-                            html += `<div style="padding:6px 16px;margin:0 0 4px 0;background:var(--bg-card);border-radius:0 0 8px 8px;font-size:0.82em;color:var(--text-dim);border-right:3px solid var(--accent);white-space:pre-wrap;">${esc(c.cv_text)}</div>`;
-                        }
-                    });
+                    const filtered = hasChildFilter ? children.filter(childMatchesFilter) : children;
+                    const label = hasChildFilter ? `الأولاد المطابقين (${filtered.length} من ${children.length})` : `الأولاد (${children.length})`;
+                    html += `<div style="margin-top:10px;font-weight:700;color:var(--accent);font-size:0.9em;">${label}:</div>`;
+                    if (hasChildFilter) {
+                        filtered.forEach((c, i) => { html += renderChildCard(c, i, true); });
+                    } else {
+                        children.forEach((c, i) => { html += renderChildCard(c, i, false); });
+                    }
                 }
             } catch(e) {}
         }
@@ -1293,40 +1323,13 @@ async function viewRecord(id) {
             try {
                 const children = JSON.parse(r.children_data_w);
                 if (children.length) {
-                    html += `<div style="margin-top:10px;font-weight:700;color:var(--accent);font-size:0.9em;">الأولاد من زواج سابق (${children.length}):</div>`;
-                    children.forEach((c, i) => {
-                        let cEduStr = c.education || '—';
-                        if (c.eduType) cEduStr += ` (${c.eduType})`;
-                        if (c.specialization) cEduStr += ` - ${c.specialization}`;
-                        if (c.university) cEduStr += ` (${c.university})`;
-
-                        let cHPStr = '—';
-                        if (c.healthStatus === 'healthy') cHPStr = 'سليم';
-                        else if (c.healthStatus === 'sick') {
-                            cHPStr = 'مريض';
-                            if (c.diseases && c.diseases.length) cHPStr += ` (${c.diseases.join('، ')})`;
-                        } else if (c.healthStatus === 'special') {
-                            cHPStr = 'ذوي احتياجات خاصة';
-                            if (c.healthDetails) cHPStr += ` (${c.healthDetails})`;
-                        }
-
-                        const genderStr = c.gender === 'male' ? 'ذكر' : (c.gender === 'female' ? 'أنثى' : '—');
-                        const birthYearStr = c.birthYear || c.age || '—';
-                        const birthLabel = c.birthYear ? 'سنة الميلاد' : 'العمر';
-
-                        let cvHtml = '';
-                        if (c.cv_path) {
-                            cvHtml = ` | CV: <a href="/uploads/cvs/${c.cv_path}" target="_blank" style="color:var(--accent);">تحميل PDF</a>`;
-                        } else if (c.cv_text) {
-                            cvHtml = ` | CV: <span style="color:var(--green);">نص مكتوب</span>`;
-                            if (c.cv_photo_path) cvHtml += ` <a href="/uploads/cv_photos/${c.cv_photo_path}" target="_blank" style="color:var(--accent);">(عرض الصورة)</a>`;
-                        }
-
-                        html += `<div style="padding:6px 12px;margin:4px 0;background:var(--bg-input);border-radius:8px;font-size:0.88em;">
-                            <strong>${i+1}.</strong> ${esc(c.name) || '—'} | الجنس: ${genderStr} | ${birthLabel}: ${birthYearStr} | التعليم: ${esc(cEduStr)} | المهنة: ${esc(c.job) || '—'} | الصحة: ${esc(cHPStr)}${cvHtml}
-                        </div>`;
-                        if (c.cv_text) {
-                            html += `<div style="padding:6px 16px;margin:0 0 4px 0;background:var(--bg-card);border-radius:0 0 8px 8px;font-size:0.82em;color:var(--text-dim);border-right:3px solid var(--accent);white-space:pre-wrap;">${esc(c.cv_text)}</div>`;
+                    const filtered = hasChildFilter ? children.filter(childMatchesFilter) : children;
+                    const label = hasChildFilter ? `الأولاد من زواج سابق المطابقين (${filtered.length} من ${children.length})` : `الأولاد من زواج سابق (${children.length})`;
+                    html += `<div style="margin-top:10px;font-weight:700;color:var(--accent);font-size:0.9em;">${label}:</div>`;
+                    if (hasChildFilter) {
+                        filtered.forEach((c, i) => { html += renderChildCard(c, i, true); });
+                    } else {
+                        children.forEach((c, i) => { html += renderChildCard(c, i, false); });
                         }
                     });
                 }
