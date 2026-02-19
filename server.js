@@ -307,20 +307,13 @@ app.get('/api/records', authMiddleware, (req, res) => {
         if (search) {
             const words = search.trim().split(/\s+/).filter(Boolean);
             if (words.length === 1) {
-                where += ' AND (first_name LIKE ? OR last_name LIKE ? OR father_name LIKE ? OR national_id LIKE ? OR phone LIKE ? OR mother_name LIKE ?)';
+                where += ' AND (first_name LIKE ? OR father_name LIKE ? OR last_name LIKE ? OR mother_name LIKE ? OR national_id LIKE ? OR phone LIKE ?)';
                 const s = `%${words[0]}%`;
                 params.push(s, s, s, s, s, s);
-            } else if (words.length === 2) {
-                where += ` AND (
-                    (first_name LIKE ? AND last_name LIKE ?)
-                    OR (first_name LIKE ? AND father_name LIKE ?)
-                    OR (father_name LIKE ? AND last_name LIKE ?)
-                    OR national_id LIKE ?
-                )`;
-                params.push(`%${words[0]}%`, `%${words[1]}%`, `%${words[0]}%`, `%${words[1]}%`, `%${words[0]}%`, `%${words[1]}%`, `%${search}%`);
             } else {
-                where += ' AND (first_name LIKE ? AND father_name LIKE ? AND last_name LIKE ?)';
-                params.push(`%${words[0]}%`, `%${words[1]}%`, `%${words[2]}%`);
+                const parts = words.map(() => '(first_name LIKE ? OR father_name LIKE ? OR last_name LIKE ? OR mother_name LIKE ?)');
+                where += ` AND (${parts.join(' AND ')})`;
+                words.forEach(w => { const s = `%${w}%`; params.push(s, s, s, s); });
             }
         }
         if (status) { where += ' AND status = ?'; params.push(status); }
@@ -568,20 +561,13 @@ app.get('/api/records-print', authMiddleware, (req, res) => {
         if (search) {
             const words = search.trim().split(/\s+/).filter(Boolean);
             if (words.length === 1) {
-                where += ' AND (first_name LIKE ? OR last_name LIKE ? OR father_name LIKE ? OR national_id LIKE ? OR phone LIKE ? OR mother_name LIKE ?)';
+                where += ' AND (first_name LIKE ? OR father_name LIKE ? OR last_name LIKE ? OR mother_name LIKE ? OR national_id LIKE ? OR phone LIKE ?)';
                 const s = `%${words[0]}%`;
                 params.push(s, s, s, s, s, s);
-            } else if (words.length === 2) {
-                where += ` AND (
-                    (first_name LIKE ? AND last_name LIKE ?)
-                    OR (first_name LIKE ? AND father_name LIKE ?)
-                    OR (father_name LIKE ? AND last_name LIKE ?)
-                    OR national_id LIKE ?
-                )`;
-                params.push(`%${words[0]}%`, `%${words[1]}%`, `%${words[0]}%`, `%${words[1]}%`, `%${words[0]}%`, `%${words[1]}%`, `%${search}%`);
             } else {
-                where += ' AND (first_name LIKE ? AND father_name LIKE ? AND last_name LIKE ?)';
-                params.push(`%${words[0]}%`, `%${words[1]}%`, `%${words[2]}%`);
+                const parts = words.map(() => '(first_name LIKE ? OR father_name LIKE ? OR last_name LIKE ? OR mother_name LIKE ?)');
+                where += ` AND (${parts.join(' AND ')})`;
+                words.forEach(w => { const s = `%${w}%`; params.push(s, s, s, s); });
             }
         }
         if (status) { where += ' AND status = ?'; params.push(status); }
