@@ -515,9 +515,25 @@
 
     <!-- Main Filters -->
     <div class="filter-bar">
-        <div class="filter-group fg-wide">
-            <label>البحث</label>
-            <input type="text" id="searchInput" placeholder="ابحث: اسم، اسم أب كنية، رقم وطني، هاتف..." onkeypress="if(event.key==='Enter') loadRecords()">
+        <div class="filter-group">
+            <label>الاسم</label>
+            <input type="text" id="firstNameFilter" placeholder="الاسم الأول" onkeypress="if(event.key==='Enter') loadRecords()">
+        </div>
+        <div class="filter-group">
+            <label>اسم الأب</label>
+            <input type="text" id="fatherNameFilter" placeholder="اسم الأب" onkeypress="if(event.key==='Enter') loadRecords()">
+        </div>
+        <div class="filter-group">
+            <label>الكنية</label>
+            <input type="text" id="lastNameFilter" placeholder="الكنية" onkeypress="if(event.key==='Enter') loadRecords()">
+        </div>
+        <div class="filter-group">
+            <label>اسم الأم</label>
+            <input type="text" id="motherNameFilter" placeholder="اسم الأم" onkeypress="if(event.key==='Enter') loadRecords()">
+        </div>
+        <div class="filter-group">
+            <label>رقم وطني / هاتف</label>
+            <input type="text" id="searchInput" placeholder="رقم وطني أو هاتف..." onkeypress="if(event.key==='Enter') loadRecords()">
         </div>
         <div class="filter-group">
             <label>الحالة</label>
@@ -988,9 +1004,17 @@ async function loadRecords(page) {
     const params = new URLSearchParams({ page: currentPage, limit: LIMIT });
 
     // Basic filters
+    const firstName = document.getElementById('firstNameFilter').value;
+    const fatherName = document.getElementById('fatherNameFilter').value;
+    const lastName = document.getElementById('lastNameFilter').value;
+    const motherName = document.getElementById('motherNameFilter').value;
     const search = document.getElementById('searchInput').value;
     const status = document.getElementById('statusFilter').value;
     const province = document.getElementById('provinceFilter').value;
+    if (firstName) params.set('firstName', firstName);
+    if (fatherName) params.set('fatherName', fatherName);
+    if (lastName) params.set('lastName', lastName);
+    if (motherName) params.set('motherName', motherName);
     if (search) params.set('search', search);
     if (status) params.set('status', status);
     if (province) params.set('province', province);
@@ -2199,6 +2223,10 @@ function toggleAdvanced() {
 
 // ══════════════ RESET FILTERS ══════════════
 function resetFilters() {
+    document.getElementById('firstNameFilter').value = '';
+    document.getElementById('fatherNameFilter').value = '';
+    document.getElementById('lastNameFilter').value = '';
+    document.getElementById('motherNameFilter').value = '';
     document.getElementById('searchInput').value = '';
     document.getElementById('statusFilter').value = '';
     document.getElementById('provinceFilter').value = '';
@@ -2295,6 +2323,8 @@ async function printSingleRecord(id) {
 function getCurrentFilterParams() {
     const params = new URLSearchParams();
     const filterMap = {
+        'firstNameFilter': 'firstName', 'fatherNameFilter': 'fatherName',
+        'lastNameFilter': 'lastName', 'motherNameFilter': 'motherName',
         'searchInput': 'search', 'statusFilter': 'status', 'provinceFilter': 'province',
         'genderFilter': 'gender', 'maritalFilter': 'marital', 'educationFilter': 'education',
         'chronicFilter': 'chronic', 'bloodTypeFilter': 'bloodType', 'arrestYearFrom': 'arrestYearFrom',

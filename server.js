@@ -304,17 +304,22 @@ app.get('/api/records', authMiddleware, (req, res) => {
 
         let where = 'WHERE 1=1';
         const params = [];
+
+        // Individual name filters
+        const fnFilter = req.query.firstName || '';
+        const fatFilter = req.query.fatherName || '';
+        const lnFilter = req.query.lastName || '';
+        const mnFilter = req.query.motherName || '';
+        if (fnFilter) { where += ' AND first_name LIKE ?'; params.push(`%${fnFilter}%`); }
+        if (fatFilter) { where += ' AND father_name LIKE ?'; params.push(`%${fatFilter}%`); }
+        if (lnFilter) { where += ' AND last_name LIKE ?'; params.push(`%${lnFilter}%`); }
+        if (mnFilter) { where += ' AND mother_name LIKE ?'; params.push(`%${mnFilter}%`); }
+
+        // General search (national ID / phone)
         if (search) {
-            const words = search.trim().split(/\s+/).filter(Boolean);
-            if (words.length === 1) {
-                where += ' AND (first_name LIKE ? OR father_name LIKE ? OR last_name LIKE ? OR mother_name LIKE ? OR national_id LIKE ? OR phone LIKE ?)';
-                const s = `%${words[0]}%`;
-                params.push(s, s, s, s, s, s);
-            } else {
-                const parts = words.map(() => '(first_name LIKE ? OR father_name LIKE ? OR last_name LIKE ? OR mother_name LIKE ?)');
-                where += ` AND (${parts.join(' AND ')})`;
-                words.forEach(w => { const s = `%${w}%`; params.push(s, s, s, s); });
-            }
+            where += ' AND (national_id LIKE ? OR phone LIKE ?)';
+            const s = `%${search}%`;
+            params.push(s, s);
         }
         if (status) { where += ' AND status = ?'; params.push(status); }
         if (province) { where += ' AND province = ?'; params.push(province); }
@@ -558,17 +563,22 @@ app.get('/api/records-print', authMiddleware, (req, res) => {
 
         let where = 'WHERE 1=1';
         const params = [];
+
+        // Individual name filters
+        const fnFilter = req.query.firstName || '';
+        const fatFilter = req.query.fatherName || '';
+        const lnFilter = req.query.lastName || '';
+        const mnFilter = req.query.motherName || '';
+        if (fnFilter) { where += ' AND first_name LIKE ?'; params.push(`%${fnFilter}%`); }
+        if (fatFilter) { where += ' AND father_name LIKE ?'; params.push(`%${fatFilter}%`); }
+        if (lnFilter) { where += ' AND last_name LIKE ?'; params.push(`%${lnFilter}%`); }
+        if (mnFilter) { where += ' AND mother_name LIKE ?'; params.push(`%${mnFilter}%`); }
+
+        // General search (national ID / phone)
         if (search) {
-            const words = search.trim().split(/\s+/).filter(Boolean);
-            if (words.length === 1) {
-                where += ' AND (first_name LIKE ? OR father_name LIKE ? OR last_name LIKE ? OR mother_name LIKE ? OR national_id LIKE ? OR phone LIKE ?)';
-                const s = `%${words[0]}%`;
-                params.push(s, s, s, s, s, s);
-            } else {
-                const parts = words.map(() => '(first_name LIKE ? OR father_name LIKE ? OR last_name LIKE ? OR mother_name LIKE ?)');
-                where += ` AND (${parts.join(' AND ')})`;
-                words.forEach(w => { const s = `%${w}%`; params.push(s, s, s, s); });
-            }
+            where += ' AND (national_id LIKE ? OR phone LIKE ?)';
+            const s = `%${search}%`;
+            params.push(s, s);
         }
         if (status) { where += ' AND status = ?'; params.push(status); }
         if (province) { where += ' AND province = ?'; params.push(province); }
