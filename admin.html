@@ -362,8 +362,12 @@
         .empty-state p { font-size: 1.1em; font-weight: 600; }
 
         /* Print styles */
+        #bpPrintDoc { display: none; }
+
         @media print {
             body { background: #fff !important; color: #000 !important; }
+
+            /* ── Table / modal normal print ── */
             .bg-effects, .main-header, .filter-bar, .adv-filter-panel,
             .pagination, .action-btns, .act-btn, .header-actions,
             .modal-close, .modal-print-btn, .modal-head-actions,
@@ -386,11 +390,58 @@
             thead th { background: #eee; color: #000; border-color: #333; }
             tbody td { border-color: #ccc; color: #000; }
             .table-scroll { overflow: visible; }
-
-            /* Print header */
             .print-header { display: block !important; text-align: center; margin-bottom: 20px; }
             .print-header img { width: 80px; }
             .print-header h2 { margin-top: 8px; }
+
+            /* ── BP-focused single-record print ── */
+            body.bp-print-mode .main-header,
+            body.bp-print-mode .wrapper,
+            body.bp-print-mode .modal-overlay,
+            body.bp-print-mode .lightbox,
+            body.bp-print-mode .print-header { display: none !important; }
+            body.bp-print-mode #bpPrintDoc { display: block !important; }
+
+            /* bpPrintDoc element styles */
+            #bpPrintDoc { font-family: 'Tajawal', sans-serif; direction: rtl; color: #000; }
+            #bpPrintDoc .bp-doc { max-width: 780px; margin: 0 auto; padding: 10px; }
+            #bpPrintDoc .bp-hdr {
+                display: flex; align-items: center; gap: 18px;
+                padding-bottom: 14px; border-bottom: 3px double #000; margin-bottom: 18px;
+            }
+            #bpPrintDoc .bp-hdr img { width: 65px; height: 65px; object-fit: contain; }
+            #bpPrintDoc .bp-hdr h1 { font-size: 1.35em; font-weight: 900; margin: 0 0 3px; }
+            #bpPrintDoc .bp-hdr h2 { font-size: 0.92em; font-weight: 600; margin: 0 0 4px; color: #333; }
+            #bpPrintDoc .bp-hdr p { font-size: 0.78em; color: #555; margin: 0; }
+            #bpPrintDoc .bp-status {
+                padding: 12px 18px; margin-bottom: 18px; border: 2.5px solid;
+                border-radius: 6px; font-size: 1.05em; font-weight: 800; text-align: center;
+            }
+            #bpPrintDoc .bp-status.ok { border-color: #166534; color: #166534; background: #f0fdf4; }
+            #bpPrintDoc .bp-status.fail { border-color: #991b1b; color: #991b1b; background: #fef2f2; }
+            #bpPrintDoc .bp-section { margin-bottom: 18px; break-inside: avoid; }
+            #bpPrintDoc .bp-section-title {
+                font-size: 0.88em; font-weight: 800; padding: 7px 14px;
+                color: #fff; margin: 0; border-radius: 5px 5px 0 0;
+            }
+            #bpPrintDoc .bp-section-title.primary { background: #1e3a5f; }
+            #bpPrintDoc .bp-section-title.secondary { background: #374151; }
+            #bpPrintDoc .bp-table { width: 100%; border-collapse: collapse; }
+            #bpPrintDoc .bp-table td {
+                padding: 7px 12px; border: 1px solid #d1d5db;
+                font-size: 0.88em; vertical-align: top;
+            }
+            #bpPrintDoc .bp-table td.lbl {
+                font-weight: 700; color: #1e293b; width: 185px;
+                background: #f8fafc; white-space: nowrap;
+            }
+            #bpPrintDoc .bp-table tr.missing td { color: #991b1b; font-style: italic; }
+            #bpPrintDoc .bp-table tr.missing td.lbl { background: #fef2f2; color: #991b1b; }
+            #bpPrintDoc .bp-footer {
+                margin-top: 22px; padding-top: 10px; border-top: 1px solid #aaa;
+                display: flex; justify-content: space-between;
+                font-size: 0.76em; color: #555;
+            }
         }
         .print-header { display: none; }
 
@@ -692,6 +743,9 @@
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
     <img id="lightboxImg" src="" alt="صورة مكبرة">
 </div>
+
+<!-- BP-Focused Print Document (hidden; shown only in print mode) -->
+<div id="bpPrintDoc"></div>
 
 <script>
 let currentPage = 1;
@@ -1511,18 +1565,122 @@ function backupDB() {
     window.location.href = '/api/backup';
 }
 
+// ══════════════ BP PRINT HELPERS ══════════════
+const BP_LABELS = {
+    method:   { interview:'مقابلة شخصية', phone_interview:'مقابلة هاتفية', documentary:'مستندات ووثائق', witness_testimony:'شهادة شاهد موثّقة', official_record:'سجلات رسمية', other:'أخرى' },
+    source:   { primary_witness:'شاهد مباشر (أولي)', secondary_source:'مصدر ثانوي', documentary:'وثائق', official_record:'سجلات رسمية', ngo:'منظمة حقوقية / إنسانية' },
+    reliability: { A:'أ — موثوق جداً', B:'ب — موثوق عادةً', C:'ج — موثوق نسبياً', D:'د — غير موثوق عادةً', E:'هـ — غير موثوق', F:'و — لا يمكن التقييم' },
+    corroboration: { corroborated:'محقق من مصادر متعددة', partially_corroborated:'محقق جزئياً', uncorroborated:'غير محقق بعد', pending:'قيد التحقق' },
+    consent:  { yes:'نعم — تم الحصول على الموافقة', no:'لا', not_applicable:'لا ينطبق' },
+    confidentiality: { public:'عام', restricted:'مقيّد (للاستخدام الداخلي)', confidential:'سري' }
+};
+
+function bpRow(label, val, map) {
+    const display = map ? (map[val] || val || '') : (val || '');
+    const missing = !val;
+    return `<tr class="${missing ? 'missing' : ''}">
+        <td class="lbl">${label}</td>
+        <td>${missing ? '— غير محدد —' : esc(display)}</td>
+    </tr>`;
+}
+
+function populateBpPrint(r) {
+    const bpOk = r.bp_collector_name && r.bp_collection_method && r.bp_source_type &&
+                 r.bp_source_reliability && r.bp_corroboration_status &&
+                 r.bp_consent_obtained && r.bp_confidentiality_level;
+    const name = `${r.first_name} ${r.father_name} ${r.last_name}`;
+    const printDate = new Date().toLocaleDateString('ar-SA', { year:'numeric', month:'long', day:'numeric' });
+    const statusVerb = r.status === 'enforced' ? 'مغيّب قسري' : r.status === 'survivor' ? 'ناجي' : r.status === 'deceased' ? 'متوفى' : '—';
+
+    document.getElementById('bpPrintDoc').innerHTML = `
+    <div class="bp-doc">
+        <div class="bp-hdr">
+            <img src="logo.jpg" alt="شعار جمعية حقنا">
+            <div>
+                <h1>جمعية حقنا — تقرير التوثيق الرسمي</h1>
+                <h2>بروتوكول بيركلي للتحقيقات الرقمية في مجال حقوق الإنسان</h2>
+                <p>رقم السجل: <strong>#${r.id}</strong> &nbsp;|&nbsp; تاريخ الإدخال: ${esc(r.created_at || '—')}</p>
+            </div>
+        </div>
+
+        <div class="bp-status ${bpOk ? 'ok' : 'fail'}">
+            ${bpOk
+                ? '✓ &nbsp; هذا السجل مطابق لمتطلبات بروتوكول بيركلي للتحقيقات الرقمية (OHCHR 2020)'
+                : '✗ &nbsp; هذا السجل غير مكتمل — بعض البيانات المطلوبة لبروتوكول بيركلي مفقودة'}
+        </div>
+
+        <div class="bp-section">
+            <div class="bp-section-title primary">بيانات التوثيق وفق بروتوكول بيركلي — الحقول الإلزامية للقبول القانوني</div>
+            <table class="bp-table">
+                ${bpRow('اسم الموثّق / المسجّل', r.bp_collector_name)}
+                ${bpRow('تاريخ جمع المعلومات', r.bp_collection_date)}
+                ${bpRow('طريقة جمع المعلومات', r.bp_collection_method, BP_LABELS.method)}
+                ${bpRow('نوع المصدر', r.bp_source_type, BP_LABELS.source)}
+                ${bpRow('موثوقية المصدر (A–F)', r.bp_source_reliability, BP_LABELS.reliability)}
+                ${bpRow('حالة التحقق من المعلومات', r.bp_corroboration_status, BP_LABELS.corroboration)}
+                <tr><td class="lbl">عدد مصادر التحقق المستقلة</td><td>${r.bp_corroboration_sources || '—'}</td></tr>
+                ${bpRow('الموافقة المسبقة المبنية على معرفة', r.bp_consent_obtained, BP_LABELS.consent)}
+                ${bpRow('مستوى سرية السجل', r.bp_confidentiality_level, BP_LABELS.confidentiality)}
+                ${r.bp_verification_notes ? `<tr><td class="lbl">ملاحظات التحقق والتوثيق</td><td>${esc(r.bp_verification_notes)}</td></tr>` : ''}
+            </table>
+        </div>
+
+        <div class="bp-section">
+            <div class="bp-section-title secondary">بيانات الحالة الموثّقة</div>
+            <table class="bp-table">
+                <tr><td class="lbl">الاسم الكامل</td><td><strong>${esc(name)}</strong></td></tr>
+                <tr><td class="lbl">الرقم الوطني</td><td style="font-family:monospace;">${esc(r.national_id)}</td></tr>
+                <tr><td class="lbl">الجنس</td><td>${r.gender === 'male' ? 'ذكر' : 'أنثى'}</td></tr>
+                <tr><td class="lbl">تاريخ الميلاد</td><td>${formatDate(r.birth_day, r.birth_month, r.birth_year)}</td></tr>
+                <tr><td class="lbl">المحافظة</td><td>${esc(r.province)}</td></tr>
+                <tr><td class="lbl">حالة القضية</td><td><strong>${statusVerb}</strong></td></tr>
+                <tr><td class="lbl">تاريخ الاعتقال</td><td>${formatDate(r.arrest_day, r.arrest_month, r.arrest_year)}</td></tr>
+                <tr><td class="lbl">مكان الاعتقال</td><td>${esc(r.arrest_place)}</td></tr>
+                <tr><td class="lbl">الجهة المسؤولة</td><td>${esc(r.arrest_authority)}</td></tr>
+                ${r.status === 'survivor' ? `<tr><td class="lbl">تاريخ الإفراج</td><td>${formatDate(r.release_day, r.release_month, r.release_year)}</td></tr>` : ''}
+                ${r.status === 'deceased' ? `<tr><td class="lbl">تاريخ الوفاة</td><td>${formatDate(r.death_day, r.death_month, r.death_year)}</td></tr><tr><td class="lbl">مكان الوفاة</td><td>${esc(r.death_place)}</td></tr>` : ''}
+                <tr><td class="lbl">مسجّل رسمياً</td><td>${r.is_officially_registered ? 'نعم' : 'لا'}</td></tr>
+            </table>
+        </div>
+
+        <div class="bp-footer">
+            <span>تاريخ الطباعة: ${printDate}</span>
+            <span>جمعية حقنا — وثّقنا كل حالة بأمانة</span>
+            <span>Berkeley Protocol / OHCHR 2020</span>
+        </div>
+    </div>`;
+}
+
 // ══════════════ PRINT ══════════════
 function printTable() {
     window.print();
 }
 
 function printRecord() {
-    window.print();
+    if (currentRecordId) {
+        fetch('/api/records/' + currentRecordId)
+            .then(res => res.json())
+            .then(r => {
+                populateBpPrint(r);
+                document.body.classList.add('bp-print-mode');
+                window.print();
+                document.body.classList.remove('bp-print-mode');
+            })
+            .catch(() => window.print());
+    } else {
+        window.print();
+    }
 }
 
 async function printSingleRecord(id) {
-    await viewRecord(id);
-    setTimeout(() => window.print(), 300);
+    try {
+        const res = await fetch('/api/records/' + id);
+        const r = await res.json();
+        populateBpPrint(r);
+        document.body.classList.add('bp-print-mode');
+        window.print();
+        document.body.classList.remove('bp-print-mode');
+    } catch(e) { alert('خطأ في تحميل السجل للطباعة'); }
 }
 
 // ══════════════ EVENT LISTENERS ══════════════

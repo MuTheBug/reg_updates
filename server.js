@@ -250,7 +250,10 @@ app.post('/api/records', upload.fields([
                 education, edu_type, edu_specialization, edu_university,
                 legal, legal_details, assoc, assoc_name, service_type, notes, breadwinner_job,
                 rent_amount, has_hypertension, has_diabetes, other_diseases, is_officially_registered,
-                has_special_needs, special_needs_details
+                has_special_needs, special_needs_details,
+                bp_collector_name, bp_collection_date, bp_collection_method, bp_source_type,
+                bp_source_reliability, bp_corroboration_status, bp_corroboration_sources,
+                bp_consent_obtained, bp_confidentiality_level, bp_verification_notes
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
@@ -258,7 +261,8 @@ app.post('/api/records', upload.fields([
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
         `);
 
@@ -280,7 +284,11 @@ app.post('/api/records', upload.fields([
             b.legal || null, b.legal === 'yes' ? collectLegalData(b) : null, b.assoc || null, b.assocName || null,
             b.serviceType || null, b.notes || null, b.breadwinnerJob || null,
             b.rentAmount || null, b.hasHypertension === 'yes' ? 1 : 0, b.hasDiabetes === 'yes' ? 1 : 0, b.otherDiseases || null, b.isOfficiallyRegistered === 'yes' ? 1 : 0,
-            b.hasSpecialNeeds === 'yes' ? 1 : 0, b.specialNeedsDetails || null
+            b.hasSpecialNeeds === 'yes' ? 1 : 0, b.specialNeedsDetails || null,
+            b.bpCollectorName || null, b.bpCollectionDate || null, b.bpCollectionMethod || null,
+            b.bpSourceType || null, b.bpSourceReliability || null, b.bpCorroborationStatus || null,
+            b.bpCorroborationSources ? parseInt(b.bpCorroborationSources) : null,
+            b.bpConsentObtained || null, b.bpConfidentialityLevel || null, b.bpVerificationNotes || null
         );
         res.json({ success: true, id: result.lastInsertRowid });
     } catch (err) {

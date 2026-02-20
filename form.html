@@ -730,6 +730,51 @@
             .btn, .actions, .bg-effects { display: none !important; }
             body { background: #fff; color: #000; }
         }
+        /* ═══════════ HELP TOOLTIP ═══════════ */
+        .help-btn {
+            width: 18px; height: 18px; border-radius: 50%;
+            background: rgba(139,92,246,0.18); border: 1.5px solid var(--accent2);
+            color: var(--accent2); font-size: 0.72em; font-weight: 900;
+            cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: all 0.2s; user-select: none;
+            position: relative; vertical-align: middle; margin-right: 4px;
+            font-style: normal;
+        }
+        .help-btn:hover { background: rgba(139,92,246,0.32); transform: scale(1.1); }
+        .help-btn.active { background: rgba(139,92,246,0.32); }
+
+        .tooltip-popup {
+            display: none; position: absolute; bottom: calc(100% + 10px); right: -10px;
+            width: 290px; background: #111827; border: 1.5px solid var(--accent2);
+            border-radius: 14px; padding: 14px 16px; z-index: 9999;
+            font-size: 0.84em; color: var(--text); line-height: 1.65; font-weight: 400;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.7), 0 0 20px rgba(139,92,246,0.15);
+            pointer-events: none; text-align: right;
+        }
+        .tooltip-popup.show { display: block; }
+        .tooltip-popup::after {
+            content: ''; position: absolute; bottom: -7px; right: 14px;
+            width: 12px; height: 12px; background: #111827;
+            border-bottom: 1.5px solid var(--accent2); border-right: 1.5px solid var(--accent2);
+            transform: rotate(45deg);
+        }
+        .tooltip-popup strong { color: var(--accent2); display: block; margin-bottom: 5px; font-size: 0.95em; }
+
+        /* ═══════════ BERKELEY SECTION ═══════════ */
+        .section.bp-section { border-color: rgba(139,92,246,0.5); }
+        .section.bp-section:hover { border-color: var(--accent2); box-shadow: 0 8px 40px rgba(139,92,246,0.15); }
+        .section.bp-section .sec-head {
+            background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(6,182,212,0.05));
+        }
+        .section.bp-section .sec-num {
+            background: linear-gradient(135deg, var(--accent2), #06b6d4);
+        }
+        .bp-required-note {
+            font-size: 0.82em; color: var(--text-dim); margin-bottom: 18px;
+            padding: 10px 14px; background: rgba(139,92,246,0.06);
+            border: 1px solid rgba(139,92,246,0.2); border-radius: 10px; line-height: 1.6;
+        }
+        .bp-required-note span { color: var(--accent2); font-weight: 700; }
     </style>
 </head>
 <body>
@@ -1258,6 +1303,236 @@
     </div>
 </div>
 
+<!-- ═══════════ 10 - بروتوكول بيركلي ═══════════ -->
+<div class="section bp-section">
+    <div class="sec-head">
+        <span class="sec-num">10</span>
+        <h3>توثيق بروتوكول بيركلي</h3>
+    </div>
+    <div class="sec-body">
+        <div class="bp-required-note">
+            يُعدّ <span>بروتوكول بيركلي للتحقيقات الرقمية</span> المعيار الدولي الصادر عن الأمم المتحدة لتوثيق انتهاكات حقوق الإنسان.
+            يضمن استيفاء هذه الحقول قبول السجل كدليل أمام المحاكم الدولية وهيئات حقوق الإنسان.
+            الحقول المعلّمة بـ <span>*</span> إلزامية لاعتبار السجل مطابقاً للبروتوكول.
+        </div>
+
+        <div class="g g2">
+            <!-- Collector Name -->
+            <div class="fg">
+                <label>
+                    <span>اسم الموثّق / المسجّل</span><span class="rq">*</span>
+                    <button type="button" class="help-btn" onclick="toggleTooltip(this)" aria-label="مساعدة">?
+                        <div class="tooltip-popup">
+                            <strong>اسم الموثّق / المسجّل</strong>
+                            الاسم الكامل للشخص المسؤول عن توثيق هذه الحالة وإدخالها في النظام.
+                            يُحدّد هذا الحقل سلسلة الحيازة (Chain of Custody)، وهو ركيزة أساسية في قبول الأدلة أمام المحاكم الدولية.
+                        </div>
+                    </button>
+                </label>
+                <input type="text" name="bpCollectorName" placeholder="الاسم الكامل للموثّق">
+            </div>
+            <!-- Collection Date -->
+            <div class="fg">
+                <label>
+                    <span>تاريخ جمع المعلومات</span>
+                    <button type="button" class="help-btn" onclick="toggleTooltip(this)" aria-label="مساعدة">?
+                        <div class="tooltip-popup">
+                            <strong>تاريخ جمع المعلومات</strong>
+                            التاريخ الفعلي الذي جُمعت فيه المعلومات من المصدر. قد يختلف عن تاريخ إدخالها في النظام.
+                            يساعد في التحقق من الجدول الزمني للأحداث وتأكيد مصداقية التوثيق.
+                        </div>
+                    </button>
+                </label>
+                <input type="date" name="bpCollectionDate">
+            </div>
+        </div>
+
+        <div class="g g3" style="margin-top:18px;">
+            <!-- Collection Method -->
+            <div class="fg">
+                <label>
+                    <span>طريقة جمع المعلومات</span><span class="rq">*</span>
+                    <button type="button" class="help-btn" onclick="toggleTooltip(this)" aria-label="مساعدة">?
+                        <div class="tooltip-popup">
+                            <strong>طريقة جمع المعلومات</strong>
+                            الأسلوب المستخدم للحصول على هذه المعلومات. يتطلب بروتوكول بيركلي توثيق طريقة الجمع لتقييم الموثوقية وضمان قبول المعلومات كدليل قانوني.
+                            <br>• <strong>مقابلة شخصية:</strong> لقاء مباشر مع الشاهد أو أحد الأقارب
+                            <br>• <strong>مقابلة هاتفية:</strong> تواصل عبر الهاتف
+                            <br>• <strong>مستندات:</strong> شهادات وفاة، وثائق اعتقال، رسائل
+                            <br>• <strong>شهادة شاهد:</strong> إفادة موثّقة
+                            <br>• <strong>سجلات رسمية:</strong> وثائق حكومية أو قضائية
+                        </div>
+                    </button>
+                </label>
+                <select name="bpCollectionMethod">
+                    <option value="">-- اختر --</option>
+                    <option value="interview">مقابلة شخصية</option>
+                    <option value="phone_interview">مقابلة هاتفية</option>
+                    <option value="documentary">مستندات ووثائق</option>
+                    <option value="witness_testimony">شهادة شاهد موثّقة</option>
+                    <option value="official_record">سجلات رسمية</option>
+                    <option value="other">أخرى</option>
+                </select>
+            </div>
+            <!-- Source Type -->
+            <div class="fg">
+                <label>
+                    <span>نوع المصدر</span><span class="rq">*</span>
+                    <button type="button" class="help-btn" onclick="toggleTooltip(this)" aria-label="مساعدة">?
+                        <div class="tooltip-popup">
+                            <strong>نوع المصدر</strong>
+                            تصنيف مصدر المعلومات يؤثر مباشرة على تقييم الموثوقية:
+                            <br>• <strong>شاهد مباشر (أولي):</strong> شخص كان موجوداً وشهد الحادثة بنفسه (ناجٍ، أحد أفراد العائلة الموجودين)
+                            <br>• <strong>مصدر ثانوي:</strong> شخص سمع بالحادثة من شخص آخر
+                            <br>• <strong>وثائق:</strong> أوراق رسمية، صور، رسائل
+                            <br>• <strong>سجلات رسمية:</strong> ملفات حكومية أو قضائية
+                            <br>• <strong>منظمة:</strong> جمعية حقوقية أو إنسانية
+                        </div>
+                    </button>
+                </label>
+                <select name="bpSourceType">
+                    <option value="">-- اختر --</option>
+                    <option value="primary_witness">شاهد مباشر (أولي)</option>
+                    <option value="secondary_source">مصدر ثانوي</option>
+                    <option value="documentary">وثائق</option>
+                    <option value="official_record">سجلات رسمية</option>
+                    <option value="ngo">منظمة حقوقية / إنسانية</option>
+                </select>
+            </div>
+            <!-- Source Reliability -->
+            <div class="fg">
+                <label>
+                    <span>موثوقية المصدر</span><span class="rq">*</span>
+                    <button type="button" class="help-btn" onclick="toggleTooltip(this)" aria-label="مساعدة">?
+                        <div class="tooltip-popup">
+                            <strong>تقييم موثوقية المصدر</strong>
+                            معيار دولي لتصنيف مصداقية المصدر المُعطي للمعلومات:
+                            <br>• <strong>أ — موثوق جداً:</strong> مصدر أثبت دقته في مناسبات متعددة سابقة
+                            <br>• <strong>ب — موثوق عادةً:</strong> أثبت مصداقيته في معظم الأحيان
+                            <br>• <strong>ج — موثوق نسبياً:</strong> صحيح في بعض الأحيان
+                            <br>• <strong>د — غير موثوق عادةً:</strong> أخطأ في كثير من الأحيان
+                            <br>• <strong>هـ — غير موثوق:</strong> غير موثوق في جميع الأحيان
+                            <br>• <strong>و — لا يمكن التقييم:</strong> مصدر جديد لم يُختبر بعد
+                        </div>
+                    </button>
+                </label>
+                <select name="bpSourceReliability">
+                    <option value="">-- اختر --</option>
+                    <option value="A">أ — موثوق جداً</option>
+                    <option value="B">ب — موثوق عادةً</option>
+                    <option value="C">ج — موثوق نسبياً</option>
+                    <option value="D">د — غير موثوق عادةً</option>
+                    <option value="E">هـ — غير موثوق</option>
+                    <option value="F">و — لا يمكن التقييم</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="g g3" style="margin-top:18px;">
+            <!-- Corroboration Status -->
+            <div class="fg">
+                <label>
+                    <span>حالة التحقق</span><span class="rq">*</span>
+                    <button type="button" class="help-btn" onclick="toggleTooltip(this)" aria-label="مساعدة">?
+                        <div class="tooltip-popup">
+                            <strong>حالة التحقق من المعلومات</strong>
+                            مدى تأكيد المعلومات من مصادر مستقلة أخرى. يُوصي بروتوكول بيركلي بالسعي للتحقق من المعلومات عبر مصادر متعددة لتعزيز قيمتها القانونية.
+                            <br>• <strong>محقق:</strong> أكّدت المعلومات مصادر متعددة مستقلة
+                            <br>• <strong>محقق جزئياً:</strong> بعض التفاصيل مؤكّدة من مصدر آخر
+                            <br>• <strong>غير محقق:</strong> لم يُؤكَّد بعد من مصادر أخرى
+                            <br>• <strong>قيد التحقق:</strong> جارٍ البحث عن مصادر تأكيد
+                        </div>
+                    </button>
+                </label>
+                <select name="bpCorroborationStatus">
+                    <option value="">-- اختر --</option>
+                    <option value="corroborated">محقق من مصادر متعددة</option>
+                    <option value="partially_corroborated">محقق جزئياً</option>
+                    <option value="uncorroborated">غير محقق بعد</option>
+                    <option value="pending">قيد التحقق</option>
+                </select>
+            </div>
+            <!-- Corroboration Sources Count -->
+            <div class="fg">
+                <label>
+                    <span>عدد مصادر التحقق</span>
+                    <button type="button" class="help-btn" onclick="toggleTooltip(this)" aria-label="مساعدة">?
+                        <div class="tooltip-popup">
+                            <strong>عدد مصادر التحقق المستقلة</strong>
+                            عدد المصادر المستقلة التي أكّدت المعلومات الواردة في هذا السجل.
+                            يُوصى بثلاثة مصادر مستقلة على الأقل لاعتبار التحقق كاملاً. اترك الحقل فارغاً إذا لم يجرِ التحقق بعد.
+                        </div>
+                    </button>
+                </label>
+                <input type="number" name="bpCorroborationSources" min="0" max="99" placeholder="0">
+            </div>
+            <!-- Consent -->
+            <div class="fg">
+                <label>
+                    <span>الموافقة المسبقة</span><span class="rq">*</span>
+                    <button type="button" class="help-btn" onclick="toggleTooltip(this)" aria-label="مساعدة">?
+                        <div class="tooltip-popup">
+                            <strong>الموافقة المسبقة المبنية على معرفة</strong>
+                            ركيزة أخلاقية أساسية في بروتوكول بيركلي. يجب الحصول على موافقة صريحة من الشخص المعني أو ذويه قبل توثيق بياناته.
+                            <br>• <strong>نعم:</strong> تم الحصول على الموافقة الصريحة
+                            <br>• <strong>لا:</strong> لم يُحصل على موافقة (يُرجى توضيح السبب في الملاحظات)
+                            <br>• <strong>لا ينطبق:</strong> حالات عدم إمكانية الوصول للشخص أو أسرته
+                        </div>
+                    </button>
+                </label>
+                <select name="bpConsentObtained">
+                    <option value="">-- اختر --</option>
+                    <option value="yes">نعم — تم الحصول على الموافقة</option>
+                    <option value="no">لا</option>
+                    <option value="not_applicable">لا ينطبق</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="g g2" style="margin-top:18px;">
+            <!-- Confidentiality Level -->
+            <div class="fg">
+                <label>
+                    <span>مستوى سرية السجل</span><span class="rq">*</span>
+                    <button type="button" class="help-btn" onclick="toggleTooltip(this)" aria-label="مساعدة">?
+                        <div class="tooltip-popup">
+                            <strong>مستوى سرية السجل</strong>
+                            يُحدّد من يحق له الاطلاع على هذه المعلومات ونطاق مشاركتها:
+                            <br>• <strong>عام:</strong> يمكن نشر هذه المعلومات علناً (بعد الحصول على الموافقة المناسبة)
+                            <br>• <strong>مقيّد:</strong> للاستخدام الداخلي داخل المنظمة فقط، لا يُشارك مع جهات خارجية
+                            <br>• <strong>سري:</strong> معلومات حساسة للغاية، تُحفظ بإجراءات مشددة، ولا يطّلع عليها إلا من يحتاج ذلك
+                        </div>
+                    </button>
+                </label>
+                <select name="bpConfidentialityLevel">
+                    <option value="">-- اختر --</option>
+                    <option value="public">عام</option>
+                    <option value="restricted">مقيّد (للاستخدام الداخلي)</option>
+                    <option value="confidential">سري</option>
+                </select>
+            </div>
+            <!-- Verification Notes -->
+            <div class="fg">
+                <label>
+                    <span>ملاحظات التحقق والتوثيق</span>
+                    <button type="button" class="help-btn" onclick="toggleTooltip(this)" aria-label="مساعدة">?
+                        <div class="tooltip-popup" style="width:300px;">
+                            <strong>ملاحظات التوثيق</strong>
+                            حقل اختياري لتسجيل أي ملاحظات تتعلق بعملية التوثيق، مثل:
+                            <br>• ظروف إجراء المقابلة
+                            <br>• تناقضات في الروايات وكيفية تسويتها
+                            <br>• معلومات إضافية عن موثوقية المصدر
+                            <br>• اعتبارات أمنية خاصة بهذا السجل
+                            <br>• أي قيود على استخدام هذه المعلومات
+                        </div>
+                    </button>
+                </label>
+                <textarea name="bpVerificationNotes" placeholder="ظروف التوثيق، ملاحظات الموثّق، أي اعتبارات خاصة..." rows="3"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ═══════════ ACTIONS ═══════════ -->
 <div class="actions">
     <button type="button" class="btn btn-ghost" onclick="resetAll()">🔄 إعادة تعيين</button>
@@ -1618,6 +1893,30 @@ function renderChildDiseases(uid) {
 
     hiddenInp.value = JSON.stringify(tags);
 }
+
+// ══════════════ TOOLTIP HELP ══════════════
+function toggleTooltip(btn) {
+    const popup = btn.querySelector('.tooltip-popup');
+    const isShown = popup.classList.contains('show');
+    document.querySelectorAll('.tooltip-popup.show').forEach(p => p.classList.remove('show'));
+    document.querySelectorAll('.help-btn.active').forEach(b => b.classList.remove('active'));
+    if (!isShown) {
+        popup.classList.add('show');
+        btn.classList.add('active');
+    }
+}
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.help-btn')) {
+        document.querySelectorAll('.tooltip-popup.show').forEach(p => p.classList.remove('show'));
+        document.querySelectorAll('.help-btn.active').forEach(b => b.classList.remove('active'));
+    }
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.tooltip-popup.show').forEach(p => p.classList.remove('show'));
+        document.querySelectorAll('.help-btn.active').forEach(b => b.classList.remove('active'));
+    }
+});
 
 // ══════════════ RESET ══════════════
 function resetAll() {
