@@ -119,7 +119,40 @@ function initDbSchema() {
         { name: 'cause_number', type: 'TEXT' },
         { name: 'record_slug', type: 'TEXT' },
         { name: 'photo_hash', type: 'TEXT' },
-        { name: 'document_hash', type: 'TEXT' }
+        { name: 'document_hash', type: 'TEXT' },
+        // Berkeley Protocol - Case Classification & Evidence Tracking
+        { name: 'case_type', type: 'TEXT' },
+        // Reporter / Informant Information
+        { name: 'reporter_name', type: 'TEXT' },
+        { name: 'reporter_relation', type: 'TEXT' },
+        { name: 'reporter_phone', type: 'TEXT' },
+        { name: 'reporter_id', type: 'TEXT' },
+        { name: 'informant_consent', type: 'INTEGER' },
+        // Witness Information (JSON array)
+        { name: 'witnesses_data', type: 'TEXT' },
+        // Digital Evidence (JSON)
+        { name: 'digital_evidence_type', type: 'TEXT' },
+        { name: 'digital_evidence_url', type: 'TEXT' },
+        { name: 'digital_evidence_url_status', type: 'TEXT' },
+        { name: 'digital_evidence_screenshot_path', type: 'TEXT' },
+        { name: 'digital_evidence_date', type: 'TEXT' },
+        { name: 'digital_evidence_description', type: 'TEXT' },
+        { name: 'digital_evidence_person_name', type: 'TEXT' },
+        { name: 'digital_evidence_death_date', type: 'TEXT' },
+        // Civil Registry
+        { name: 'civil_registry_status', type: 'TEXT' },
+        { name: 'civil_registry_date', type: 'TEXT' },
+        { name: 'civil_registry_document_path', type: 'TEXT' },
+        // Evidence Conflict
+        { name: 'has_conflicting_info', type: 'INTEGER' },
+        { name: 'conflicting_info_details', type: 'TEXT' },
+        // Evidence Assessment (Berkeley Protocol)
+        { name: 'evidence_level', type: 'TEXT' },
+        { name: 'evidence_sources_count', type: 'INTEGER' },
+        { name: 'last_known_alive_date', type: 'TEXT' },
+        { name: 'last_known_location', type: 'TEXT' },
+        // Detention Facilities Path (JSON array)
+        { name: 'detention_facilities_data', type: 'TEXT' }
     ];
     for (const col of columnsToAdd) {
         try { db.exec(`ALTER TABLE records ADD COLUMN ${col.name} ${col.type}`); } catch (err) {}
@@ -133,6 +166,8 @@ const storage = multer.diskStorage({
         if (file.fieldname === 'photo') subdir = 'photos';
         else if (file.fieldname === 'survivorCvPhoto' || file.fieldname.startsWith('cvPhoto_')) subdir = 'cv_photos';
         else if (file.fieldname === 'survivorCv' || file.fieldname.startsWith('cv_')) subdir = 'cvs';
+        else if (file.fieldname === 'evidenceScreenshot') subdir = 'evidence';
+        else if (file.fieldname === 'civilRegistryDoc') subdir = 'civil_registry';
         const dir = path.join(UPLOAD_DIR, subdir);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         cb(null, dir);
@@ -242,6 +277,22 @@ app.post('/api/records', upload.any(), (req, res) => {
         const { data: c2, under18Count: u2 } = collectChildrenData(b, 'kidsBoxW', filesMap);
         const survivorCvPath = filesMap['survivorCv'] || null;
         const survivorCvPhotoPath = filesMap['survivorCvPhoto'] || null;
+        const evidenceScreenshotPath = filesMap['evidenceScreenshot'] || null;
+        const civilRegistryDocPath = filesMap['civilRegistryDoc'] || null;
+
+        // Collect witnesses data (JSON array)
+        const witnessesArr = [];
+        for (let i = 1; i <= 10; i++) {
+            if (b[`witnessName_${i}`]) {
+                witnessesArr.push({
+                    name: b[`witnessName_${i}`],
+                    phone: b[`witnessPhone_${i}`] || '',
+                    relation: b[`witnessRelation_${i}`] || '',
+                    statement: b[`witnessStatement_${i}`] || '',
+                    date: b[`witnessDate_${i}`] || ''
+                });
+            }
+        }
 
         // Append ' - جمعية حقنا' to collector name if present
         if (b.collectorName && !b.collectorName.includes('جمعية حقنا')) {
@@ -274,7 +325,16 @@ app.post('/api/records', upload.any(), (req, res) => {
                 breadwinner_relation_other,
                 survivor_cv_path, survivor_cv_text, survivor_cv_photo_path,
                 source_type, source_url, collection_date, collector_name, verification_status, methodology_notes, cause_number, record_slug,
-                photo_hash, document_hash
+                photo_hash, document_hash,
+                case_type, reporter_name, reporter_relation, reporter_phone, reporter_id, informant_consent,
+                witnesses_data,
+                digital_evidence_type, digital_evidence_url, digital_evidence_url_status,
+                digital_evidence_screenshot_path, digital_evidence_date, digital_evidence_description,
+                digital_evidence_person_name, digital_evidence_death_date,
+                civil_registry_status, civil_registry_date, civil_registry_document_path,
+                has_conflicting_info, conflicting_info_details,
+                evidence_level, evidence_sources_count, last_known_alive_date, last_known_location,
+                detention_facilities_data
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
@@ -285,7 +345,16 @@ app.post('/api/records', upload.any(), (req, res) => {
                 ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?
+                ?, ?,
+                ?, ?, ?, ?, ?, ?,
+                ?,
+                ?, ?, ?,
+                ?, ?, ?,
+                ?, ?,
+                ?, ?, ?,
+                ?, ?,
+                ?, ?, ?, ?,
+                ?
             )
         `);
 
@@ -312,7 +381,16 @@ app.post('/api/records', upload.any(), (req, res) => {
             b.breadwinnerRelationOther || null,
             survivorCvPath, b.survivorCvText || null, survivorCvPhotoPath,
             b.sourceType || null, b.sourceUrl || null, b.collectionDate || null, b.collectorName || null, b.verificationStatus || null, b.methodologyNotes || null, causeNumber, recordSlug,
-            photoHash || null, docHash || null
+            photoHash || null, docHash || null,
+            b.caseType || null, b.reporterName || null, b.reporterRelation || null, b.reporterPhone || null, b.reporterId || null, b.informantConsent === 'yes' ? 1 : 0,
+            witnessesArr.length > 0 ? JSON.stringify(witnessesArr) : null,
+            b.digitalEvidenceType || null, b.digitalEvidenceUrl || null, b.digitalEvidenceUrlStatus || null,
+            evidenceScreenshotPath, b.digitalEvidenceDate || null, b.digitalEvidenceDescription || null,
+            b.digitalEvidencePersonName || null, b.digitalEvidenceDeathDate || null,
+            b.civilRegistryStatus || null, b.civilRegistryDate || null, civilRegistryDocPath,
+            b.hasConflictingInfo === 'yes' ? 1 : 0, b.conflictingInfoDetails || null,
+            b.evidenceLevel || null, parseInt(b.evidenceSourcesCount) || null, b.lastKnownAliveDate || null, b.lastKnownLocation || null,
+            b.detentionFacilitiesData || null
         );
         res.json({ success: true, id: result.lastInsertRowid });
     } catch (err) {
@@ -556,6 +634,33 @@ app.get('/api/records', authMiddleware, (req, res) => {
             )`;
             params.push(...eduValues, ...eduValues);
         }
+
+        // Case type filter
+        const caseType = req.query.caseType || '';
+        if (caseType) { where += ' AND case_type = ?'; params.push(caseType); }
+
+        // Evidence level filter
+        const evidenceLevel = req.query.evidenceLevel || '';
+        if (evidenceLevel) { where += ' AND evidence_level = ?'; params.push(evidenceLevel); }
+
+        // Civil registry status filter
+        const civilRegistryStatus = req.query.civilRegistryStatus || '';
+        if (civilRegistryStatus) { where += ' AND civil_registry_status = ?'; params.push(civilRegistryStatus); }
+
+        // Conflicting info filter
+        const hasConflictingInfo = req.query.hasConflictingInfo || '';
+        if (hasConflictingInfo === 'yes') { where += ' AND has_conflicting_info = 1'; }
+        if (hasConflictingInfo === 'no') { where += ' AND (has_conflicting_info IS NULL OR has_conflicting_info = 0)'; }
+
+        // Digital evidence filter
+        const hasDigitalEvidence = req.query.hasDigitalEvidence || '';
+        if (hasDigitalEvidence === 'yes') { where += " AND digital_evidence_type IS NOT NULL AND digital_evidence_type != ''"; }
+        if (hasDigitalEvidence === 'no') { where += " AND (digital_evidence_type IS NULL OR digital_evidence_type = '')"; }
+
+        // Witnesses filter
+        const hasWitnesses = req.query.hasWitnesses || '';
+        if (hasWitnesses === 'yes') { where += " AND witnesses_data IS NOT NULL AND witnesses_data != ''"; }
+        if (hasWitnesses === 'no') { where += " AND (witnesses_data IS NULL OR witnesses_data = '')"; }
 
         const total = db.prepare(`SELECT COUNT(*) as count FROM records ${where}`).get(...params).count;
         const records = db.prepare(`SELECT * FROM records ${where} ORDER BY id DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
@@ -867,14 +972,29 @@ app.put('/api/records/:id', authMiddleware, upload.any(), (req, res) => {
             survivorCvText:'survivor_cv_text',
             sourceType:'source_type', sourceUrl:'source_url', collectionDate:'collection_date',
             collectorName:'collector_name', verificationStatus:'verification_status',
-            methodologyNotes:'methodology_notes', causeNumber:'cause_number', recordSlug:'record_slug'
+            methodologyNotes:'methodology_notes', causeNumber:'cause_number', recordSlug:'record_slug',
+            // Berkeley Protocol - Case Classification & Evidence
+            caseType:'case_type',
+            reporterName:'reporter_name', reporterRelation:'reporter_relation',
+            reporterPhone:'reporter_phone', reporterId:'reporter_id',
+            informantConsent:'informant_consent',
+            witnessesData:'witnesses_data',
+            digitalEvidenceType:'digital_evidence_type', digitalEvidenceUrl:'digital_evidence_url',
+            digitalEvidenceUrlStatus:'digital_evidence_url_status',
+            digitalEvidenceDate:'digital_evidence_date', digitalEvidenceDescription:'digital_evidence_description',
+            digitalEvidencePersonName:'digital_evidence_person_name', digitalEvidenceDeathDate:'digital_evidence_death_date',
+            civilRegistryStatus:'civil_registry_status', civilRegistryDate:'civil_registry_date',
+            hasConflictingInfo:'has_conflicting_info', conflictingInfoDetails:'conflicting_info_details',
+            evidenceLevel:'evidence_level', evidenceSourcesCount:'evidence_sources_count',
+            lastKnownAliveDate:'last_known_alive_date', lastKnownLocation:'last_known_location',
+            detentionFacilitiesData:'detention_facilities_data'
         };
 
         const sets = [];
         const vals = [];
 
         // Handle checkboxes explicitly for PUT
-        const boolFields = ['hasHypertension', 'hasDiabetes', 'isOfficiallyRegistered', 'hasSpecialNeeds'];
+        const boolFields = ['hasHypertension', 'hasDiabetes', 'isOfficiallyRegistered', 'hasSpecialNeeds', 'informantConsent', 'hasConflictingInfo'];
         boolFields.forEach(f => {
             sets.push(`${map[f]} = ?`);
             vals.push(b[f] === 'yes' ? 1 : 0);
@@ -916,6 +1036,50 @@ app.put('/api/records/:id', authMiddleware, upload.any(), (req, res) => {
         if (b.legal_present === 'true') {
             sets.push('legal_details = ?');
             vals.push(b.legal === 'yes' ? collectLegalData(b) : null);
+        }
+
+        // Evidence screenshot file handling
+        let evScreenshotPath = old.digital_evidence_screenshot_path;
+        if (b.deleteEvidenceScreenshot === 'yes') {
+            if (old.digital_evidence_screenshot_path) {
+                try { fs.unlinkSync(path.join(UPLOAD_DIR, 'evidence', old.digital_evidence_screenshot_path)); } catch(e) {}
+            }
+            evScreenshotPath = null;
+        } else if (filesMap['evidenceScreenshot']) {
+            evScreenshotPath = filesMap['evidenceScreenshot'];
+        }
+        sets.push('digital_evidence_screenshot_path = ?');
+        vals.push(evScreenshotPath);
+
+        // Civil registry document file handling
+        let civilRegDocPath = old.civil_registry_document_path;
+        if (b.deleteCivilRegistryDoc === 'yes') {
+            if (old.civil_registry_document_path) {
+                try { fs.unlinkSync(path.join(UPLOAD_DIR, 'civil_registry', old.civil_registry_document_path)); } catch(e) {}
+            }
+            civilRegDocPath = null;
+        } else if (filesMap['civilRegistryDoc']) {
+            civilRegDocPath = filesMap['civilRegistryDoc'];
+        }
+        sets.push('civil_registry_document_path = ?');
+        vals.push(civilRegDocPath);
+
+        // Handle witnesses data for PUT
+        if (b.witnesses_present === 'true') {
+            const witnessesArr = [];
+            for (let i = 1; i <= 10; i++) {
+                if (b[`witnessName_${i}`]) {
+                    witnessesArr.push({
+                        name: b[`witnessName_${i}`],
+                        phone: b[`witnessPhone_${i}`] || '',
+                        relation: b[`witnessRelation_${i}`] || '',
+                        statement: b[`witnessStatement_${i}`] || '',
+                        date: b[`witnessDate_${i}`] || ''
+                    });
+                }
+            }
+            sets.push('witnesses_data = ?');
+            vals.push(witnessesArr.length > 0 ? JSON.stringify(witnessesArr) : null);
         }
 
         // Survivor CV file handling
@@ -964,7 +1128,13 @@ app.get('/api/stats', authMiddleware, (req, res) => {
     const enforced = db.prepare("SELECT COUNT(*) as count FROM records WHERE status = 'enforced'").get().count;
     const survivors = db.prepare("SELECT COUNT(*) as count FROM records WHERE status = 'survivor'").get().count;
     const deceased = db.prepare("SELECT COUNT(*) as count FROM records WHERE status = 'deceased'").get().count;
-    res.json({ total, enforced, survivors, deceased });
+    const withConflicts = db.prepare("SELECT COUNT(*) as count FROM records WHERE has_conflicting_info = 1").get().count;
+    const withDigitalEvidence = db.prepare("SELECT COUNT(*) as count FROM records WHERE digital_evidence_type IS NOT NULL AND digital_evidence_type != ''").get().count;
+    const withWitnesses = db.prepare("SELECT COUNT(*) as count FROM records WHERE witnesses_data IS NOT NULL AND witnesses_data != ''").get().count;
+    const highEvidence = db.prepare("SELECT COUNT(*) as count FROM records WHERE evidence_level = 'high'").get().count;
+    const mediumEvidence = db.prepare("SELECT COUNT(*) as count FROM records WHERE evidence_level = 'medium'").get().count;
+    const lowEvidence = db.prepare("SELECT COUNT(*) as count FROM records WHERE evidence_level = 'low'").get().count;
+    res.json({ total, enforced, survivors, deceased, withConflicts, withDigitalEvidence, withWitnesses, highEvidence, mediumEvidence, lowEvidence });
 });
 
 app.get('/api/export', authMiddleware, (req, res) => {

@@ -900,6 +900,55 @@
     </div>
 </div>
 
+<!-- ═══════════ R - بيانات المُبلّغ / مصدر المعلومة ═══════════ -->
+<div class="section glow-green" style="border: 1px solid var(--green);">
+    <div class="sec-head" style="background: rgba(16,185,129,0.05);">
+        <span class="sec-num" style="background: var(--green);">R</span>
+        <h3 style="color:var(--green);">بيانات المُبلّغ / مصدر الإبلاغ (Reporter Information)</h3>
+    </div>
+    <div class="sec-body">
+        <div style="padding:10px 14px; background:rgba(16,185,129,0.05); border:1px solid rgba(16,185,129,0.2); border-radius:10px; margin-bottom:16px;">
+            <p style="font-size:0.85em; color:var(--text-dim); line-height:1.6;">
+                بروتوكول بيركلي: يجب توثيق هوية المُبلّغ وعلاقته بالشخص المعني لضمان مصداقية المعلومات وقابليتها للتحقق. هذه البيانات سرية ولا تُنشر.
+            </p>
+        </div>
+        <div class="g g2">
+            <div class="fg"><label><span class="rq">*</span> اسم المُبلّغ</label><input type="text" name="reporterName" placeholder="الاسم الكامل للمُبلّغ" required></div>
+            <div class="fg">
+                <label><span class="rq">*</span> صلة القرابة بالشخص المعني</label>
+                <select name="reporterRelation" required>
+                    <option value="">-- اختر --</option>
+                    <option value="self">الشخص نفسه (ناجي)</option>
+                    <option value="mother">أم</option>
+                    <option value="father">أب</option>
+                    <option value="spouse">زوج/زوجة</option>
+                    <option value="brother">أخ</option>
+                    <option value="sister">أخت</option>
+                    <option value="son">ابن</option>
+                    <option value="daughter">ابنة</option>
+                    <option value="uncle">عم / خال</option>
+                    <option value="aunt">عمة / خالة</option>
+                    <option value="friend">صديق</option>
+                    <option value="neighbor">جار</option>
+                    <option value="lawyer">محامي</option>
+                    <option value="ngo">منظمة حقوقية</option>
+                    <option value="other">أخرى</option>
+                </select>
+            </div>
+        </div>
+        <div class="g g2" style="margin-top:14px;">
+            <div class="fg"><label>رقم هاتف المُبلّغ</label><input type="tel" name="reporterPhone" placeholder="+9639XXXXXXXXXX"></div>
+            <div class="fg"><label>الرقم الوطني للمُبلّغ</label><input type="text" name="reporterId" placeholder="للتحقق الداخلي فقط"></div>
+        </div>
+        <div style="margin-top:14px;">
+            <div class="pill p-green">
+                <input type="checkbox" name="informantConsent" id="informant_consent" value="yes">
+                <label for="informant_consent">تم أخذ الموافقة المستنيرة من المُبلّغ (Informed Consent)</label>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ═══════════ 1 - الشخصية ═══════════ -->
 <div class="section glow-cyan">
     <div class="sec-head">
@@ -1101,6 +1150,188 @@
                     <label>ملاحظات المنهجية (يتم التعبئة تلقائياً أو يدوياً)</label>
                     <textarea name="methodologyNotes" id="inp_methodologyNotes" placeholder="شرح طريقة التحقق والمصادر..." rows="3"></textarea>
                 </div>
+            </div>
+        </div>
+
+        <!-- ← تصنيف الحالة الفرعي (Case Sub-type) -->
+        <div class="cond" id="sec_case_type" style="margin-top:18px; padding:16px; background:rgba(245,158,11,0.05); border:1px solid var(--amber); border-radius:12px; display:none;">
+            <h4 style="color:var(--amber); font-size:0.95em; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                <span>تصنيف الحالة الفرعي (Berkeley Case Classification)</span>
+                <div class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">التصنيف الفرعي يساعد في تحديد نوع الأدلة المطلوبة ومستوى التحقق حسب بروتوكول بيركلي.</span>
+                </div>
+            </h4>
+            <div class="fg">
+                <label><span class="rq">*</span> نوع الحالة الفرعي</label>
+                <select name="caseType" id="inp_caseType" onchange="toggleCaseTypeDetails()">
+                    <option value="">-- اختر --</option>
+                    <!-- Options populated dynamically based on status -->
+                </select>
+            </div>
+        </div>
+
+        <!-- ← قسم الشهود (Witnesses Section) -->
+        <div class="cond" id="sec_witnesses" style="margin-top:18px; padding:16px; background:rgba(6,182,212,0.03); border:1px solid var(--accent); border-radius:12px; display:none;">
+            <h4 style="color:var(--accent); font-size:0.95em; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                <span>شهود على الاعتقال / الواقعة (Witnesses)</span>
+                <div class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">بروتوكول بيركلي: توثيق الشهود يعزز مصداقية القضية. أضف كل شاهد على حدة مع بياناته.</span>
+                </div>
+            </h4>
+            <div class="fg" style="margin-bottom:12px;">
+                <label>عدد الشهود</label>
+                <input type="number" id="witnessCount" min="0" max="10" placeholder="أدخل عدد الشهود" oninput="buildWitnesses(this.value)">
+            </div>
+            <div id="witnessesBox"></div>
+        </div>
+
+        <!-- ← قسم الأدلة الرقمية (Digital Evidence Section) -->
+        <div class="cond" id="sec_digital_evidence" style="margin-top:18px; padding:16px; background:rgba(239,68,68,0.03); border:1px solid rgba(239,68,68,0.3); border-radius:12px; display:none;">
+            <h4 style="color:var(--red); font-size:0.95em; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                <span>الأدلة الرقمية (Digital Evidence)</span>
+                <div class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">بروتوكول بيركلي: يجب حفظ الأدلة الرقمية بشكل آمن مع توثيق سلسلة العهدة (Chain of Custody) والبصمة الرقمية.</span>
+                </div>
+            </h4>
+            <div class="g g2">
+                <div class="fg">
+                    <label>نوع الدليل الرقمي</label>
+                    <select name="digitalEvidenceType" id="inp_digitalEvidenceType">
+                        <option value="">-- اختر --</option>
+                        <option value="caesar_files">تسريبات قيصر (Caesar Files)</option>
+                        <option value="leaked_photos">صور مسربة أخرى</option>
+                        <option value="social_media">منشور على وسائل التواصل</option>
+                        <option value="news_report">تقرير إخباري</option>
+                        <option value="database_leak">تسريب قاعدة بيانات</option>
+                        <option value="other">أخرى</option>
+                    </select>
+                </div>
+                <div class="fg">
+                    <label>الرابط الأصلي للدليل</label>
+                    <input type="text" name="digitalEvidenceUrl" placeholder="URL (حتى لو كان محذوفاً)">
+                </div>
+            </div>
+            <div class="g g2" style="margin-top:12px;">
+                <div class="fg">
+                    <label>حالة الرابط</label>
+                    <select name="digitalEvidenceUrlStatus">
+                        <option value="">-- اختر --</option>
+                        <option value="active">فعّال (Active)</option>
+                        <option value="deleted">محذوف (Deleted)</option>
+                        <option value="archived">مؤرشف (Archived)</option>
+                        <option value="unknown">غير معروف</option>
+                    </select>
+                </div>
+                <div class="fg">
+                    <label>تاريخ اكتشاف / الحصول على الدليل</label>
+                    <input type="date" name="digitalEvidenceDate" style="color-scheme:dark;">
+                </div>
+            </div>
+            <div class="g g2" style="margin-top:12px;">
+                <div class="fg">
+                    <label>اسم الشخص كما ظهر في الدليل</label>
+                    <input type="text" name="digitalEvidencePersonName" placeholder="الاسم كما ورد في التسريب">
+                </div>
+                <div class="fg">
+                    <label>تاريخ الوفاة كما ظهر في الدليل</label>
+                    <input type="text" name="digitalEvidenceDeathDate" placeholder="إن وُجد">
+                </div>
+            </div>
+            <div class="fg" style="margin-top:12px;">
+                <label>وصف الدليل / ملاحظات</label>
+                <textarea name="digitalEvidenceDescription" placeholder="صف الدليل الرقمي بالتفصيل: ماذا يُظهر؟ ما السياق؟ كيف تم الحصول عليه؟" rows="3"></textarea>
+            </div>
+            <div class="fg" style="margin-top:12px;">
+                <label>لقطة شاشة / صورة الدليل</label>
+                <div style="position:relative;">
+                    <div class="fbox">
+                        <div class="flbl" id="fl_evidence">ارفق لقطة شاشة أو صورة الدليل</div>
+                        <input type="file" name="evidenceScreenshot" id="inp_evidence" accept="image/*,.pdf" onchange="markFileGeneric(this,'fl_evidence','cl_evidence')">
+                    </div>
+                    <button type="button" class="file-clear-btn" id="cl_evidence" onclick="clearFileGeneric('inp_evidence','fl_evidence','cl_evidence','ارفق لقطة شاشة أو صورة الدليل');" style="display:none;">✕</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ← قسم السجل المدني (Civil Registry Section) -->
+        <div class="cond" id="sec_civil_registry" style="margin-top:18px; padding:16px; background:rgba(139,92,246,0.03); border:1px solid rgba(139,92,246,0.3); border-radius:12px; display:none;">
+            <h4 style="color:var(--accent2); font-size:0.95em; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                <span>حالة السجل المدني / النفوس (Civil Registry Status)</span>
+                <div class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">بروتوكول بيركلي: التحقق من السجلات الرسمية ضروري لمطابقة المعلومات وكشف التناقضات.</span>
+                </div>
+            </h4>
+            <div class="g g2">
+                <div class="fg">
+                    <label><span class="rq">*</span> حالة الشخص في السجل المدني</label>
+                    <select name="civilRegistryStatus" id="inp_civilRegistryStatus" onchange="checkConflicts()">
+                        <option value="">-- اختر --</option>
+                        <option value="alive">على قيد الحياة في السجل</option>
+                        <option value="deceased">مسجل كمتوفى</option>
+                        <option value="not_checked">لم يتم التحقق</option>
+                        <option value="no_record">لا يوجد سجل</option>
+                        <option value="unknown">غير معروف</option>
+                    </select>
+                </div>
+                <div class="fg">
+                    <label>تاريخ التحقق من السجل المدني</label>
+                    <input type="date" name="civilRegistryDate" style="color-scheme:dark;">
+                </div>
+            </div>
+            <div class="fg" style="margin-top:12px;">
+                <label>وثيقة إخراج القيد / بيان القيد</label>
+                <div style="position:relative;">
+                    <div class="fbox">
+                        <div class="flbl" id="fl_civilreg">ارفق وثيقة السجل المدني</div>
+                        <input type="file" name="civilRegistryDoc" id="inp_civilreg" accept="image/*,.pdf" onchange="markFileGeneric(this,'fl_civilreg','cl_civilreg')">
+                    </div>
+                    <button type="button" class="file-clear-btn" id="cl_civilreg" onclick="clearFileGeneric('inp_civilreg','fl_civilreg','cl_civilreg','ارفق وثيقة السجل المدني');" style="display:none;">✕</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ← تنبيه التناقض (Conflict Alert) -->
+        <div id="sec_conflict_alert" style="display:none; margin-top:18px; padding:16px; background:rgba(239,68,68,0.08); border:2px solid var(--red); border-radius:12px;">
+            <h4 style="color:var(--red); font-size:0.95em; margin-bottom:8px;">تنبيه: تناقض في المعلومات (Conflicting Information)</h4>
+            <p id="conflict_alert_text" style="font-size:0.88em; color:#fca5a5; margin-bottom:12px;"></p>
+            <input type="hidden" name="hasConflictingInfo" id="inp_hasConflictingInfo" value="">
+            <div class="fg">
+                <label>تفاصيل التناقض</label>
+                <textarea name="conflictingInfoDetails" id="inp_conflictingInfoDetails" placeholder="اشرح التناقض بالتفصيل..." rows="2"></textarea>
+            </div>
+        </div>
+
+        <!-- ← تقييم الأدلة (Evidence Assessment) -->
+        <div class="cond" id="sec_evidence_assessment" style="margin-top:18px; padding:16px; background:rgba(16,185,129,0.03); border:1px solid rgba(16,185,129,0.3); border-radius:12px; display:none;">
+            <h4 style="color:var(--green); font-size:0.95em; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                <span>تقييم مستوى الأدلة (Berkeley Evidence Assessment)</span>
+            </h4>
+            <div class="g g3">
+                <div class="fg">
+                    <label>مستوى الأدلة</label>
+                    <select name="evidenceLevel" id="inp_evidenceLevel">
+                        <option value="">-- يحدد تلقائياً --</option>
+                        <option value="high">عالي (High) - مصادر متعددة مؤكدة</option>
+                        <option value="medium">متوسط (Medium) - مصدر موثوق واحد</option>
+                        <option value="low">منخفض (Low) - شهادة فردية بدون أدلة</option>
+                    </select>
+                </div>
+                <div class="fg">
+                    <label>عدد المصادر المستقلة</label>
+                    <input type="number" name="evidenceSourcesCount" min="0" max="20" placeholder="عدد المصادر" id="inp_evidenceSourcesCount">
+                </div>
+                <div class="fg">
+                    <label>آخر تاريخ معروف (حياً)</label>
+                    <input type="date" name="lastKnownAliveDate" style="color-scheme:dark;">
+                </div>
+            </div>
+            <div class="fg" style="margin-top:12px;">
+                <label>آخر مكان معروف</label>
+                <input type="text" name="lastKnownLocation" placeholder="آخر مكان شوهد فيه الشخص">
             </div>
         </div>
 
@@ -1636,22 +1867,43 @@ function toggleStatus() {
     // Berkeley Integrated Section Logic
     const bSec = document.getElementById('sec_berkeley_source');
     const bLbl = document.getElementById('lbl_source_type');
+    const caseTypeSec = document.getElementById('sec_case_type');
+    const witnessesSec = document.getElementById('sec_witnesses');
+    const digitalEvSec = document.getElementById('sec_digital_evidence');
+    const civilRegSec = document.getElementById('sec_civil_registry');
+    const evidenceAssessSec = document.getElementById('sec_evidence_assessment');
 
     if (v) {
         bSec.style.display = 'block';
+        caseTypeSec.style.display = 'block';
+        witnessesSec.style.display = 'block';
+        civilRegSec.style.display = 'block';
+        evidenceAssessSec.style.display = 'block';
+
+        // Populate case type options based on status
+        populateCaseTypeOptions(v);
+
         if (v === 'survivor') {
             bLbl.textContent = 'نوع مصدر معلومات النجاة';
             show('sec_survivor');
+            digitalEvSec.style.display = 'none';
         } else if (v === 'deceased') {
             bLbl.textContent = 'نوع مصدر معلومات الوفاة';
             show('sec_dead');
             show('sec_official_registration');
+            digitalEvSec.style.display = 'block';
         } else if (v === 'enforced') {
             bLbl.textContent = 'نوع مصدر معلومات الاختفاء';
             show('sec_official_registration');
+            digitalEvSec.style.display = 'block';
         }
     } else {
         bSec.style.display = 'none';
+        caseTypeSec.style.display = 'none';
+        witnessesSec.style.display = 'none';
+        digitalEvSec.style.display = 'none';
+        civilRegSec.style.display = 'none';
+        evidenceAssessSec.style.display = 'none';
     }
 
     // survivor: show employment, hide breadwinner, show health
@@ -1673,6 +1925,188 @@ function toggleStatus() {
         breadSection.style.display = 'block';
         healthSection.style.display = 'block';
     }
+
+    checkConflicts();
+}
+
+// ══════════════ CASE TYPE OPTIONS ══════════════
+function populateCaseTypeOptions(status) {
+    const sel = document.getElementById('inp_caseType');
+    sel.innerHTML = '<option value="">-- اختر --</option>';
+
+    const options = {
+        enforced: [
+            { value: 'enforced_no_info', label: 'إخفاء قسري - بدون أي معلومات إضافية' },
+            { value: 'enforced_with_witnesses', label: 'إخفاء قسري - مع شهود على الاعتقال' },
+            { value: 'enforced_with_digital', label: 'إخفاء قسري - مع أدلة رقمية (تسريبات / منشورات)' },
+            { value: 'enforced_conflicting', label: 'إخفاء قسري - معلومات متضاربة (دليل رقمي يناقض السجل الرسمي)' }
+        ],
+        deceased: [
+            { value: 'deceased_official_only', label: 'متوفى - مؤكد رسمياً فقط (بيان قيد / شهادة وفاة)' },
+            { value: 'deceased_digital_only', label: 'متوفى - دليل رقمي فقط (تسريبات / صور) بدون تأكيد رسمي' },
+            { value: 'deceased_confirmed_both', label: 'متوفى - مؤكد بأدلة رقمية + رسمية' },
+            { value: 'deceased_caesar', label: 'متوفى - ملفات قيصر (Caesar Files)' },
+            { value: 'deceased_conflicting', label: 'متوفى - معلومات متضاربة' }
+        ],
+        survivor: [
+            { value: 'survivor_documented', label: 'ناجي - لديه وثائق إثبات الاعتقال' },
+            { value: 'survivor_undocumented', label: 'ناجي - بدون وثائق إثبات' },
+            { value: 'survivor_with_witnesses', label: 'ناجي - مع شهود يؤكدون اعتقاله' }
+        ]
+    };
+
+    (options[status] || []).forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt.value;
+        o.textContent = opt.label;
+        sel.appendChild(o);
+    });
+}
+
+// ══════════════ CASE TYPE DETAILS TOGGLE ══════════════
+function toggleCaseTypeDetails() {
+    const ct = document.getElementById('inp_caseType').value;
+    const digitalEvSec = document.getElementById('sec_digital_evidence');
+    const status = document.querySelector('[name=status]:checked')?.value;
+
+    // Auto-show digital evidence section for certain case types
+    if (['deceased_digital_only', 'deceased_confirmed_both', 'deceased_caesar',
+         'deceased_conflicting', 'enforced_with_digital', 'enforced_conflicting'].includes(ct)) {
+        digitalEvSec.style.display = 'block';
+        // Auto-select caesar_files type for caesar case type
+        if (ct === 'deceased_caesar') {
+            document.getElementById('inp_digitalEvidenceType').value = 'caesar_files';
+        }
+    } else if (status === 'survivor') {
+        digitalEvSec.style.display = 'none';
+    }
+
+    autoCalculateEvidenceLevel();
+}
+
+// ══════════════ WITNESSES ══════════════
+function buildWitnesses(count) {
+    const box = document.getElementById('witnessesBox');
+    box.innerHTML = '';
+    const n = parseInt(count) || 0;
+    for (let i = 1; i <= n; i++) {
+        box.innerHTML += `
+        <div class="child-card" style="border-color:rgba(6,182,212,0.3);">
+            <div class="child-head">
+                <h4><span class="cn">${i}</span> شاهد رقم ${i}</h4>
+            </div>
+            <div class="g g2">
+                <div class="fg"><label><span class="rq">*</span> اسم الشاهد</label><input type="text" name="witnessName_${i}" placeholder="الاسم الكامل"></div>
+                <div class="fg"><label>رقم هاتف الشاهد</label><input type="tel" name="witnessPhone_${i}" placeholder="رقم التواصل"></div>
+                <div class="fg">
+                    <label>صلة الشاهد بالشخص</label>
+                    <select name="witnessRelation_${i}">
+                        <option value="">-- اختر --</option>
+                        <option value="relative">قريب</option>
+                        <option value="friend">صديق</option>
+                        <option value="neighbor">جار</option>
+                        <option value="colleague">زميل عمل</option>
+                        <option value="fellow_detainee">معتقل سابق معه</option>
+                        <option value="eyewitness">شاهد عيان</option>
+                        <option value="other">أخرى</option>
+                    </select>
+                </div>
+                <div class="fg"><label>تاريخ الشهادة</label><input type="date" name="witnessDate_${i}" style="color-scheme:dark;"></div>
+                <div class="fg spanall"><label>نص الشهادة / الملاحظات</label><textarea name="witnessStatement_${i}" placeholder="ملخص ما شهده الشاهد..." rows="2"></textarea></div>
+            </div>
+        </div>`;
+    }
+    autoCalculateEvidenceLevel();
+}
+
+// ══════════════ CONFLICT DETECTION ══════════════
+function checkConflicts() {
+    const status = document.querySelector('[name=status]:checked')?.value;
+    const civilStatus = document.getElementById('inp_civilRegistryStatus')?.value;
+    const caseType = document.getElementById('inp_caseType')?.value;
+    const alertBox = document.getElementById('sec_conflict_alert');
+    const alertText = document.getElementById('conflict_alert_text');
+    const hiddenConflict = document.getElementById('inp_hasConflictingInfo');
+
+    let hasConflict = false;
+    let conflictMsg = '';
+
+    // Conflict: Status is deceased but civil registry says alive
+    if (status === 'deceased' && civilStatus === 'alive') {
+        hasConflict = true;
+        conflictMsg = 'تناقض: الحالة مسجلة كمتوفى لكن السجل المدني يُظهر أنه على قيد الحياة. هذا يستوجب تحقيقاً إضافياً.';
+    }
+    // Conflict: Status is enforced but civil registry says deceased
+    if (status === 'enforced' && civilStatus === 'deceased') {
+        hasConflict = true;
+        conflictMsg = 'تناقض: الحالة مسجلة كإخفاء قسري لكن السجل المدني يُظهر أنه متوفى. قد تحتاج لإعادة تصنيف الحالة.';
+    }
+    // Conflict: case type indicates conflicting info
+    if (caseType && caseType.includes('conflicting')) {
+        hasConflict = true;
+        conflictMsg = conflictMsg || 'تنبيه: تم اختيار تصنيف حالة يتضمن معلومات متضاربة. يرجى توثيق تفاصيل التناقض أدناه.';
+    }
+
+    if (hasConflict) {
+        alertBox.style.display = 'block';
+        alertText.textContent = conflictMsg;
+        hiddenConflict.value = 'yes';
+    } else {
+        alertBox.style.display = 'none';
+        hiddenConflict.value = '';
+    }
+
+    autoCalculateEvidenceLevel();
+}
+
+// ══════════════ AUTO EVIDENCE LEVEL CALCULATION ══════════════
+function autoCalculateEvidenceLevel() {
+    let sourcesCount = 0;
+    const status = document.querySelector('[name=status]:checked')?.value;
+    const caseType = document.getElementById('inp_caseType')?.value || '';
+    const hasDigitalEv = document.getElementById('inp_digitalEvidenceType')?.value;
+    const civilStatus = document.getElementById('inp_civilRegistryStatus')?.value;
+    const witnessCount = parseInt(document.getElementById('witnessCount')?.value) || 0;
+    const hasDoc = document.getElementById('inp_doc')?.files?.length > 0;
+
+    // Count sources
+    if (hasDigitalEv) sourcesCount++;
+    if (civilStatus && civilStatus !== 'not_checked' && civilStatus !== 'unknown' && civilStatus !== '') sourcesCount++;
+    if (witnessCount > 0) sourcesCount += Math.min(witnessCount, 3); // Cap at 3
+    if (hasDoc) sourcesCount++;
+    // Reporter always counts as 1
+    sourcesCount++;
+
+    document.getElementById('inp_evidenceSourcesCount').value = sourcesCount;
+
+    // Auto-set evidence level
+    const levelSel = document.getElementById('inp_evidenceLevel');
+    if (sourcesCount >= 3 || caseType === 'deceased_confirmed_both' || caseType === 'deceased_caesar') {
+        levelSel.value = 'high';
+    } else if (sourcesCount === 2 || caseType.includes('with_witnesses') || caseType === 'survivor_documented') {
+        levelSel.value = 'medium';
+    } else {
+        levelSel.value = 'low';
+    }
+}
+
+// ══════════════ GENERIC FILE HELPERS ══════════════
+function markFileGeneric(inp, lblId, clId) {
+    const lbl = document.getElementById(lblId);
+    if (inp.files.length) {
+        lbl.textContent = '✅ ' + inp.files[0].name;
+        lbl.classList.add('done');
+        document.getElementById(clId).style.display = 'flex';
+    }
+}
+
+function clearFileGeneric(inputId, labelId, clearId, defaultText) {
+    const inp = document.getElementById(inputId);
+    inp.value = '';
+    const lbl = document.getElementById(labelId);
+    lbl.textContent = defaultText;
+    lbl.classList.remove('done');
+    document.getElementById(clearId).style.display = 'none';
 }
 
 // ══════════════ BERKELEY INTERACTIVE METHODOLOGY ══════════════
@@ -2063,6 +2497,21 @@ function resetAll() {
         el.classList.remove('done');
     });
     ['cl_photo', 'cl_doc'].forEach(id => document.getElementById(id).style.display = 'none');
+    // Reset new sections
+    ['sec_case_type', 'sec_witnesses', 'sec_digital_evidence', 'sec_civil_registry',
+     'sec_evidence_assessment', 'sec_conflict_alert'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    document.getElementById('witnessesBox').innerHTML = '';
+    ['cl_evidence', 'cl_civilreg'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    ['fl_evidence', 'fl_civilreg'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.textContent = id === 'fl_evidence' ? 'ارفق لقطة شاشة أو صورة الدليل' : 'ارفق وثيقة السجل المدني'; el.classList.remove('done'); }
+    });
     document.getElementById('logoImg').style.display = 'block';
     localStorage.removeItem('haquna_form_data');
 }
@@ -2211,7 +2660,22 @@ function restoreFormData() {
             }
         }
 
-        // Step 8: Restore "other" text fields
+        // Step 8: Restore witness section
+        const witnessCount = data.fields?.witnessCount || '';
+        if (witnessCount) {
+            buildWitnesses(witnessCount);
+            // Restore witness fields
+            if (data.fields) {
+                for (const [name, val] of Object.entries(data.fields)) {
+                    if (name.match(/^witness(Name|Phone|Relation|Statement|Date)_/)) {
+                        const el = form.elements[name];
+                        if (el) el.value = val;
+                    }
+                }
+            }
+        }
+
+        // Step 8b: Restore "other" text fields
         if (data.otherArrestPlace) {
             const el = document.getElementById('otherArrestPlace');
             if (el) { el.value = data.otherArrestPlace; el.parentElement.style.display = 'block'; }
@@ -2298,6 +2762,11 @@ document.getElementById('mainForm').addEventListener('submit', async function(e)
         // If not checked, they aren't in FD. We might want to ensure they are sent as 'no' or 0 if needed,
         // but our server handles missing as null/0.
         // Actually, FD works fine for checked checkboxes.
+
+        // Ensure conflict info is sent
+        if (!fd.get('hasConflictingInfo')) {
+            fd.set('hasConflictingInfo', '');
+        }
 
         const resp = await fetch('/api/records', {
             method: 'POST',

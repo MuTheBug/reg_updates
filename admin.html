@@ -516,6 +516,21 @@
             <div class="stat-label">متوفى</div>
         </div>
     </div>
+    <!-- Evidence Stats Row -->
+    <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-top:-8px;">
+        <div class="stat-card" style="border-color:rgba(16,185,129,0.3);">
+            <div class="stat-number" style="color:var(--green); font-size:1.6em;" id="statHighEvidence">-</div>
+            <div class="stat-label">أدلة عالية المستوى</div>
+        </div>
+        <div class="stat-card" style="border-color:rgba(239,68,68,0.3);">
+            <div class="stat-number" style="color:var(--red); font-size:1.6em;" id="statConflicts">-</div>
+            <div class="stat-label">حالات متضاربة</div>
+        </div>
+        <div class="stat-card" style="border-color:rgba(6,182,212,0.3);">
+            <div class="stat-number" style="color:var(--accent); font-size:1.6em;" id="statDigitalEvidence">-</div>
+            <div class="stat-label">أدلة رقمية</div>
+        </div>
+    </div>
 
     <!-- Main Filters -->
     <div class="filter-bar">
@@ -887,6 +902,78 @@
             </div>
         </div>
 
+        <!-- Section: Berkeley Protocol & Evidence -->
+        <div style="font-weight:800; color:var(--accent2); font-size:0.92em; margin-top:18px; margin-bottom:10px; padding-bottom:6px; border-bottom:2px solid var(--accent2);">بروتوكول بيركلي والأدلة</div>
+        <div class="adv-grid">
+            <div class="filter-group">
+                <label>تصنيف الحالة الفرعي</label>
+                <select id="caseTypeFilter">
+                    <option value="">الكل</option>
+                    <optgroup label="إخفاء قسري">
+                        <option value="enforced_no_info">بدون معلومات إضافية</option>
+                        <option value="enforced_with_witnesses">مع شهود</option>
+                        <option value="enforced_with_digital">مع أدلة رقمية</option>
+                        <option value="enforced_conflicting">معلومات متضاربة</option>
+                    </optgroup>
+                    <optgroup label="متوفى">
+                        <option value="deceased_official_only">مؤكد رسمياً فقط</option>
+                        <option value="deceased_digital_only">دليل رقمي فقط</option>
+                        <option value="deceased_confirmed_both">مؤكد رقمي + رسمي</option>
+                        <option value="deceased_caesar">ملفات قيصر</option>
+                        <option value="deceased_conflicting">متضارب</option>
+                    </optgroup>
+                    <optgroup label="ناجي">
+                        <option value="survivor_documented">موثّق بمستندات</option>
+                        <option value="survivor_undocumented">بدون مستندات</option>
+                        <option value="survivor_with_witnesses">مع شهود</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>مستوى الأدلة</label>
+                <select id="evidenceLevelFilter">
+                    <option value="">الكل</option>
+                    <option value="high">عالي (High)</option>
+                    <option value="medium">متوسط (Medium)</option>
+                    <option value="low">منخفض (Low)</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>حالة السجل المدني</label>
+                <select id="civilRegistryStatusFilter">
+                    <option value="">الكل</option>
+                    <option value="alive">على قيد الحياة</option>
+                    <option value="deceased">مسجل كمتوفى</option>
+                    <option value="not_checked">لم يتم التحقق</option>
+                    <option value="unknown">غير معروف</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>معلومات متضاربة</label>
+                <select id="hasConflictingInfoFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">نعم - يوجد تضارب</option>
+                    <option value="no">لا</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>أدلة رقمية</label>
+                <select id="hasDigitalEvidenceFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">يوجد</option>
+                    <option value="no">لا يوجد</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>شهود</label>
+                <select id="hasWitnessesFilter">
+                    <option value="">الكل</option>
+                    <option value="yes">يوجد شهود</option>
+                    <option value="no">بدون شهود</option>
+                </select>
+            </div>
+        </div>
+
         <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
             <button class="filter-btn" onclick="loadRecords()">تطبيق التصفية</button>
             <button class="reset-btn" onclick="resetFilters()">مسح جميع الفلاتر</button>
@@ -999,6 +1086,9 @@ async function loadStats() {
         document.getElementById('statEnforced').textContent = s.enforced;
         document.getElementById('statSurvivors').textContent = s.survivors;
         document.getElementById('statDeceased').textContent = s.deceased;
+        document.getElementById('statHighEvidence').textContent = s.highEvidence || 0;
+        document.getElementById('statConflicts').textContent = s.withConflicts || 0;
+        document.getElementById('statDigitalEvidence').textContent = s.withDigitalEvidence || 0;
     } catch (e) { console.error('Stats error:', e); }
 }
 
@@ -1097,6 +1187,20 @@ async function loadRecords(page) {
     if (document.getElementById('parentStatusSurvivor').checked) parentStatuses.push('survivor');
     if (parentStatuses.length > 0) params.set('parentStatuses', parentStatuses.join(','));
 
+    // Berkeley Protocol filters
+    const caseTypeF = document.getElementById('caseTypeFilter').value;
+    const evidenceLevelF = document.getElementById('evidenceLevelFilter').value;
+    const civilRegistryStatusF = document.getElementById('civilRegistryStatusFilter').value;
+    const hasConflictingInfoF = document.getElementById('hasConflictingInfoFilter').value;
+    const hasDigitalEvidenceF = document.getElementById('hasDigitalEvidenceFilter').value;
+    const hasWitnessesF = document.getElementById('hasWitnessesFilter').value;
+    if (caseTypeF) params.set('caseType', caseTypeF);
+    if (evidenceLevelF) params.set('evidenceLevel', evidenceLevelF);
+    if (civilRegistryStatusF) params.set('civilRegistryStatus', civilRegistryStatusF);
+    if (hasConflictingInfoF) params.set('hasConflictingInfo', hasConflictingInfoF);
+    if (hasDigitalEvidenceF) params.set('hasDigitalEvidence', hasDigitalEvidenceF);
+    if (hasWitnessesF) params.set('hasWitnesses', hasWitnessesF);
+
     // Children filters
     const childBirthYearFrom = document.getElementById('childBirthYearFrom').value;
     const childBirthYearTo = document.getElementById('childBirthYearTo').value;
@@ -1148,7 +1252,47 @@ async function loadRecords(page) {
 const months = ['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
 
         function isBerkeleyCompliant(r) {
-            return r.source_type && r.collection_date && r.collector_name && r.verification_status;
+            return r.source_type && r.collection_date && r.collector_name && r.verification_status && r.reporter_name && r.case_type;
+        }
+
+        function caseTypeLabel(ct) {
+            const map = {
+                'enforced_no_info': 'إخفاء قسري - بدون معلومات',
+                'enforced_with_witnesses': 'إخفاء قسري - مع شهود',
+                'enforced_with_digital': 'إخفاء قسري - مع أدلة رقمية',
+                'enforced_conflicting': 'إخفاء قسري - متضارب',
+                'deceased_official_only': 'متوفى - مؤكد رسمياً',
+                'deceased_digital_only': 'متوفى - دليل رقمي فقط',
+                'deceased_confirmed_both': 'متوفى - مؤكد (رقمي + رسمي)',
+                'deceased_caesar': 'متوفى - ملفات قيصر',
+                'deceased_conflicting': 'متوفى - متضارب',
+                'survivor_documented': 'ناجي - موثّق',
+                'survivor_undocumented': 'ناجي - بدون وثائق',
+                'survivor_with_witnesses': 'ناجي - مع شهود'
+            };
+            return map[ct] || ct || '—';
+        }
+
+        function evidenceLevelBadge(level) {
+            if (level === 'high') return '<span style="background:var(--green);color:#fff;padding:3px 10px;border-radius:8px;font-size:0.8em;font-weight:700;">عالي</span>';
+            if (level === 'medium') return '<span style="background:var(--amber);color:#000;padding:3px 10px;border-radius:8px;font-size:0.8em;font-weight:700;">متوسط</span>';
+            if (level === 'low') return '<span style="background:var(--red);color:#fff;padding:3px 10px;border-radius:8px;font-size:0.8em;font-weight:700;">منخفض</span>';
+            return '<span style="color:var(--text-dim);">غير محدد</span>';
+        }
+
+        function civilRegistryLabel(status) {
+            const map = { 'alive': 'على قيد الحياة', 'deceased': 'مسجل كمتوفى', 'not_checked': 'لم يتم التحقق', 'no_record': 'لا يوجد سجل', 'unknown': 'غير معروف' };
+            return map[status] || status || '—';
+        }
+
+        function reporterRelationLabel(rel) {
+            const map = { 'self': 'الشخص نفسه', 'mother': 'أم', 'father': 'أب', 'spouse': 'زوج/زوجة', 'brother': 'أخ', 'sister': 'أخت', 'son': 'ابن', 'daughter': 'ابنة', 'uncle': 'عم/خال', 'aunt': 'عمة/خالة', 'friend': 'صديق', 'neighbor': 'جار', 'lawyer': 'محامي', 'ngo': 'منظمة حقوقية', 'other': 'أخرى' };
+            return map[rel] || rel || '—';
+        }
+
+        function digitalEvidenceTypeLabel(type) {
+            const map = { 'caesar_files': 'تسريبات قيصر (Caesar Files)', 'leaked_photos': 'صور مسربة', 'social_media': 'وسائل تواصل', 'news_report': 'تقرير إخباري', 'database_leak': 'تسريب قاعدة بيانات', 'other': 'أخرى' };
+            return map[type] || type || '—';
         }
 
         function statusLabel(r) {
@@ -1268,6 +1412,126 @@ async function viewRecord(id) {
                 ${r.methodology_notes ? `<div style="margin-top:8px;"><div style="font-weight:700;color:var(--text-label);font-size:0.88em;margin-bottom:4px;">منهجية التحقق:</div><div style="background:var(--bg-input);padding:8px;border-radius:8px;font-size:0.9em;white-space:pre-wrap;">${esc(r.methodology_notes)}</div></div>` : ''}
             </div>
         </div>`;
+
+        // Reporter Information
+        if (r.reporter_name) {
+            html += `<div style="border:2px solid var(--green); border-radius:12px; overflow:hidden; margin-bottom:20px;">
+                <div style="background:rgba(16,185,129,0.1); padding:10px 16px; border-bottom:1px solid var(--green);">
+                    <h3 style="color:var(--green); margin:0; font-size:1em;">بيانات المُبلّغ (Reporter)</h3>
+                </div>
+                <div style="padding:16px;">
+                    ${detailRow('اسم المُبلّغ', esc(r.reporter_name))}
+                    ${detailRow('صلة القرابة', reporterRelationLabel(r.reporter_relation))}
+                    ${r.reporter_phone ? detailRow('هاتف المُبلّغ', esc(r.reporter_phone)) : ''}
+                    ${r.reporter_id ? detailRow('الرقم الوطني للمُبلّغ', esc(r.reporter_id)) : ''}
+                    ${detailRow('الموافقة المستنيرة', r.informant_consent ? '<span style="color:var(--green)">تم أخذ الموافقة</span>' : '<span style="color:var(--red)">لم يتم</span>')}
+                </div>
+            </div>`;
+        }
+
+        // Case Classification
+        if (r.case_type) {
+            html += `<div style="border:2px solid var(--amber); border-radius:12px; overflow:hidden; margin-bottom:20px;">
+                <div style="background:rgba(245,158,11,0.1); padding:10px 16px; border-bottom:1px solid var(--amber);">
+                    <h3 style="color:var(--amber); margin:0; font-size:1em;">تصنيف الحالة والأدلة (Case Classification)</h3>
+                </div>
+                <div style="padding:16px;">
+                    ${detailRow('التصنيف الفرعي', caseTypeLabel(r.case_type))}
+                    ${detailRow('مستوى الأدلة', evidenceLevelBadge(r.evidence_level))}
+                    ${detailRow('عدد المصادر المستقلة', r.evidence_sources_count || '—')}
+                    ${r.last_known_alive_date ? detailRow('آخر تاريخ معروف حياً', esc(r.last_known_alive_date)) : ''}
+                    ${r.last_known_location ? detailRow('آخر مكان معروف', esc(r.last_known_location)) : ''}
+                </div>
+            </div>`;
+        }
+
+        // Witnesses
+        if (r.witnesses_data) {
+            try {
+                const witnesses = JSON.parse(r.witnesses_data);
+                if (witnesses.length) {
+                    html += `<div style="border:2px solid var(--accent); border-radius:12px; overflow:hidden; margin-bottom:20px;">
+                        <div style="background:rgba(6,182,212,0.1); padding:10px 16px; border-bottom:1px solid var(--accent);">
+                            <h3 style="color:var(--accent); margin:0; font-size:1em;">الشهود (${witnesses.length})</h3>
+                        </div>
+                        <div style="padding:16px;">`;
+                    witnesses.forEach((w, i) => {
+                        html += `<div style="padding:8px 12px;margin:4px 0;background:var(--bg-input);border-radius:8px;font-size:0.88em;border-right:3px solid var(--accent);">
+                            <strong>${i+1}.</strong> ${esc(w.name)}`;
+                        if (w.relation) html += ` | الصلة: ${esc(w.relation)}`;
+                        if (w.phone) html += ` | هاتف: ${esc(w.phone)}`;
+                        if (w.date) html += ` | تاريخ الشهادة: ${esc(w.date)}`;
+                        if (w.statement) html += `<div style="margin-top:4px;color:var(--text-dim);font-size:0.92em;">${esc(w.statement)}</div>`;
+                        html += `</div>`;
+                    });
+                    html += `</div></div>`;
+                }
+            } catch(e) {}
+        }
+
+        // Digital Evidence
+        if (r.digital_evidence_type) {
+            html += `<div style="border:2px solid var(--red); border-radius:12px; overflow:hidden; margin-bottom:20px;">
+                <div style="background:rgba(239,68,68,0.1); padding:10px 16px; border-bottom:1px solid var(--red);">
+                    <h3 style="color:var(--red); margin:0; font-size:1em;">الأدلة الرقمية (Digital Evidence)</h3>
+                </div>
+                <div style="padding:16px;">
+                    ${detailRow('نوع الدليل', digitalEvidenceTypeLabel(r.digital_evidence_type))}
+                    ${r.digital_evidence_url ? detailRow('الرابط', `<a href="${esc(r.digital_evidence_url)}" target="_blank" style="color:var(--accent);word-break:break-all;">${esc(r.digital_evidence_url)}</a>`) : ''}
+                    ${r.digital_evidence_url_status ? detailRow('حالة الرابط', r.digital_evidence_url_status === 'active' ? '<span style="color:var(--green)">فعّال</span>' : r.digital_evidence_url_status === 'deleted' ? '<span style="color:var(--red)">محذوف</span>' : r.digital_evidence_url_status === 'archived' ? '<span style="color:var(--amber)">مؤرشف</span>' : esc(r.digital_evidence_url_status)) : ''}
+                    ${r.digital_evidence_date ? detailRow('تاريخ الاكتشاف', esc(r.digital_evidence_date)) : ''}
+                    ${r.digital_evidence_person_name ? detailRow('الاسم في الدليل', esc(r.digital_evidence_person_name)) : ''}
+                    ${r.digital_evidence_death_date ? detailRow('تاريخ الوفاة في الدليل', esc(r.digital_evidence_death_date)) : ''}
+                    ${r.digital_evidence_description ? detailRow('الوصف', esc(r.digital_evidence_description)) : ''}`;
+            if (r.digital_evidence_screenshot_path) {
+                const evFile = (r.digital_evidence_screenshot_path || '').replace(/^.*[\/\\]/, '');
+                const isEvImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(evFile);
+                html += `<div style="margin-top:8px;">`;
+                if (isEvImage) {
+                    html += `<img src="/uploads/evidence/${evFile}" style="max-width:100%;max-height:300px;border-radius:10px;border:2px solid var(--border);cursor:pointer;" onclick="openLightbox('/uploads/evidence/${evFile}')" onerror="this.style.display='none';">`;
+                } else {
+                    html += `<a href="/uploads/evidence/${evFile}" target="_blank" style="color:var(--accent);">عرض ملف الدليل</a>`;
+                }
+                html += `</div>`;
+            }
+            html += `</div></div>`;
+        }
+
+        // Civil Registry
+        if (r.civil_registry_status && r.civil_registry_status !== 'not_checked') {
+            const crColor = r.civil_registry_status === 'deceased' ? 'var(--red)' : r.civil_registry_status === 'alive' ? 'var(--green)' : 'var(--accent2)';
+            html += `<div style="border:2px solid ${crColor}; border-radius:12px; overflow:hidden; margin-bottom:20px;">
+                <div style="background:${crColor}11; padding:10px 16px; border-bottom:1px solid ${crColor};">
+                    <h3 style="color:${crColor}; margin:0; font-size:1em;">السجل المدني / النفوس</h3>
+                </div>
+                <div style="padding:16px;">
+                    ${detailRow('حالة السجل المدني', civilRegistryLabel(r.civil_registry_status))}
+                    ${r.civil_registry_date ? detailRow('تاريخ التحقق', esc(r.civil_registry_date)) : ''}`;
+            if (r.civil_registry_document_path) {
+                const crFile = (r.civil_registry_document_path || '').replace(/^.*[\/\\]/, '');
+                const isCrImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(crFile);
+                html += `<div style="margin-top:8px;">`;
+                if (isCrImage) {
+                    html += `<img src="/uploads/civil_registry/${crFile}" style="max-width:100%;max-height:300px;border-radius:10px;border:2px solid var(--border);cursor:pointer;" onclick="openLightbox('/uploads/civil_registry/${crFile}')" onerror="this.style.display='none';">`;
+                } else {
+                    html += `<a href="/uploads/civil_registry/${crFile}" target="_blank" style="color:var(--accent);">عرض وثيقة السجل المدني</a>`;
+                }
+                html += `</div>`;
+            }
+            html += `</div></div>`;
+        }
+
+        // Conflict Warning
+        if (r.has_conflicting_info) {
+            html += `<div style="border:2px solid var(--red); border-radius:12px; overflow:hidden; margin-bottom:20px; background:rgba(239,68,68,0.05);">
+                <div style="background:rgba(239,68,68,0.15); padding:10px 16px; border-bottom:1px solid var(--red);">
+                    <h3 style="color:var(--red); margin:0; font-size:1em;">تنبيه: تناقض في المعلومات</h3>
+                </div>
+                <div style="padding:16px;">
+                    ${r.conflicting_info_details ? `<div style="color:#fca5a5;font-size:0.92em;">${esc(r.conflicting_info_details)}</div>` : '<div style="color:#fca5a5;">يوجد تناقض في المعلومات المسجلة. يرجى المراجعة.</div>'}
+                </div>
+            </div>`;
+        }
 
         // Personal info
         html += `<div class="detail-section-title">المعلومات الشخصية</div>`;
@@ -1664,6 +1928,134 @@ async function editRecord(id) {
                 <div id="edit_methodology_checklist" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;"></div>
                 <textarea name="methodologyNotes" id="edit_methodologyNotes" rows="3" style="background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:10px;">${esc(r.methodology_notes||'')}</textarea>
             </div>
+
+            <div class="detail-section-title" style="color:var(--green); border-color:var(--green);">بيانات المُبلّغ (Reporter)</div>
+            <div class="adv-grid">
+                <div class="filter-group"><label>اسم المُبلّغ</label><input name="reporterName" value="${esc(r.reporter_name||'')}"></div>
+                <div class="filter-group">
+                    <label>صلة القرابة</label>
+                    <select name="reporterRelation">
+                        <option value="">-- اختر --</option>
+                        ${['self','mother','father','spouse','brother','sister','son','daughter','uncle','aunt','friend','neighbor','lawyer','ngo','other'].map(v => `<option value="${v}" ${r.reporter_relation===v?'selected':''}>${reporterRelationLabel(v)}</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group"><label>هاتف المُبلّغ</label><input name="reporterPhone" value="${esc(r.reporter_phone||'')}"></div>
+                <div class="filter-group"><label>الرقم الوطني للمُبلّغ</label><input name="reporterId" value="${esc(r.reporter_id||'')}"></div>
+            </div>
+            <div class="filter-group">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" name="informantConsent" value="yes" ${r.informant_consent?'checked':''} style="accent-color:var(--green);width:16px;height:16px;">
+                    تم أخذ الموافقة المستنيرة
+                </label>
+            </div>
+
+            <div class="detail-section-title" style="color:var(--amber); border-color:var(--amber);">تصنيف الحالة والأدلة</div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>تصنيف الحالة الفرعي</label>
+                    <select name="caseType">
+                        <option value="">-- اختر --</option>
+                        <optgroup label="إخفاء قسري">
+                            ${['enforced_no_info','enforced_with_witnesses','enforced_with_digital','enforced_conflicting'].map(v => `<option value="${v}" ${r.case_type===v?'selected':''}>${caseTypeLabel(v)}</option>`).join('')}
+                        </optgroup>
+                        <optgroup label="متوفى">
+                            ${['deceased_official_only','deceased_digital_only','deceased_confirmed_both','deceased_caesar','deceased_conflicting'].map(v => `<option value="${v}" ${r.case_type===v?'selected':''}>${caseTypeLabel(v)}</option>`).join('')}
+                        </optgroup>
+                        <optgroup label="ناجي">
+                            ${['survivor_documented','survivor_undocumented','survivor_with_witnesses'].map(v => `<option value="${v}" ${r.case_type===v?'selected':''}>${caseTypeLabel(v)}</option>`).join('')}
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>مستوى الأدلة</label>
+                    <select name="evidenceLevel">
+                        <option value="">-- اختر --</option>
+                        <option value="high" ${r.evidence_level==='high'?'selected':''}>عالي (High)</option>
+                        <option value="medium" ${r.evidence_level==='medium'?'selected':''}>متوسط (Medium)</option>
+                        <option value="low" ${r.evidence_level==='low'?'selected':''}>منخفض (Low)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group"><label>عدد المصادر المستقلة</label><input type="number" name="evidenceSourcesCount" value="${r.evidence_sources_count||''}" min="0" max="20"></div>
+                <div class="filter-group"><label>آخر تاريخ معروف حياً</label><input type="date" name="lastKnownAliveDate" value="${esc(r.last_known_alive_date||'')}"></div>
+                <div class="filter-group"><label>آخر مكان معروف</label><input name="lastKnownLocation" value="${esc(r.last_known_location||'')}"></div>
+            </div>
+
+            <div class="detail-section-title" style="color:var(--red); border-color:rgba(239,68,68,0.5);">الأدلة الرقمية</div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>نوع الدليل الرقمي</label>
+                    <select name="digitalEvidenceType">
+                        <option value="">-- اختر --</option>
+                        ${['caesar_files','leaked_photos','social_media','news_report','database_leak','other'].map(v => `<option value="${v}" ${r.digital_evidence_type===v?'selected':''}>${digitalEvidenceTypeLabel(v)}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="filter-group"><label>الرابط الأصلي</label><input name="digitalEvidenceUrl" value="${esc(r.digital_evidence_url||'')}"></div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>حالة الرابط</label>
+                    <select name="digitalEvidenceUrlStatus">
+                        <option value="">-- اختر --</option>
+                        <option value="active" ${r.digital_evidence_url_status==='active'?'selected':''}>فعّال</option>
+                        <option value="deleted" ${r.digital_evidence_url_status==='deleted'?'selected':''}>محذوف</option>
+                        <option value="archived" ${r.digital_evidence_url_status==='archived'?'selected':''}>مؤرشف</option>
+                    </select>
+                </div>
+                <div class="filter-group"><label>تاريخ الاكتشاف</label><input type="date" name="digitalEvidenceDate" value="${esc(r.digital_evidence_date||'')}"></div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group"><label>الاسم في الدليل</label><input name="digitalEvidencePersonName" value="${esc(r.digital_evidence_person_name||'')}"></div>
+                <div class="filter-group"><label>تاريخ الوفاة في الدليل</label><input name="digitalEvidenceDeathDate" value="${esc(r.digital_evidence_death_date||'')}"></div>
+            </div>
+            <div class="filter-group"><label>وصف الدليل</label><textarea name="digitalEvidenceDescription" rows="2" style="background:var(--bg-input);color:var(--text);border:2px solid var(--border);border-radius:12px;padding:10px;">${esc(r.digital_evidence_description||'')}</textarea></div>
+            <div class="filter-group">
+                <label>لقطة شاشة الدليل ${r.digital_evidence_screenshot_path ? '(يوجد ملف حالي)' : ''}</label>
+                ${r.digital_evidence_screenshot_path ? `<div style="margin:6px 0; display:flex; align-items:center; gap:8px;">
+                    <a href="/uploads/evidence/${(r.digital_evidence_screenshot_path||'').replace(/^.*[\\/\\\\]/, '')}" target="_blank" style="color:var(--accent);font-size:0.85em;">عرض الملف الحالي</a>
+                    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.82em;color:var(--red);font-weight:600;">
+                        <input type="checkbox" name="deleteEvidenceScreenshot" value="yes" style="accent-color:#ef4444;"> حذف
+                    </label>
+                </div>` : ''}
+                <input type="file" name="evidenceScreenshot" accept="image/*,.pdf" style="padding:8px; background:var(--bg-input); border:2px solid var(--border); border-radius:10px; color:var(--text);">
+            </div>
+
+            <div class="detail-section-title" style="color:var(--accent2); border-color:var(--accent2);">السجل المدني / النفوس</div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>حالة السجل المدني</label>
+                    <select name="civilRegistryStatus">
+                        <option value="">-- اختر --</option>
+                        <option value="alive" ${r.civil_registry_status==='alive'?'selected':''}>على قيد الحياة</option>
+                        <option value="deceased" ${r.civil_registry_status==='deceased'?'selected':''}>مسجل كمتوفى</option>
+                        <option value="not_checked" ${r.civil_registry_status==='not_checked'?'selected':''}>لم يتم التحقق</option>
+                        <option value="no_record" ${r.civil_registry_status==='no_record'?'selected':''}>لا يوجد سجل</option>
+                        <option value="unknown" ${r.civil_registry_status==='unknown'?'selected':''}>غير معروف</option>
+                    </select>
+                </div>
+                <div class="filter-group"><label>تاريخ التحقق</label><input type="date" name="civilRegistryDate" value="${esc(r.civil_registry_date||'')}"></div>
+            </div>
+            <div class="filter-group">
+                <label>وثيقة السجل المدني ${r.civil_registry_document_path ? '(يوجد ملف حالي)' : ''}</label>
+                ${r.civil_registry_document_path ? `<div style="margin:6px 0; display:flex; align-items:center; gap:8px;">
+                    <a href="/uploads/civil_registry/${(r.civil_registry_document_path||'').replace(/^.*[\\/\\\\]/, '')}" target="_blank" style="color:var(--accent);font-size:0.85em;">عرض الوثيقة</a>
+                    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.82em;color:var(--red);font-weight:600;">
+                        <input type="checkbox" name="deleteCivilRegistryDoc" value="yes" style="accent-color:#ef4444;"> حذف
+                    </label>
+                </div>` : ''}
+                <input type="file" name="civilRegistryDoc" accept="image/*,.pdf" style="padding:8px; background:var(--bg-input); border:2px solid var(--border); border-radius:10px; color:var(--text);">
+            </div>
+
+            <div class="filter-group">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" name="hasConflictingInfo" value="yes" ${r.has_conflicting_info?'checked':''} style="accent-color:#ef4444;width:16px;height:16px;">
+                    <span style="color:var(--red);font-weight:700;">يوجد تناقض في المعلومات</span>
+                </label>
+            </div>
+            <div class="filter-group"><label>تفاصيل التناقض</label><textarea name="conflictingInfoDetails" rows="2" style="background:var(--bg-input);color:var(--text);border:2px solid var(--border);border-radius:12px;padding:10px;">${esc(r.conflicting_info_details||'')}</textarea></div>
 
             <div class="detail-section-title">المعلومات الشخصية الأساسية</div>
             <div class="adv-grid">
@@ -2411,6 +2803,13 @@ function resetFilters() {
     document.getElementById('childGenderFilter').value = '';
     document.getElementById('childEducationFilter').value = '';
     document.getElementById('childEducationAbove').checked = false;
+    // Berkeley Protocol filters
+    document.getElementById('caseTypeFilter').value = '';
+    document.getElementById('evidenceLevelFilter').value = '';
+    document.getElementById('civilRegistryStatusFilter').value = '';
+    document.getElementById('hasConflictingInfoFilter').value = '';
+    document.getElementById('hasDigitalEvidenceFilter').value = '';
+    document.getElementById('hasWitnessesFilter').value = '';
     currentPage = 1;
     loadRecords();
 }
