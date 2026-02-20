@@ -1619,6 +1619,13 @@ async function editRecord(id) {
         currentRecordId = id;
         document.getElementById('modalTitle').textContent = `تعديل السجل #${r.id}`;
 
+        // Auto-generate Cause Number if missing (Client-side pre-fill)
+        if (!r.cause_number) {
+            const year = new Date().getFullYear();
+            const rand = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
+            r.cause_number = `CASE-${year}-${rand}`;
+        }
+
         const provinces = ["دمشق","ريف دمشق","حلب","حمص","حماة","اللاذقية","طرطوس","إدلب","دير الزور","الرقة","الحسكة","درعا","السويداء","القنيطرة","أخرى"];
         const arrestPlacesList = ["صيدنايا الامني (الاحمر)","صيدنايا القضائي (الابيض)","الفرع 235 فرع فلسطين","فرع 248، التحقيق العسكري","فرع 215، بسرية المداهمة والاقتحام","فرع 251، فرع الخطيب","فرع 216، فرع الدوريات","فرع 227، فرع المنطقة","فرع 285، فرع التحقيق","فرع 295، مكافحة الإرهاب","الدفاع الوطني","السجن المدني"];
         const eduTypeOptions = ['علمي','ادبي','شريعة','صناعة وفنون','تجارة','معلوماتية'];
