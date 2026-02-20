@@ -1099,6 +1099,8 @@ async function viewRecord(id) {
         const bpCorroborationLabels = { corroborated:'محقق', partially_corroborated:'محقق جزئياً', uncorroborated:'غير محقق', pending:'قيد التحقق' };
         const bpConsentLabels = { yes:'نعم - تم الحصول على الموافقة', no:'لا', not_applicable:'لا ينطبق' };
         const bpConfidentialityLabels = { public:'عام', restricted:'مقيد', confidential:'سري' };
+        const bpViolationTypeLabels = { enforced_disappearance:'اختفاء قسري', arbitrary_detention:'اعتقال تعسفي', torture:'تعذيب / معاملة قاسية', extrajudicial_execution:'إعدام خارج القضاء', unlawful_killing:'قتل غير مشروع', other:'أخرى' };
+        const bpLegalFrameworkLabels = { IHRL:'IHRL — القانون الدولي لحقوق الإنسان', IHL:'IHL — القانون الإنساني الدولي', ICL:'ICL — القانون الجنائي الدولي', IHRL_IHL:'IHRL + IHL', IHRL_ICL:'IHRL + ICL', all:'جميع الأطر القانونية' };
 
         const bpOk = r.bp_collector_name && r.bp_collection_method && r.bp_source_type && r.bp_source_reliability && r.bp_corroboration_status && r.bp_consent_obtained && r.bp_confidentiality_level;
         const bpStatusHtml = bpOk
@@ -1120,6 +1122,9 @@ async function viewRecord(id) {
         html += detailRow('الموافقة المسبقة', bpConsentLabels[r.bp_consent_obtained] || esc(r.bp_consent_obtained));
         html += detailRow('مستوى السرية', bpConfidentialityLabels[r.bp_confidentiality_level] || esc(r.bp_confidentiality_level));
         if (r.bp_verification_notes) html += detailRow('ملاحظات التحقق', esc(r.bp_verification_notes));
+        if (r.bp_violation_type) html += detailRow('تصنيف نوع الانتهاك', bpViolationTypeLabels[r.bp_violation_type] || esc(r.bp_violation_type));
+        if (r.bp_legal_framework) html += detailRow('الإطار القانوني الدولي', bpLegalFrameworkLabels[r.bp_legal_framework] || esc(r.bp_legal_framework));
+        if (r.bp_case_reference) html += detailRow('رقم القضية / المرجع', esc(r.bp_case_reference));
 
         // Document viewer
         html += `<div class="detail-section-title">المرفقات</div>`;
@@ -1423,6 +1428,36 @@ async function editRecord(id) {
                     <label>ملاحظات التحقق والتوثيق</label>
                     <textarea name="bpVerificationNotes" rows="3" style="background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:10px; width:100%; font-family:'Tajawal',sans-serif; font-size:0.9em;">${esc(r.bp_verification_notes||'')}</textarea>
                 </div>
+                <div class="adv-grid" style="margin-top:8px;">
+                    <div class="filter-group">
+                        <label>تصنيف نوع الانتهاك</label>
+                        <select name="bpViolationType">
+                            <option value="">-- اختر --</option>
+                            <option value="enforced_disappearance" ${r.bp_violation_type==='enforced_disappearance'?'selected':''}>اختفاء قسري</option>
+                            <option value="arbitrary_detention" ${r.bp_violation_type==='arbitrary_detention'?'selected':''}>اعتقال تعسفي</option>
+                            <option value="torture" ${r.bp_violation_type==='torture'?'selected':''}>تعذيب / معاملة قاسية أو مهينة</option>
+                            <option value="extrajudicial_execution" ${r.bp_violation_type==='extrajudicial_execution'?'selected':''}>إعدام خارج نطاق القضاء</option>
+                            <option value="unlawful_killing" ${r.bp_violation_type==='unlawful_killing'?'selected':''}>قتل غير مشروع</option>
+                            <option value="other" ${r.bp_violation_type==='other'?'selected':''}>أخرى</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>الإطار القانوني الدولي</label>
+                        <select name="bpLegalFramework">
+                            <option value="">-- اختر --</option>
+                            <option value="IHRL" ${r.bp_legal_framework==='IHRL'?'selected':''}>IHRL — القانون الدولي لحقوق الإنسان</option>
+                            <option value="IHL" ${r.bp_legal_framework==='IHL'?'selected':''}>IHL — القانون الإنساني الدولي</option>
+                            <option value="ICL" ${r.bp_legal_framework==='ICL'?'selected':''}>ICL — القانون الجنائي الدولي</option>
+                            <option value="IHRL_IHL" ${r.bp_legal_framework==='IHRL_IHL'?'selected':''}>IHRL + IHL</option>
+                            <option value="IHRL_ICL" ${r.bp_legal_framework==='IHRL_ICL'?'selected':''}>IHRL + ICL</option>
+                            <option value="all" ${r.bp_legal_framework==='all'?'selected':''}>جميع الأطر القانونية الثلاثة</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-group" style="margin-top:8px;">
+                    <label>رقم القضية / المرجع المتقاطع</label>
+                    <input type="text" name="bpCaseReference" value="${esc(r.bp_case_reference||'')}" placeholder="مثال: UN-SYR-2024-001">
+                </div>
             </div>
 
             <div class="detail-section-title">بيانات متقدمة (JSON)</div>
@@ -1572,7 +1607,9 @@ const BP_LABELS = {
     reliability: { A:'أ — موثوق جداً', B:'ب — موثوق عادةً', C:'ج — موثوق نسبياً', D:'د — غير موثوق عادةً', E:'هـ — غير موثوق', F:'و — لا يمكن التقييم' },
     corroboration: { corroborated:'محقق من مصادر متعددة', partially_corroborated:'محقق جزئياً', uncorroborated:'غير محقق بعد', pending:'قيد التحقق' },
     consent:  { yes:'نعم — تم الحصول على الموافقة', no:'لا', not_applicable:'لا ينطبق' },
-    confidentiality: { public:'عام', restricted:'مقيّد (للاستخدام الداخلي)', confidential:'سري' }
+    confidentiality: { public:'عام', restricted:'مقيّد (للاستخدام الداخلي)', confidential:'سري' },
+    violationType: { enforced_disappearance:'اختفاء قسري', arbitrary_detention:'اعتقال تعسفي', torture:'تعذيب / معاملة قاسية أو مهينة', extrajudicial_execution:'إعدام خارج نطاق القضاء', unlawful_killing:'قتل غير مشروع', other:'أخرى' },
+    legalFramework: { IHRL:'IHRL — القانون الدولي لحقوق الإنسان', IHL:'IHL — القانون الإنساني الدولي', ICL:'ICL — القانون الجنائي الدولي', IHRL_IHL:'IHRL + IHL', IHRL_ICL:'IHRL + ICL', all:'جميع الأطر القانونية الثلاثة' }
 };
 
 function bpRow(label, val, map) {
@@ -1622,6 +1659,9 @@ function populateBpPrint(r) {
                 ${bpRow('الموافقة المسبقة المبنية على معرفة', r.bp_consent_obtained, BP_LABELS.consent)}
                 ${bpRow('مستوى سرية السجل', r.bp_confidentiality_level, BP_LABELS.confidentiality)}
                 ${r.bp_verification_notes ? `<tr><td class="lbl">ملاحظات التحقق والتوثيق</td><td>${esc(r.bp_verification_notes)}</td></tr>` : ''}
+                ${bpRow('تصنيف نوع الانتهاك', r.bp_violation_type, BP_LABELS.violationType)}
+                ${bpRow('الإطار القانوني الدولي المنطبق', r.bp_legal_framework, BP_LABELS.legalFramework)}
+                ${r.bp_case_reference ? `<tr><td class="lbl">رقم القضية / المرجع المتقاطع</td><td>${esc(r.bp_case_reference)}</td></tr>` : ''}
             </table>
         </div>
 

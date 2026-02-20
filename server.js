@@ -115,7 +115,10 @@ function initDbSchema() {
         { name: 'bp_corroboration_sources', type: 'INTEGER' },
         { name: 'bp_consent_obtained', type: 'TEXT' },
         { name: 'bp_confidentiality_level', type: 'TEXT' },
-        { name: 'bp_verification_notes', type: 'TEXT' }
+        { name: 'bp_verification_notes', type: 'TEXT' },
+        { name: 'bp_violation_type', type: 'TEXT' },
+        { name: 'bp_legal_framework', type: 'TEXT' },
+        { name: 'bp_case_reference', type: 'TEXT' }
     ];
     for (const col of columnsToAdd) {
         try { db.exec(`ALTER TABLE records ADD COLUMN ${col.name} ${col.type}`); } catch (err) {}
@@ -253,7 +256,8 @@ app.post('/api/records', upload.fields([
                 has_special_needs, special_needs_details,
                 bp_collector_name, bp_collection_date, bp_collection_method, bp_source_type,
                 bp_source_reliability, bp_corroboration_status, bp_corroboration_sources,
-                bp_consent_obtained, bp_confidentiality_level, bp_verification_notes
+                bp_consent_obtained, bp_confidentiality_level, bp_verification_notes,
+                bp_violation_type, bp_legal_framework, bp_case_reference
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
@@ -262,7 +266,8 @@ app.post('/api/records', upload.fields([
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?
             )
         `);
 
@@ -288,7 +293,8 @@ app.post('/api/records', upload.fields([
             b.bpCollectorName || null, b.bpCollectionDate || null, b.bpCollectionMethod || null,
             b.bpSourceType || null, b.bpSourceReliability || null, b.bpCorroborationStatus || null,
             b.bpCorroborationSources ? parseInt(b.bpCorroborationSources) : null,
-            b.bpConsentObtained || null, b.bpConfidentialityLevel || null, b.bpVerificationNotes || null
+            b.bpConsentObtained || null, b.bpConfidentialityLevel || null, b.bpVerificationNotes || null,
+            b.bpViolationType || null, b.bpLegalFramework || null, b.bpCaseReference || null
         );
         res.json({ success: true, id: result.lastInsertRowid });
     } catch (err) {
@@ -399,7 +405,9 @@ app.put('/api/records/:id', authMiddleware, upload.fields([{ name: 'photo' }, { 
             bpCollectionMethod:'bp_collection_method', bpSourceType:'bp_source_type',
             bpSourceReliability:'bp_source_reliability', bpCorroborationStatus:'bp_corroboration_status',
             bpCorroborationSources:'bp_corroboration_sources', bpConsentObtained:'bp_consent_obtained',
-            bpConfidentialityLevel:'bp_confidentiality_level', bpVerificationNotes:'bp_verification_notes'
+            bpConfidentialityLevel:'bp_confidentiality_level', bpVerificationNotes:'bp_verification_notes',
+            bpViolationType:'bp_violation_type', bpLegalFramework:'bp_legal_framework',
+            bpCaseReference:'bp_case_reference'
         };
 
         const sets = [];
