@@ -1081,15 +1081,20 @@ function esc(str) {
 async function loadStats() {
     try {
         const res = await fetch('/api/stats');
+        if (!res.ok) throw new Error(`Status ${res.status}`);
         const s = await res.json();
-        document.getElementById('statTotal').textContent = s.total;
-        document.getElementById('statEnforced').textContent = s.enforced;
-        document.getElementById('statSurvivors').textContent = s.survivors;
-        document.getElementById('statDeceased').textContent = s.deceased;
+        console.log('Stats loaded:', s);
+        document.getElementById('statTotal').textContent = s.total !== undefined ? s.total : '-';
+        document.getElementById('statEnforced').textContent = s.enforced !== undefined ? s.enforced : '-';
+        document.getElementById('statSurvivors').textContent = s.survivors !== undefined ? s.survivors : '-';
+        document.getElementById('statDeceased').textContent = s.deceased !== undefined ? s.deceased : '-';
         document.getElementById('statHighEvidence').textContent = s.highEvidence || 0;
         document.getElementById('statConflicts').textContent = s.withConflicts || 0;
         document.getElementById('statDigitalEvidence').textContent = s.withDigitalEvidence || 0;
-    } catch (e) { console.error('Stats error:', e); }
+    } catch (e) {
+        console.error('Stats error:', e);
+        document.getElementById('statTotal').textContent = '⚠️';
+    }
 }
 
 // ══════════════ LOAD RECORDS ══════════════
@@ -1217,8 +1222,12 @@ async function loadRecords(page) {
     }
 
     try {
+        console.log('Fetching records with params:', params.toString());
         const res = await fetch('/api/records?' + params);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
+        console.log('Records loaded:', data);
+
         if (data.error) {
             document.getElementById('tableBody').innerHTML =
                 `<tr><td colspan="8"><div class="empty-state"><div class="icon">⚠️</div><p>خطأ من الخادم: ${esc(data.error)}</p></div></td></tr>`;
@@ -1244,7 +1253,7 @@ async function loadRecords(page) {
     } catch (e) {
         console.error('Load records error:', e);
         document.getElementById('tableBody').innerHTML =
-            '<tr><td colspan="8"><div class="empty-state"><div class="icon">⚠️</div><p>خطأ في الاتصال بالخادم. تأكد من تشغيل السيرفر.</p></div></td></tr>';
+            `<tr><td colspan="8"><div class="empty-state"><div class="icon">⚠️</div><p>خطأ في الاتصال: ${esc(e.message)}</p></div></td></tr>`;
     }
 }
 

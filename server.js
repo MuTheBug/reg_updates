@@ -14,14 +14,17 @@ if (!fs.existsSync(UPLOAD_DIR)) {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
-let db = new Database(DB_PATH);
+let db = new Database(DB_PATH, { verbose: console.log });
 db.pragma('journal_mode = WAL');
 db.pragma('busy_timeout = 5000');
 
+console.log(`Database opened at: ${DB_PATH}`);
+
 function initDbSchema() {
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+    try {
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
             created_at TEXT DEFAULT (datetime('now','localtime')),
             first_name TEXT NOT NULL,
             father_name TEXT NOT NULL,
@@ -88,9 +91,13 @@ function initDbSchema() {
             assoc TEXT,
             assoc_name TEXT,
             service_type TEXT,
-            notes TEXT
-        );
-    `);
+                notes TEXT
+            );
+        `);
+    } catch (err) {
+        console.error('Error creating table:', err);
+    }
+
     const columnsToAdd = [
         { name: 'edu_type', type: 'TEXT' },
         { name: 'edu_specialization', type: 'TEXT' },
@@ -155,10 +162,23 @@ function initDbSchema() {
         { name: 'detention_facilities_data', type: 'TEXT' }
     ];
     for (const col of columnsToAdd) {
-        try { db.exec(`ALTER TABLE records ADD COLUMN ${col.name} ${col.type}`); } catch (err) {}
+        try {
+            db.exec(`ALTER TABLE records ADD COLUMN ${col.name} ${col.type}`);
+        } catch (err) {
+            if (!err.message.includes('duplicate column name')) {
+                console.error(`Error adding column ${col.name}:`, err.message);
+            }
+        }
     }
 }
 initDbSchema();
+
+try {
+    const count = db.prepare('SELECT COUNT(*) as count FROM records').get().count;
+    console.log(`Total records in DB on startup: ${count}`);
+} catch (e) {
+    console.error('Error checking DB count on startup:', e);
+}
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -401,6 +421,7 @@ app.post('/api/records', upload.any(), (req, res) => {
 
 app.get('/api/records', authMiddleware, (req, res) => {
     try {
+        console.log('GET /api/records query:', req.query);
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
         const offset = (page - 1) * limit;
@@ -664,6 +685,8 @@ app.get('/api/records', authMiddleware, (req, res) => {
 
         const total = db.prepare(`SELECT COUNT(*) as count FROM records ${where}`).get(...params).count;
         const records = db.prepare(`SELECT * FROM records ${where} ORDER BY id DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
+
+        console.log(`Found ${total} records, returning ${records.length} for page ${page}`);
 
         // Count matching children if birth year filter is active
         let matchingChildrenCount = null;
@@ -1124,17 +1147,23 @@ app.delete('/api/records/:id', authMiddleware, (req, res) => {
 });
 
 app.get('/api/stats', authMiddleware, (req, res) => {
-    const total = db.prepare('SELECT COUNT(*) as count FROM records').get().count;
-    const enforced = db.prepare("SELECT COUNT(*) as count FROM records WHERE status = 'enforced'").get().count;
-    const survivors = db.prepare("SELECT COUNT(*) as count FROM records WHERE status = 'survivor'").get().count;
-    const deceased = db.prepare("SELECT COUNT(*) as count FROM records WHERE status = 'deceased'").get().count;
-    const withConflicts = db.prepare("SELECT COUNT(*) as count FROM records WHERE has_conflicting_info = 1").get().count;
-    const withDigitalEvidence = db.prepare("SELECT COUNT(*) as count FROM records WHERE digital_evidence_type IS NOT NULL AND digital_evidence_type != ''").get().count;
-    const withWitnesses = db.prepare("SELECT COUNT(*) as count FROM records WHERE witnesses_data IS NOT NULL AND witnesses_data != ''").get().count;
-    const highEvidence = db.prepare("SELECT COUNT(*) as count FROM records WHERE evidence_level = 'high'").get().count;
-    const mediumEvidence = db.prepare("SELECT COUNT(*) as count FROM records WHERE evidence_level = 'medium'").get().count;
-    const lowEvidence = db.prepare("SELECT COUNT(*) as count FROM records WHERE evidence_level = 'low'").get().count;
-    res.json({ total, enforced, survivors, deceased, withConflicts, withDigitalEvidence, withWitnesses, highEvidence, mediumEvidence, lowEvidence });
+    try {
+        const total = db.prepare('SELECT COUNT(*) as count FROM records').get().count;
+        const enforced = db.prepare("SELECT COUNT(*) as count FROM records WHERE status = 'enforced'").get().count;
+        const survivors = db.prepare("SELECT COUNT(*) as count FROM records WHERE status = 'survivor'").get().count;
+        const deceased = db.prepare("SELECT COUNT(*) as count FROM records WHERE status = 'deceased'").get().count;
+        const withConflicts = db.prepare("SELECT COUNT(*) as count FROM records WHERE has_conflicting_info = 1").get().count;
+        const withDigitalEvidence = db.prepare("SELECT COUNT(*) as count FROM records WHERE digital_evidence_type IS NOT NULL AND digital_evidence_type != ''").get().count;
+        const withWitnesses = db.prepare("SELECT COUNT(*) as count FROM records WHERE witnesses_data IS NOT NULL AND witnesses_data != ''").get().count;
+        const highEvidence = db.prepare("SELECT COUNT(*) as count FROM records WHERE evidence_level = 'high'").get().count;
+        const mediumEvidence = db.prepare("SELECT COUNT(*) as count FROM records WHERE evidence_level = 'medium'").get().count;
+        const lowEvidence = db.prepare("SELECT COUNT(*) as count FROM records WHERE evidence_level = 'low'").get().count;
+        console.log('Stats:', { total, enforced, survivors, deceased });
+        res.json({ total, enforced, survivors, deceased, withConflicts, withDigitalEvidence, withWitnesses, highEvidence, mediumEvidence, lowEvidence });
+    } catch (e) {
+        console.error('Stats error:', e);
+        res.status(500).json({ error: e.message });
+    }
 });
 
 app.get('/api/export', authMiddleware, (req, res) => {
