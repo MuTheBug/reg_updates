@@ -1287,7 +1287,7 @@ async function viewRecord(id) {
         html += detailRow('الجهة المسؤولة', r.arrest_authority);
         html += detailRow('السبب', r.arrest_reason);
         html += detailRow('المُسبِّب', r.arrest_causer);
-        html += detailRow('الحالة', statusLabel(r.status));
+        html += detailRow('الحالة', statusLabel(r));
         html += detailRow('مسجل رسمياً', r.is_officially_registered ? '<span style="color:var(--green)">نعم</span>' : '<span style="color:var(--text-dim)">لا</span>');
         if (r.status === 'survivor') html += detailRow('تاريخ الخروج', formatDate(r.release_day, r.release_month, r.release_year));
         if (r.status === 'deceased') {
@@ -2452,7 +2452,7 @@ function printRecord() {
 async function printSingleRecord(id) {
     await viewRecord(id);
     // Increased timeout to ensure images load and print preview works correctly
-    setTimeout(() => window.print(), 800);
+    setTimeout(() => window.print(), 1500);
 }
 
 // ══════════════ PDF EXPORT ══════════════
