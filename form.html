@@ -858,6 +858,48 @@
 <div class="wrapper">
 <form id="mainForm" autocomplete="off">
 
+<!-- ═══════════ DOCUMENTATION METADATA (Berkeley Protocol) ═══════════ -->
+<div class="section glow-purple" style="border: 1px solid var(--accent2);">
+    <div class="sec-head" style="background: rgba(139,92,246,0.05);">
+        <span class="sec-num" style="background: var(--accent2);">M</span>
+        <h3 style="color:var(--accent2);">بيانات التوثيق (Documentation Metadata)</h3>
+    </div>
+    <div class="sec-body">
+        <div class="g g2">
+            <div class="fg">
+                <label>
+                    اسم جامع المعلومة (الموثّق)
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <span class="tooltip-text">اسم الشخص أو الرمز التعريفي للموثق الذي قام بجمع هذه البيانات.</span>
+                    </div>
+                </label>
+                <input type="text" name="collectorName" placeholder="اسم الموثّق">
+            </div>
+            <div class="fg">
+                <label>
+                    تاريخ جمع المعلومة
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <span class="tooltip-text">التاريخ الدقيق الذي قام فيه الباحث/الموثّق بالحصول على هذه المعلومة.</span>
+                    </div>
+                </label>
+                <input type="date" name="collectionDate" style="color-scheme:dark;">
+            </div>
+        </div>
+        <div class="fg" style="margin-top:12px;">
+            <label>
+                رقم القضية (Cause Number) - اختياري
+                <div class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">الرقم المرجعي للقضية. سيتم توليده تلقائياً إذا ترك فارغاً.</span>
+                </div>
+            </label>
+            <input type="text" name="causeNumber" placeholder="اتركه فارغاً للتوليد التلقائي">
+        </div>
+    </div>
+</div>
+
 <!-- ═══════════ 1 - الشخصية ═══════════ -->
 <div class="section glow-cyan">
     <div class="sec-head">
@@ -921,20 +963,24 @@
                 <div style="position:relative;">
                     <div class="fbox">
                         <div class="flbl" id="fl_photo">📷 اختر صورة</div>
-                        <input type="file" name="photo" id="inp_photo" accept="image/*" onchange="markFile(this,'fl_photo')">
+                        <input type="file" name="photo" id="inp_photo" accept="image/*" onchange="markFile(this,'fl_photo'); calculateFileHash(this, 'hash_photo');">
                     </div>
-                    <button type="button" class="file-clear-btn" id="cl_photo" onclick="clearFile('inp_photo','fl_photo','📷 اختر صورة')" style="display:none;">✕</button>
+                    <button type="button" class="file-clear-btn" id="cl_photo" onclick="clearFile('inp_photo','fl_photo','📷 اختر صورة'); clearHash('hash_photo');" style="display:none;">✕</button>
                 </div>
+                <div id="hash_photo" style="font-size:0.7em; color:var(--text-dim); margin-top:4px; font-family:monospace; word-break:break-all;"></div>
+                <input type="hidden" name="photoHash" id="inp_hash_photo">
             </div>
             <div class="fg">
                 <label>وثيقة إثبات</label>
                 <div style="position:relative;">
                     <div class="fbox">
                         <div class="flbl" id="fl_doc">📄 ارفق وثيقة</div>
-                        <input type="file" name="document" id="inp_doc" accept="image/*,.pdf" onchange="markFile(this,'fl_doc')">
+                        <input type="file" name="document" id="inp_doc" accept="image/*,.pdf" onchange="markFile(this,'fl_doc'); calculateFileHash(this, 'hash_doc');">
                     </div>
-                    <button type="button" class="file-clear-btn" id="cl_doc" onclick="clearFile('inp_doc','fl_doc','📄 ارفق وثيقة')" style="display:none;">✕</button>
+                    <button type="button" class="file-clear-btn" id="cl_doc" onclick="clearFile('inp_doc','fl_doc','📄 ارفق وثيقة'); clearHash('hash_doc');" style="display:none;">✕</button>
                 </div>
+                <div id="hash_doc" style="font-size:0.7em; color:var(--text-dim); margin-top:4px; font-family:monospace; word-break:break-all;"></div>
+                <input type="hidden" name="docHash" id="inp_hash_doc">
             </div>
         </div>
     </div>
@@ -1003,6 +1049,57 @@
                 <div class="pill p-red">
                     <input type="radio" name="status" id="st_dead" value="deceased" onchange="toggleStatus()">
                     <label for="st_dead">⚫ متوفى</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- BERKELEY SOURCE & VERIFICATION (Integrated) -->
+        <div class="cond show" id="sec_berkeley_source" style="margin-top:18px; padding:16px; background:rgba(139,92,246,0.05); border:1px solid var(--accent2); border-radius:12px; display:none;">
+            <h4 style="color:var(--accent2); font-size:0.95em; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                <span>مصدر المعلومات والتحقق (Berkeley Protocol)</span>
+            </h4>
+            <div class="g g2">
+                <div class="fg">
+                    <label id="lbl_source_type">نوع المصدر</label>
+                    <select name="sourceType" id="inp_sourceType" onchange="updateMethodologyChecklist()">
+                        <option value="">-- اختر --</option>
+                        <option value="Social Media">منصة تواصل اجتماعي (Social Media)</option>
+                        <option value="Witness">شاهد عيان / مقابلة (Witness/Interview)</option>
+                        <option value="Official Document">وثيقة رسمية (Official Document)</option>
+                        <option value="News Report">تقرير إخباري (News Report)</option>
+                        <option value="Other">أخرى</option>
+                    </select>
+                </div>
+                <div class="fg">
+                    <label>رابط / مكان المصدر</label>
+                    <input type="text" name="sourceUrl" placeholder="URL أو وصف المكان">
+                </div>
+            </div>
+
+            <div class="g g2" style="margin-top:12px;">
+                <div class="fg">
+                    <label>حالة التحقق</label>
+                    <select name="verificationStatus">
+                        <option value="Unverified">غير متحقق منه (Unverified)</option>
+                        <option value="Partially Verified">متحقق منه جزئياً (Partially Verified)</option>
+                        <option value="Verified">متحقق منه (Verified)</option>
+                        <option value="Corroborated">مُؤكَّد بمصادر أخرى (Corroborated)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- INTERACTIVE METHODOLOGY -->
+            <div style="margin-top:16px; border-top:1px dashed var(--accent2); padding-top:12px;">
+                <label style="color:var(--text-label); font-weight:700; font-size:0.9em; margin-bottom:8px; display:block;">منهجية التحقق (Interactive Checklist)</label>
+
+                <div id="methodology_checklist_container" style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+                    <!-- Checkboxes injected by JS -->
+                    <span style="color:var(--text-dim); font-size:0.85em;">اختر نوع المصدر لعرض قائمة التحقق المقترحة.</span>
+                </div>
+
+                <div class="fg">
+                    <label>ملاحظات المنهجية (يتم التعبئة تلقائياً أو يدوياً)</label>
+                    <textarea name="methodologyNotes" id="inp_methodologyNotes" placeholder="شرح طريقة التحقق والمصادر..." rows="3"></textarea>
                 </div>
             </div>
         </div>
@@ -1409,112 +1506,6 @@
     </div>
 </div>
 
-<!-- ═══════════ 10 - بروتوكول بيركلي ═══════════ -->
-<div class="section glow-purple" style="border: 2px solid var(--accent2); box-shadow: 0 0 15px rgba(139,92,246,0.1);">
-    <div class="sec-head" style="background: rgba(139,92,246,0.05);">
-        <span class="sec-num" style="background: var(--accent2);">10</span>
-        <h3 style="color:var(--accent2);">بروتوكول بيركلي (التوثيق الدولي)</h3>
-    </div>
-    <div class="sec-body">
-        <div style="margin-bottom:20px; padding:12px; background:rgba(139,92,246,0.05); border-radius:12px; font-size:0.9em; color:var(--text-dim); border-right:3px solid var(--accent2);">
-            <strong>ملاحظة:</strong> هذه البيانات ضرورية لتوثيق الانتهاكات وفق المعايير الدولية (بروتوكول بيركلي)، مما يسهل استخدامها كأدلة قانونية في المحاكم الدولية.
-        </div>
-
-        <div class="g g2">
-            <div class="fg">
-                <label>
-                    نوع المصدر
-                    <div class="tooltip-container">
-                        <span class="tooltip-icon">?</span>
-                        <span class="tooltip-text">حدد طبيعة المصدر الذي تم الحصول منه على المعلومات (مثلاً: مقابلة مباشرة، وثيقة رسمية، منصة تواصل اجتماعي).</span>
-                    </div>
-                </label>
-                <select name="sourceType">
-                    <option value="">-- اختر --</option>
-                    <option value="Social Media">منصة تواصل اجتماعي (Social Media)</option>
-                    <option value="Witness">شاهد عيان / مقابلة (Witness)</option>
-                    <option value="Official Document">وثيقة رسمية (Official Document)</option>
-                    <option value="News Report">تقرير إخباري (News Report)</option>
-                    <option value="Other">أخرى</option>
-                </select>
-            </div>
-            <div class="fg">
-                <label>
-                    رابط / مكان المصدر
-                    <div class="tooltip-container">
-                        <span class="tooltip-icon">?</span>
-                        <span class="tooltip-text">رابط المنشور (URL) أو وصف دقيق لمكان وجود الوثيقة الأصلية أو مكان إجراء المقابلة.</span>
-                    </div>
-                </label>
-                <input type="text" name="sourceUrl" placeholder="https://... أو مكان الأرشيف">
-            </div>
-        </div>
-
-        <div class="g g2" style="margin-top:18px;">
-            <div class="fg">
-                <label>
-                    تاريخ جمع المعلومة
-                    <div class="tooltip-container">
-                        <span class="tooltip-icon">?</span>
-                        <span class="tooltip-text">التاريخ الدقيق الذي قام فيه الباحث/الموثّق بالحصول على هذه المعلومة.</span>
-                    </div>
-                </label>
-                <input type="date" name="collectionDate" style="color-scheme:dark;">
-            </div>
-            <div class="fg">
-                <label>
-                    اسم جامع المعلومة (الموثّق)
-                    <div class="tooltip-container">
-                        <span class="tooltip-icon">?</span>
-                        <span class="tooltip-text">اسم الشخص أو الرمز التعريفي للموثق الذي قام بجمع هذه البيانات.</span>
-                    </div>
-                </label>
-                <input type="text" name="collectorName" placeholder="اسم الموثّق">
-            </div>
-        </div>
-
-        <div class="g g2" style="margin-top:18px;">
-            <div class="fg">
-                <label>
-                    حالة التحقق
-                    <div class="tooltip-container">
-                        <span class="tooltip-icon">?</span>
-                        <span class="tooltip-text">مدى موثوقية المعلومة. "متحقق منه" يعني تم التأكد من صحتها عبر مصادر متعددة أو أدلة قاطعة.</span>
-                    </div>
-                </label>
-                <select name="verificationStatus">
-                    <option value="">-- اختر --</option>
-                    <option value="Unverified">غير متحقق منه (Unverified)</option>
-                    <option value="Partially Verified">متحقق منه جزئياً (Partially Verified)</option>
-                    <option value="Verified">متحقق منه (Verified)</option>
-                    <option value="Corroborated">مُؤكَّد بمصادر أخرى (Corroborated)</option>
-                </select>
-            </div>
-            <div class="fg">
-                <label>
-                    رقم القضية (Cause Number)
-                    <div class="tooltip-container">
-                        <span class="tooltip-icon">?</span>
-                        <span class="tooltip-text">الرقم المرجعي للقضية القانونية المرتبطة بهذا السجل. اتركه فارغاً ليقوم النظام بتوليده تلقائياً.</span>
-                    </div>
-                </label>
-                <input type="text" name="causeNumber" placeholder="اتركه فارغاً للتوليد التلقائي">
-            </div>
-        </div>
-
-        <div class="fg" style="margin-top:18px;">
-            <label>
-                ملاحظات المنهجية (Methodology)
-                <div class="tooltip-container">
-                    <span class="tooltip-icon">?</span>
-                    <span class="tooltip-text">اشرح كيف تم التحقق من المعلومة؟ ما هي الخطوات التي اتبعتها للتأكد من صحة البيانات؟ (سلسلة العهدة).</span>
-                </div>
-            </label>
-            <textarea name="methodologyNotes" placeholder="شرح طريقة التحقق والمصادر..." rows="3"></textarea>
-        </div>
-    </div>
-</div>
-
 <!-- ═══════════ ACTIONS ═══════════ -->
 <div class="actions">
     <button type="button" class="btn btn-ghost" onclick="resetAll()">🔄 إعادة تعيين</button>
@@ -1600,6 +1591,33 @@ function clearFile(inputId, labelId, defaultText) {
     document.getElementById(clId).style.display = 'none';
 }
 
+async function calculateFileHash(input, outputId) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const output = document.getElementById(outputId);
+    const hidden = document.getElementById('inp_' + outputId);
+    output.textContent = 'جاري حساب البصمة الرقمية (Hash)...';
+
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+        output.innerHTML = `<span style="color:var(--accent);">SHA-256:</span> ${hashHex} ✅`;
+        hidden.value = hashHex;
+    } catch (e) {
+        output.textContent = 'خطأ في حساب البصمة الرقمية';
+        console.error(e);
+    }
+}
+
+function clearHash(outputId) {
+    document.getElementById(outputId).textContent = '';
+    document.getElementById('inp_' + outputId).value = '';
+}
+
 // ══════════════ TOGGLE HELPERS ══════════════
 function show(id) { document.getElementById(id).classList.add('show'); }
 function hide(id) { document.getElementById(id).classList.remove('show'); }
@@ -1614,9 +1632,27 @@ function toggleSurvivorCv() {
 function toggleStatus() {
     const v = document.querySelector('[name=status]:checked')?.value;
     hide('sec_survivor'); hide('sec_dead'); hide('sec_official_registration');
-    if (v === 'survivor') show('sec_survivor');
-    else if (v === 'deceased') { show('sec_dead'); show('sec_official_registration'); }
-    else if (v === 'enforced') { show('sec_official_registration'); }
+
+    // Berkeley Integrated Section Logic
+    const bSec = document.getElementById('sec_berkeley_source');
+    const bLbl = document.getElementById('lbl_source_type');
+
+    if (v) {
+        bSec.style.display = 'block';
+        if (v === 'survivor') {
+            bLbl.textContent = 'نوع مصدر معلومات النجاة';
+            show('sec_survivor');
+        } else if (v === 'deceased') {
+            bLbl.textContent = 'نوع مصدر معلومات الوفاة';
+            show('sec_dead');
+            show('sec_official_registration');
+        } else if (v === 'enforced') {
+            bLbl.textContent = 'نوع مصدر معلومات الاختفاء';
+            show('sec_official_registration');
+        }
+    } else {
+        bSec.style.display = 'none';
+    }
 
     // survivor: show employment, hide breadwinner, show health
     // enforced/deceased: hide employment, show breadwinner, hide health
@@ -1636,6 +1672,63 @@ function toggleStatus() {
         empSection.style.display = 'block';
         breadSection.style.display = 'block';
         healthSection.style.display = 'block';
+    }
+}
+
+// ══════════════ BERKELEY INTERACTIVE METHODOLOGY ══════════════
+function updateMethodologyChecklist() {
+    const type = document.getElementById('inp_sourceType').value;
+    const container = document.getElementById('methodology_checklist_container');
+
+    let checks = [];
+    if (type === 'Social Media') {
+        checks = [
+            'تم أرشفة الرابط (Wayback Machine/Archive)',
+            'تم التحقق من حساب الناشر',
+            'تم تحليل المحتوى البصري',
+            'تم مطابقة التاريخ والوقت'
+        ];
+    } else if (type === 'Witness') {
+        checks = [
+            'تم أخذ الموافقة المستنيرة',
+            'تم إجراء المقابلة في مكان آمن',
+            'الشاهد موثوق ومعروف',
+            'تم تسجيل الشهادة (صوت/فيديو/كتابة)'
+        ];
+    } else if (type === 'Official Document') {
+        checks = [
+            'تم التحقق من الجهة المصدرة',
+            'تم التأكد من الأختام والتواقيع',
+            'تم حفظ النسخة الأصلية/صورة عالية الدقة',
+            'سلسلة العهدة (Chain of Custody) محفوظة'
+        ];
+    } else {
+        checks = ['تم التأكد من المصدر', 'تم مقاطعة المعلومات'];
+    }
+
+    container.innerHTML = checks.map(c => `
+        <div class="pill" style="font-size:0.8em;">
+            <input type="checkbox" id="meth_${c}" value="${c}" onchange="buildMethodologyNotes()">
+            <label for="meth_${c}">${c}</label>
+        </div>
+    `).join('');
+}
+
+function buildMethodologyNotes() {
+    const checked = Array.from(document.querySelectorAll('#methodology_checklist_container input:checked')).map(cb => cb.value);
+    const textArea = document.getElementById('inp_methodologyNotes');
+
+    // Append or replace? Let's just prepend the checklist items if they aren't there.
+    // For simplicity, we'll overwrite the top part or append.
+    // Better: Just set the value to "Checklist: [items]. \nNotes: ..."
+
+    let currentText = textArea.value;
+    // Remove old checklist text if present (simple regex heuristic)
+    currentText = currentText.replace(/^القائمة المرجعية:.*?\n---\n/s, '');
+
+    if (checked.length > 0) {
+        const checklistStr = "القائمة المرجعية: \n- " + checked.join("\n- ") + "\n---\n";
+        textArea.value = checklistStr + currentText;
     }
 }
 

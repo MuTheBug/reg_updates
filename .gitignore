@@ -4,3 +4,4 @@ temp_restore/
 registry.db-shm
 registry.db-wal
 server.log
+uploads/

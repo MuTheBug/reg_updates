@@ -117,7 +117,9 @@ function initDbSchema() {
         { name: 'verification_status', type: 'TEXT' },
         { name: 'methodology_notes', type: 'TEXT' },
         { name: 'cause_number', type: 'TEXT' },
-        { name: 'record_slug', type: 'TEXT' }
+        { name: 'record_slug', type: 'TEXT' },
+        { name: 'photo_hash', type: 'TEXT' },
+        { name: 'document_hash', type: 'TEXT' }
     ];
     for (const col of columnsToAdd) {
         try { db.exec(`ALTER TABLE records ADD COLUMN ${col.name} ${col.type}`); } catch (err) {}
@@ -233,7 +235,9 @@ app.post('/api/records', upload.any(), (req, res) => {
         const filesMap = {};
         (req.files || []).forEach(f => { filesMap[f.fieldname] = f.filename; });
         const photoPath = filesMap['photo'] || null;
+        const photoHash = filesMap['photo'] ? b.photoHash : null;
         const docPath = filesMap['document'] || null;
+        const docHash = filesMap['document'] ? b.docHash : null;
         const { data: c1, under18Count: u1 } = collectChildrenData(b, 'kidsBox', filesMap);
         const { data: c2, under18Count: u2 } = collectChildrenData(b, 'kidsBoxW', filesMap);
         const survivorCvPath = filesMap['survivorCv'] || null;
@@ -264,7 +268,8 @@ app.post('/api/records', upload.any(), (req, res) => {
                 has_special_needs, special_needs_details, breadwinner_relation,
                 breadwinner_relation_other,
                 survivor_cv_path, survivor_cv_text, survivor_cv_photo_path,
-                source_type, source_url, collection_date, collector_name, verification_status, methodology_notes, cause_number, record_slug
+                source_type, source_url, collection_date, collector_name, verification_status, methodology_notes, cause_number, record_slug,
+                photo_hash, document_hash
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
@@ -274,7 +279,8 @@ app.post('/api/records', upload.any(), (req, res) => {
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?
             )
         `);
 
@@ -300,7 +306,8 @@ app.post('/api/records', upload.any(), (req, res) => {
             b.breadwinnerRelation || null,
             b.breadwinnerRelationOther || null,
             survivorCvPath, b.survivorCvText || null, survivorCvPhotoPath,
-            b.sourceType || null, b.sourceUrl || null, b.collectionDate || null, b.collectorName || null, b.verificationStatus || null, b.methodologyNotes || null, causeNumber, recordSlug
+            b.sourceType || null, b.sourceUrl || null, b.collectionDate || null, b.collectorName || null, b.verificationStatus || null, b.methodologyNotes || null, causeNumber, recordSlug,
+            photoHash || null, docHash || null
         );
         res.json({ success: true, id: result.lastInsertRowid });
     } catch (err) {
@@ -780,24 +787,30 @@ app.put('/api/records/:id', authMiddleware, upload.any(), (req, res) => {
         (req.files || []).forEach(f => { filesMap[f.fieldname] = f.filename; });
 
         let pPath = old.photo_path;
+        let pHash = old.photo_hash;
         if (b.deletePhoto === 'yes') {
             if (old.photo_path) {
                 const photoFile = path.join(UPLOAD_DIR, 'photos', old.photo_path);
                 try { fs.unlinkSync(photoFile); } catch(e) {}
             }
             pPath = null;
+            pHash = null;
         } else if (filesMap['photo']) {
             pPath = filesMap['photo'];
+            pHash = b.photoHash || null;
         }
         let dPath = old.document_path;
+        let dHash = old.document_hash;
         if (b.deleteDocument === 'yes') {
             if (old.document_path) {
                 const docFile = path.join(UPLOAD_DIR, 'documents', old.document_path);
                 try { fs.unlinkSync(docFile); } catch(e) {}
             }
             dPath = null;
+            dHash = null;
         } else if (filesMap['document']) {
             dPath = filesMap['document'];
+            dHash = b.docHash || null;
         }
 
         const map = {
@@ -900,8 +913,8 @@ app.put('/api/records/:id', authMiddleware, upload.any(), (req, res) => {
         sets.push('survivor_cv_path = ?', 'survivor_cv_photo_path = ?');
         vals.push(sCvPath, sCvPhotoPath);
 
-        sets.push('photo_path = ?', 'document_path = ?');
-        vals.push(pPath, dPath);
+        sets.push('photo_path = ?', 'document_path = ?', 'photo_hash = ?', 'document_hash = ?');
+        vals.push(pPath, dPath, pHash, dHash);
 
         if (sets.length > 0) {
             vals.push(id);
