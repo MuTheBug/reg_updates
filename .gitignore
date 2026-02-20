@@ -1,3 +1,6 @@
 node_modules/
 temp_uploads/
 temp_restore/
+registry.db-shm
+registry.db-wal
+server.log

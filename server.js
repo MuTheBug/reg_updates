@@ -109,7 +109,15 @@ function initDbSchema() {
         { name: 'breadwinner_relation_other', type: 'TEXT' },
         { name: 'survivor_cv_path', type: 'TEXT' },
         { name: 'survivor_cv_text', type: 'TEXT' },
-        { name: 'survivor_cv_photo_path', type: 'TEXT' }
+        { name: 'survivor_cv_photo_path', type: 'TEXT' },
+        { name: 'source_type', type: 'TEXT' },
+        { name: 'source_url', type: 'TEXT' },
+        { name: 'collection_date', type: 'TEXT' },
+        { name: 'collector_name', type: 'TEXT' },
+        { name: 'verification_status', type: 'TEXT' },
+        { name: 'methodology_notes', type: 'TEXT' },
+        { name: 'cause_number', type: 'TEXT' },
+        { name: 'record_slug', type: 'TEXT' }
     ];
     for (const col of columnsToAdd) {
         try { db.exec(`ALTER TABLE records ADD COLUMN ${col.name} ${col.type}`); } catch (err) {}
@@ -231,6 +239,11 @@ app.post('/api/records', upload.any(), (req, res) => {
         const survivorCvPath = filesMap['survivorCv'] || null;
         const survivorCvPhotoPath = filesMap['survivorCvPhoto'] || null;
 
+        // Berkeley Protocol Generation Logic
+        const causeNumber = b.causeNumber || `CASE-${new Date().getFullYear()}-${Math.floor(Math.random() * 100000).toString().padStart(5, '0')}`;
+        const slugBase = `${b.firstName}-${b.lastName}`.replace(/\s+/g, '-').toLowerCase();
+        const recordSlug = `${slugBase}-${Date.now().toString(36)}`;
+
         const stmt = db.prepare(`
             INSERT INTO records (
                 first_name, father_name, last_name, gender, mother_name,
@@ -250,7 +263,8 @@ app.post('/api/records', upload.any(), (req, res) => {
                 rent_amount, has_hypertension, has_diabetes, other_diseases, is_officially_registered,
                 has_special_needs, special_needs_details, breadwinner_relation,
                 breadwinner_relation_other,
-                survivor_cv_path, survivor_cv_text, survivor_cv_photo_path
+                survivor_cv_path, survivor_cv_text, survivor_cv_photo_path,
+                source_type, source_url, collection_date, collector_name, verification_status, methodology_notes, cause_number, record_slug
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
@@ -259,7 +273,8 @@ app.post('/api/records', upload.any(), (req, res) => {
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?
+                ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?
             )
         `);
 
@@ -284,7 +299,8 @@ app.post('/api/records', upload.any(), (req, res) => {
             b.hasSpecialNeeds === 'yes' ? 1 : 0, b.specialNeedsDetails || null,
             b.breadwinnerRelation || null,
             b.breadwinnerRelationOther || null,
-            survivorCvPath, b.survivorCvText || null, survivorCvPhotoPath
+            survivorCvPath, b.survivorCvText || null, survivorCvPhotoPath,
+            b.sourceType || null, b.sourceUrl || null, b.collectionDate || null, b.collectorName || null, b.verificationStatus || null, b.methodologyNotes || null, causeNumber, recordSlug
         );
         res.json({ success: true, id: result.lastInsertRowid });
     } catch (err) {
@@ -808,7 +824,10 @@ app.put('/api/records/:id', authMiddleware, upload.any(), (req, res) => {
             hasSpecialNeeds:'has_special_needs', specialNeedsDetails:'special_needs_details',
             breadwinnerRelation:'breadwinner_relation',
             breadwinnerRelationOther:'breadwinner_relation_other',
-            survivorCvText:'survivor_cv_text'
+            survivorCvText:'survivor_cv_text',
+            sourceType:'source_type', sourceUrl:'source_url', collectionDate:'collection_date',
+            collectorName:'collector_name', verificationStatus:'verification_status',
+            methodologyNotes:'methodology_notes', causeNumber:'cause_number', recordSlug:'record_slug'
         };
 
         const sets = [];

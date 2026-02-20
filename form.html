@@ -761,6 +761,75 @@
             .btn, .actions, .bg-effects { display: none !important; }
             body { background: #fff; color: #000; }
         }
+
+        /* ═══════════ TOOLTIP ═══════════ */
+        .tooltip-container {
+            display: inline-block;
+            position: relative;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        .tooltip-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(6,182,212,0.15);
+            color: var(--accent);
+            font-size: 0.75em;
+            font-weight: 800;
+            cursor: help;
+            border: 1px solid rgba(6,182,212,0.3);
+            transition: all 0.2s;
+        }
+
+        .tooltip-icon:hover {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            width: 260px;
+            background: rgba(15, 23, 42, 0.95);
+            color: #e2e8f0;
+            text-align: right;
+            border-radius: 8px;
+            padding: 10px 12px;
+            position: absolute;
+            z-index: 100;
+            bottom: 135%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.82em;
+            font-weight: 500;
+            line-height: 1.4;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            pointer-events: none;
+        }
+
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
+        }
+
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -1337,6 +1406,112 @@
     </div>
     <div class="sec-body">
         <div class="fg"><label>ملاحظات أو تفاصيل أخرى</label><textarea name="notes" placeholder="أي معلومات إضافية..." rows="4"></textarea></div>
+    </div>
+</div>
+
+<!-- ═══════════ 10 - بروتوكول بيركلي ═══════════ -->
+<div class="section glow-purple" style="border: 2px solid var(--accent2); box-shadow: 0 0 15px rgba(139,92,246,0.1);">
+    <div class="sec-head" style="background: rgba(139,92,246,0.05);">
+        <span class="sec-num" style="background: var(--accent2);">10</span>
+        <h3 style="color:var(--accent2);">بروتوكول بيركلي (التوثيق الدولي)</h3>
+    </div>
+    <div class="sec-body">
+        <div style="margin-bottom:20px; padding:12px; background:rgba(139,92,246,0.05); border-radius:12px; font-size:0.9em; color:var(--text-dim); border-right:3px solid var(--accent2);">
+            <strong>ملاحظة:</strong> هذه البيانات ضرورية لتوثيق الانتهاكات وفق المعايير الدولية (بروتوكول بيركلي)، مما يسهل استخدامها كأدلة قانونية في المحاكم الدولية.
+        </div>
+
+        <div class="g g2">
+            <div class="fg">
+                <label>
+                    نوع المصدر
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <span class="tooltip-text">حدد طبيعة المصدر الذي تم الحصول منه على المعلومات (مثلاً: مقابلة مباشرة، وثيقة رسمية، منصة تواصل اجتماعي).</span>
+                    </div>
+                </label>
+                <select name="sourceType">
+                    <option value="">-- اختر --</option>
+                    <option value="Social Media">منصة تواصل اجتماعي (Social Media)</option>
+                    <option value="Witness">شاهد عيان / مقابلة (Witness)</option>
+                    <option value="Official Document">وثيقة رسمية (Official Document)</option>
+                    <option value="News Report">تقرير إخباري (News Report)</option>
+                    <option value="Other">أخرى</option>
+                </select>
+            </div>
+            <div class="fg">
+                <label>
+                    رابط / مكان المصدر
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <span class="tooltip-text">رابط المنشور (URL) أو وصف دقيق لمكان وجود الوثيقة الأصلية أو مكان إجراء المقابلة.</span>
+                    </div>
+                </label>
+                <input type="text" name="sourceUrl" placeholder="https://... أو مكان الأرشيف">
+            </div>
+        </div>
+
+        <div class="g g2" style="margin-top:18px;">
+            <div class="fg">
+                <label>
+                    تاريخ جمع المعلومة
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <span class="tooltip-text">التاريخ الدقيق الذي قام فيه الباحث/الموثّق بالحصول على هذه المعلومة.</span>
+                    </div>
+                </label>
+                <input type="date" name="collectionDate" style="color-scheme:dark;">
+            </div>
+            <div class="fg">
+                <label>
+                    اسم جامع المعلومة (الموثّق)
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <span class="tooltip-text">اسم الشخص أو الرمز التعريفي للموثق الذي قام بجمع هذه البيانات.</span>
+                    </div>
+                </label>
+                <input type="text" name="collectorName" placeholder="اسم الموثّق">
+            </div>
+        </div>
+
+        <div class="g g2" style="margin-top:18px;">
+            <div class="fg">
+                <label>
+                    حالة التحقق
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <span class="tooltip-text">مدى موثوقية المعلومة. "متحقق منه" يعني تم التأكد من صحتها عبر مصادر متعددة أو أدلة قاطعة.</span>
+                    </div>
+                </label>
+                <select name="verificationStatus">
+                    <option value="">-- اختر --</option>
+                    <option value="Unverified">غير متحقق منه (Unverified)</option>
+                    <option value="Partially Verified">متحقق منه جزئياً (Partially Verified)</option>
+                    <option value="Verified">متحقق منه (Verified)</option>
+                    <option value="Corroborated">مُؤكَّد بمصادر أخرى (Corroborated)</option>
+                </select>
+            </div>
+            <div class="fg">
+                <label>
+                    رقم القضية (Cause Number)
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <span class="tooltip-text">الرقم المرجعي للقضية القانونية المرتبطة بهذا السجل. اتركه فارغاً ليقوم النظام بتوليده تلقائياً.</span>
+                    </div>
+                </label>
+                <input type="text" name="causeNumber" placeholder="اتركه فارغاً للتوليد التلقائي">
+            </div>
+        </div>
+
+        <div class="fg" style="margin-top:18px;">
+            <label>
+                ملاحظات المنهجية (Methodology)
+                <div class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">اشرح كيف تم التحقق من المعلومة؟ ما هي الخطوات التي اتبعتها للتأكد من صحة البيانات؟ (سلسلة العهدة).</span>
+                </div>
+            </label>
+            <textarea name="methodologyNotes" placeholder="شرح طريقة التحقق والمصادر..." rows="3"></textarea>
+        </div>
     </div>
 </div>
 
