@@ -2865,23 +2865,34 @@ function printRecord() {
 }
 
 async function printSingleRecord(id) {
+    console.log(`Preparing to print record ${id}...`);
     await viewRecord(id);
 
     const modalBody = document.getElementById('modalBody');
     const images = Array.from(modalBody.querySelectorAll('img'));
+    console.log(`Found ${images.length} images to load.`);
 
     const imagePromises = images.map(img => {
         if (img.complete) return Promise.resolve();
         return new Promise(resolve => {
-            img.onload = resolve;
-            img.onerror = resolve;
+            img.onload = () => { console.log('Image loaded'); resolve(); };
+            img.onerror = () => { console.warn('Image failed to load'); resolve(); };
         });
     });
 
-    try {
-        await Promise.all(imagePromises);
-    } catch (e) { console.error('Image load error', e); }
+    // Race between image loading and a 3-second timeout
+    const timeoutPromise = new Promise(resolve => setTimeout(() => {
+        console.warn('Image loading timed out, proceeding to print.');
+        resolve();
+    }, 3000));
 
+    try {
+        await Promise.race([Promise.all(imagePromises), timeoutPromise]);
+    } catch (e) {
+        console.error('Error waiting for images:', e);
+    }
+
+    console.log('Opening print dialog...');
     // Small delay to ensure rendering is complete after images load
     setTimeout(() => window.print(), 500);
 }
