@@ -1148,7 +1148,7 @@ async function loadRecords(page) {
 const months = ['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
 
         function isBerkeleyCompliant(r) {
-            return r.source_type && r.collection_date && r.collector_name && r.verification_status && r.verification_status !== 'Unverified';
+            return r.source_type && r.collection_date && r.collector_name && r.verification_status;
         }
 
         function statusLabel(r) {
@@ -2451,7 +2451,8 @@ function printRecord() {
 
 async function printSingleRecord(id) {
     await viewRecord(id);
-    setTimeout(() => window.print(), 300);
+    // Increased timeout to ensure images load and print preview works correctly
+    setTimeout(() => window.print(), 800);
 }
 
 // ══════════════ PDF EXPORT ══════════════

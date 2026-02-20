@@ -243,6 +243,11 @@ app.post('/api/records', upload.any(), (req, res) => {
         const survivorCvPath = filesMap['survivorCv'] || null;
         const survivorCvPhotoPath = filesMap['survivorCvPhoto'] || null;
 
+        // Append ' - جمعية حقنا' to collector name if present
+        if (b.collectorName && !b.collectorName.includes('جمعية حقنا')) {
+            b.collectorName = b.collectorName.trim() + ' - جمعية حقنا';
+        }
+
         // Berkeley Protocol Generation Logic
         const causeNumber = b.causeNumber || `CASE-${new Date().getFullYear()}-${Math.floor(Math.random() * 100000).toString().padStart(5, '0')}`;
         const slugBase = `${b.firstName}-${b.lastName}`.replace(/\s+/g, '-').toLowerCase();
@@ -811,6 +816,24 @@ app.put('/api/records/:id', authMiddleware, upload.any(), (req, res) => {
         } else if (filesMap['document']) {
             dPath = filesMap['document'];
             dHash = b.docHash || null;
+        }
+
+        // Append ' - جمعية حقنا' to collector name if present
+        if (b.collectorName && !b.collectorName.includes('جمعية حقنا')) {
+            b.collectorName = b.collectorName.trim() + ' - جمعية حقنا';
+        }
+
+        // Auto-generate Cause Number if missing
+        if (!b.causeNumber && !old.cause_number) {
+            b.causeNumber = `CASE-${new Date().getFullYear()}-${Math.floor(Math.random() * 100000).toString().padStart(5, '0')}`;
+        }
+
+        // Auto-generate Slug if missing
+        if (!b.recordSlug && !old.record_slug) {
+            const fName = b.firstName || old.first_name || 'unknown';
+            const lName = b.lastName || old.last_name || 'record';
+            const slugBase = `${fName}-${lName}`.replace(/\s+/g, '-').toLowerCase();
+            b.recordSlug = `${slugBase}-${Date.now().toString(36)}`;
         }
 
         const map = {
