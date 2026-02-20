@@ -824,12 +824,16 @@ app.put('/api/records/:id', authMiddleware, upload.any(), (req, res) => {
         }
 
         // Auto-generate Cause Number if missing
-        if (!b.causeNumber && !old.cause_number) {
+        const currentCause = b.causeNumber ? String(b.causeNumber).trim() : '';
+        const oldCause = old.cause_number ? String(old.cause_number).trim() : '';
+        if (!currentCause && !oldCause) {
             b.causeNumber = `CASE-${new Date().getFullYear()}-${Math.floor(Math.random() * 100000).toString().padStart(5, '0')}`;
         }
 
         // Auto-generate Slug if missing
-        if (!b.recordSlug && !old.record_slug) {
+        const currentSlug = b.recordSlug ? String(b.recordSlug).trim() : '';
+        const oldSlug = old.record_slug ? String(old.record_slug).trim() : '';
+        if (!currentSlug && !oldSlug) {
             const fName = b.firstName || old.first_name || 'unknown';
             const lName = b.lastName || old.last_name || 'record';
             const slugBase = `${fName}-${lName}`.replace(/\s+/g, '-').toLowerCase();

@@ -2451,8 +2451,24 @@ function printRecord() {
 
 async function printSingleRecord(id) {
     await viewRecord(id);
-    // Increased timeout to ensure images load and print preview works correctly
-    setTimeout(() => window.print(), 1500);
+
+    const modalBody = document.getElementById('modalBody');
+    const images = Array.from(modalBody.querySelectorAll('img'));
+
+    const imagePromises = images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+            img.onload = resolve;
+            img.onerror = resolve;
+        });
+    });
+
+    try {
+        await Promise.all(imagePromises);
+    } catch (e) { console.error('Image load error', e); }
+
+    // Small delay to ensure rendering is complete after images load
+    setTimeout(() => window.print(), 500);
 }
 
 // ══════════════ PDF EXPORT ══════════════
