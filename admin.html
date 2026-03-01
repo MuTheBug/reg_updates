@@ -221,6 +221,10 @@
         .badge-survivor { background: var(--green-glow); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
         .badge-deceased { background: var(--red-glow); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
 
+        .badge-berkeley { font-size: 0.7em; margin-top: 4px; display: block; width: fit-content; }
+        .badge-berkeley.compliant { color: var(--green); border: 1px solid var(--green); background: rgba(16,185,129,0.1); padding: 2px 6px; border-radius: 4px; }
+        .badge-berkeley.non-compliant { color: var(--red); border: 1px solid var(--red); background: rgba(239,68,68,0.1); padding: 2px 6px; border-radius: 4px; cursor: pointer; }
+
         .photo-thumb {
             width: 40px; height: 40px; border-radius: 10px; object-fit: cover;
             border: 2px solid var(--border); cursor: pointer; transition: all 0.3s;
@@ -1143,12 +1147,24 @@ async function loadRecords(page) {
 // ══════════════ HELPERS ══════════════
 const months = ['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
 
-function statusLabel(s) {
-    if (s === 'enforced') return '<span class="status-badge badge-enforced">مغيّب قسري</span>';
-    if (s === 'survivor') return '<span class="status-badge badge-survivor">ناجي</span>';
-    if (s === 'deceased') return '<span class="status-badge badge-deceased">متوفى</span>';
-    return '<span style="color:var(--text-dim)">—</span>';
-}
+        function isBerkeleyCompliant(r) {
+            return r.source_type && r.collection_date && r.collector_name && r.verification_status;
+        }
+
+        function statusLabel(r) {
+            let sHtml = '';
+            if (r.status === 'enforced') sHtml = '<span class="status-badge badge-enforced">مغيّب قسري</span>';
+            else if (r.status === 'survivor') sHtml = '<span class="status-badge badge-survivor">ناجي</span>';
+            else if (r.status === 'deceased') sHtml = '<span class="status-badge badge-deceased">متوفى</span>';
+            else sHtml = '<span style="color:var(--text-dim)">—</span>';
+
+            if (isBerkeleyCompliant(r)) {
+                sHtml += '<span class="badge-berkeley compliant">✅ مطابق لبيركلي</span>';
+            } else {
+                sHtml += `<span class="badge-berkeley non-compliant" onclick="editRecord(${r.id})" title="انقر لاستكمال البيانات">⚠️ غير مطابق لبيركلي</span>`;
+            }
+            return sHtml;
+        }
 
 function formatDate(d, m, y) {
     if (!y) return '—';
@@ -1189,7 +1205,7 @@ function renderTable(records) {
             <td style="font-weight:700;">${name}</td>
             <td>${r.province || '—'}</td>
             <td style="font-family:monospace;direction:ltr;text-align:right;">${r.national_id || '—'}</td>
-            <td>${statusLabel(r.status)}</td>
+            <td>${statusLabel(r)}</td>
             <td style="color:var(--text-dim);font-size:0.85em;">${r.created_at || '—'}</td>
             <td>
                 <div class="action-btns">
@@ -1230,8 +1246,28 @@ async function viewRecord(id) {
                      onclick="openLightbox('/uploads/photos/${pFile}')"
                      onerror="this.style.display='none';this.nextElementSibling.textContent='الصورة غير متوفرة';">
                 <p style="font-size:0.8em;color:var(--text-dim);margin-top:4px;">اضغط على الصورة لتكبيرها</p>
+                ${r.photo_hash ? `<div style="font-family:monospace;font-size:0.75em;color:var(--accent);margin-top:2px;word-break:break-all;">SHA256: ${r.photo_hash}</div>` : ''}
             </div>`;
         }
+
+        // Berkeley Protocol Box (Top Priority)
+        html += `<div style="border: 2px solid var(--accent2); border-radius: 12px; overflow: hidden; margin-bottom: 20px;">
+            <div style="background: rgba(139,92,246,0.1); padding: 10px 16px; border-bottom: 1px solid var(--accent2); display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="color: var(--accent2); margin: 0; font-size: 1.1em;">توثيق بروتوكول بيركلي</h3>
+                ${isBerkeleyCompliant(r) ? '<span style="background:var(--green); color:#fff; padding:4px 10px; border-radius:8px; font-size:0.8em; font-weight:700;">✅ مطابق للمعايير</span>' : '<span style="background:var(--red); color:#fff; padding:4px 10px; border-radius:8px; font-size:0.8em; font-weight:700;">⚠️ غير مكتمل</span>'}
+            </div>
+            <div style="padding: 16px;">
+                ${detailRow('رقم القضية (Cause #)', `<span style="font-family:monospace; font-weight:700; color:var(--accent);">${esc(r.cause_number || '—')}</span>`)}
+                ${detailRow('المعرف الفريد (Slug)', `<span style="font-family:monospace; color:var(--text-dim);">${esc(r.record_slug || '—')}</span>`)}
+                <div style="height:1px; background:var(--border); margin:8px 0;"></div>
+                ${detailRow('نوع المصدر', esc(r.source_type))}
+                ${detailRow('رابط/مكان المصدر', r.source_url ? `<a href="${esc(r.source_url)}" target="_blank" style="color:var(--accent); text-decoration:underline;">${esc(r.source_url)}</a>` : '—')}
+                ${detailRow('تاريخ الجمع', esc(r.collection_date))}
+                ${detailRow('اسم الموثّق', esc(r.collector_name))}
+                ${detailRow('حالة التحقق', `<span style="font-weight:700; color:${r.verification_status==='Verified'||r.verification_status==='Corroborated'? 'var(--green)' : 'var(--red)'}">${esc(r.verification_status || 'Unverified')}</span>`)}
+                ${r.methodology_notes ? `<div style="margin-top:8px;"><div style="font-weight:700;color:var(--text-label);font-size:0.88em;margin-bottom:4px;">منهجية التحقق:</div><div style="background:var(--bg-input);padding:8px;border-radius:8px;font-size:0.9em;white-space:pre-wrap;">${esc(r.methodology_notes)}</div></div>` : ''}
+            </div>
+        </div>`;
 
         // Personal info
         html += `<div class="detail-section-title">المعلومات الشخصية</div>`;
@@ -1251,7 +1287,7 @@ async function viewRecord(id) {
         html += detailRow('الجهة المسؤولة', r.arrest_authority);
         html += detailRow('السبب', r.arrest_reason);
         html += detailRow('المُسبِّب', r.arrest_causer);
-        html += detailRow('الحالة', statusLabel(r.status));
+        html += detailRow('الحالة', statusLabel(r));
         html += detailRow('مسجل رسمياً', r.is_officially_registered ? '<span style="color:var(--green)">نعم</span>' : '<span style="color:var(--text-dim)">لا</span>');
         if (r.status === 'survivor') html += detailRow('تاريخ الخروج', formatDate(r.release_day, r.release_month, r.release_year));
         if (r.status === 'deceased') {
@@ -1457,6 +1493,9 @@ async function viewRecord(id) {
             } else if (isPdf) {
                 html += `<br><iframe src="/uploads/documents/${dFile}" style="width:100%;height:400px;border:none;border-radius:8px;margin-top:8px;"></iframe>`;
             }
+            if (r.document_hash) {
+                html += `<div style="font-family:monospace;font-size:0.75em;color:var(--accent);margin-top:6px;word-break:break-all;border-top:1px dashed var(--border);padding-top:4px;">SHA256: ${r.document_hash}</div>`;
+            }
             html += `</div>`;
         }
         if (!r.photo_path && !r.document_path) {
@@ -1495,6 +1534,63 @@ function closeLightbox() {
 }
 
 // ══════════════ EDIT RECORD ══════════════
+async function calculateEditHash(input, outputId) {
+    const file = input.files[0];
+    const hidden = document.getElementById(outputId);
+    if (!hidden) return;
+    if (!file) { hidden.value = ''; return; }
+
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        hidden.value = hashHex;
+    } catch (e) {
+        console.error('Hash error:', e);
+        hidden.value = '';
+    }
+}
+
+function renderEditMethodologyChecklist() {
+    const typeSel = document.getElementById('edit_sourceType');
+    const container = document.getElementById('edit_methodology_checklist');
+    if (!typeSel || !container) return;
+
+    const type = typeSel.value;
+    let checks = [];
+    if (type === 'Social Media') {
+        checks = ['تم أرشفة الرابط (Wayback Machine/Archive)', 'تم التحقق من حساب الناشر', 'تم تحليل المحتوى البصري', 'تم مطابقة التاريخ والوقت'];
+    } else if (type === 'Witness') {
+        checks = ['تم أخذ الموافقة المستنيرة', 'تم إجراء المقابلة في مكان آمن', 'الشاهد موثوق ومعروف', 'تم تسجيل الشهادة (صوت/فيديو/كتابة)'];
+    } else if (type === 'Official Document') {
+        checks = ['تم التحقق من الجهة المصدرة', 'تم التأكد من الأختام والتواقيع', 'تم حفظ النسخة الأصلية/صورة عالية الدقة', 'سلسلة العهدة (Chain of Custody) محفوظة'];
+    } else {
+        checks = ['تم التأكد من المصدر', 'تم مقاطعة المعلومات'];
+    }
+
+    container.innerHTML = checks.map(c => `
+        <div class="col-picker-item" style="padding:4px 10px; font-size:0.8em;">
+            <input type="checkbox" id="emeth_${c.replace(/\s/g,'')}" value="${c}" onchange="buildEditMethodologyNotes()">
+            <label for="emeth_${c.replace(/\s/g,'')}" style="margin-right:6px;">${c}</label>
+        </div>
+    `).join('');
+}
+
+function buildEditMethodologyNotes() {
+    const checked = Array.from(document.querySelectorAll('#edit_methodology_checklist input:checked')).map(cb => cb.value);
+    const textArea = document.getElementById('edit_methodologyNotes');
+    if (!textArea) return;
+
+    let currentText = textArea.value;
+    currentText = currentText.replace(/^القائمة المرجعية:.*?\n---\n/s, '');
+
+    if (checked.length > 0) {
+        const checklistStr = "القائمة المرجعية: \n- " + checked.join("\n- ") + "\n---\n";
+        textArea.value = checklistStr + currentText;
+    }
+}
+
 function buildDateOptions(type, selectedVal) {
     const val = parseInt(selectedVal) || 0;
     if (type === 'day') {
@@ -1523,11 +1619,51 @@ async function editRecord(id) {
         currentRecordId = id;
         document.getElementById('modalTitle').textContent = `تعديل السجل #${r.id}`;
 
+        // Auto-generate Cause Number if missing (Client-side pre-fill)
+        if (!r.cause_number) {
+            const year = new Date().getFullYear();
+            const rand = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
+            r.cause_number = `CASE-${year}-${rand}`;
+        }
+
         const provinces = ["دمشق","ريف دمشق","حلب","حمص","حماة","اللاذقية","طرطوس","إدلب","دير الزور","الرقة","الحسكة","درعا","السويداء","القنيطرة","أخرى"];
         const arrestPlacesList = ["صيدنايا الامني (الاحمر)","صيدنايا القضائي (الابيض)","الفرع 235 فرع فلسطين","فرع 248، التحقيق العسكري","فرع 215، بسرية المداهمة والاقتحام","فرع 251، فرع الخطيب","فرع 216، فرع الدوريات","فرع 227، فرع المنطقة","فرع 285، فرع التحقيق","فرع 295، مكافحة الإرهاب","الدفاع الوطني","السجن المدني"];
         const eduTypeOptions = ['علمي','ادبي','شريعة','صناعة وفنون','تجارة','معلوماتية'];
 
         let html = `<form id="editForm" onsubmit="saveEdit(event)" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:16px;">
+
+            <div class="detail-section-title" style="color:var(--accent2); border-color:var(--accent2);">بروتوكول بيركلي (التوثيق)</div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>نوع المصدر</label>
+                    <select name="sourceType" id="edit_sourceType" onchange="renderEditMethodologyChecklist()">
+                        <option value="">-- اختر --</option>
+                        ${['Social Media','Witness','Official Document','News Report','Other'].map(o => `<option value="${o}" ${r.source_type===o?'selected':''}>${o}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="filter-group"><label>رابط / مكان المصدر</label><input name="sourceUrl" value="${esc(r.source_url||'')}"></div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group"><label>تاريخ الجمع</label><input type="date" name="collectionDate" value="${esc(r.collection_date||'')}"></div>
+                <div class="filter-group"><label>اسم الموثّق</label><input name="collectorName" value="${esc(r.collector_name||'')}"></div>
+            </div>
+            <div class="adv-grid">
+                <div class="filter-group">
+                    <label>حالة التحقق</label>
+                    <select name="verificationStatus">
+                        <option value="Unverified" ${r.verification_status==='Unverified'?'selected':''}>غير متحقق (Unverified)</option>
+                        <option value="Partially Verified" ${r.verification_status==='Partially Verified'?'selected':''}>متحقق جزئياً (Partially Verified)</option>
+                        <option value="Verified" ${r.verification_status==='Verified'?'selected':''}>متحقق (Verified)</option>
+                        <option value="Corroborated" ${r.verification_status==='Corroborated'?'selected':''}>مؤكد (Corroborated)</option>
+                    </select>
+                </div>
+                <div class="filter-group"><label>رقم القضية (Cause #)</label><input name="causeNumber" value="${esc(r.cause_number||'')}"></div>
+            </div>
+            <div class="filter-group">
+                <label>منهجية التحقق (Interactive Checklist)</label>
+                <div id="edit_methodology_checklist" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;"></div>
+                <textarea name="methodologyNotes" id="edit_methodologyNotes" rows="3" style="background:var(--bg-input); color:var(--text); border:2px solid var(--border); border-radius:12px; padding:10px;">${esc(r.methodology_notes||'')}</textarea>
+            </div>
 
             <div class="detail-section-title">المعلومات الشخصية الأساسية</div>
             <div class="adv-grid">
@@ -1915,7 +2051,8 @@ async function editRecord(id) {
                             <input type="checkbox" name="deletePhoto" value="yes" style="accent-color:#ef4444;"> حذف الصورة
                         </label>
                     </div>` : ''}
-                    <input type="file" name="photo" accept="image/*" style="padding:8px; background:var(--bg-input); border:2px solid var(--border); border-radius:10px; color:var(--text);">
+                    <input type="file" name="photo" accept="image/*" onchange="calculateEditHash(this, 'edit_photoHash')" style="padding:8px; background:var(--bg-input); border:2px solid var(--border); border-radius:10px; color:var(--text);">
+                    <input type="hidden" name="photoHash" id="edit_photoHash">
                     <span style="font-size:0.75em;color:var(--text-dim);">اتركه فارغاً للاحتفاظ بالصورة الحالية</span>
                 </div>
                 <div class="filter-group">
@@ -1926,7 +2063,8 @@ async function editRecord(id) {
                             <input type="checkbox" name="deleteDocument" value="yes" style="accent-color:#ef4444;"> حذف الوثيقة
                         </label>
                     </div>` : ''}
-                    <input type="file" name="document" accept="image/*,.pdf" style="padding:8px; background:var(--bg-input); border:2px solid var(--border); border-radius:10px; color:var(--text);">
+                    <input type="file" name="document" accept="image/*,.pdf" onchange="calculateEditHash(this, 'edit_docHash')" style="padding:8px; background:var(--bg-input); border:2px solid var(--border); border-radius:10px; color:var(--text);">
+                    <input type="hidden" name="docHash" id="edit_docHash">
                     <span style="font-size:0.75em;color:var(--text-dim);">اتركه فارغاً للاحتفاظ بالوثيقة الحالية</span>
                 </div>
             </div>
@@ -1954,6 +2092,10 @@ async function editRecord(id) {
             document.getElementById('edit_kidsCountW').value = kcw;
             buildEditKids('edit_kidsBoxW', kcw, editChildrenDataW);
         }
+
+        // Initialize Methodology Checklist
+        renderEditMethodologyChecklist();
+
     } catch (e) { console.error(e); alert('خطأ في تحميل السجل'); }
 }
 
@@ -2316,7 +2458,24 @@ function printRecord() {
 
 async function printSingleRecord(id) {
     await viewRecord(id);
-    setTimeout(() => window.print(), 300);
+
+    const modalBody = document.getElementById('modalBody');
+    const images = Array.from(modalBody.querySelectorAll('img'));
+
+    const imagePromises = images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+            img.onload = resolve;
+            img.onerror = resolve;
+        });
+    });
+
+    try {
+        await Promise.all(imagePromises);
+    } catch (e) { console.error('Image load error', e); }
+
+    // Small delay to ensure rendering is complete after images load
+    setTimeout(() => window.print(), 500);
 }
 
 // ══════════════ PDF EXPORT ══════════════
@@ -2397,6 +2556,10 @@ function getActiveFilterSummary() {
 const PDF_COLUMNS = [
     { key: 'rowNum', label: '#', always: true },
     { key: 'id', label: 'ID' },
+    { key: 'causeNumber', label: 'رقم القضية', default: true },
+    { key: 'recordSlug', label: 'المعرف (Slug)' },
+    { key: 'verificationStatus', label: 'حالة التحقق', default: true },
+    { key: 'sourceType', label: 'نوع المصدر' },
     { key: 'fullName', label: 'الاسم الكامل', default: true },
     { key: 'motherName', label: 'اسم الأم', default: true },
     { key: 'nationalId', label: 'الرقم الوطني', default: true },
@@ -2433,7 +2596,11 @@ const PDF_COLUMNS = [
     { key: 'officiallyRegistered', label: 'مسجل رسمياً' },
     { key: 'assoc', label: 'مسجل بجمعية أخرى' },
     { key: 'notes', label: 'ملاحظات' },
-    { key: 'createdAt', label: 'تاريخ التسجيل' }
+    { key: 'collectionDate', label: 'تاريخ الجمع' },
+    { key: 'collectorName', label: 'اسم الموثق' },
+    { key: 'createdAt', label: 'تاريخ التسجيل' },
+    { key: 'photoHash', label: 'بصمة الصورة (Hash)' },
+    { key: 'documentHash', label: 'بصمة الوثيقة (Hash)' }
 ];
 
 let pendingPdfMode = null;
@@ -2636,6 +2803,14 @@ async function generatePDF(mode, selectedKeys) {
                 case 'assoc': return r.assoc === 'yes' ? (r.assoc_name || 'نعم') : '';
                 case 'notes': return r.notes || '';
                 case 'createdAt': return r.created_at || '';
+                case 'causeNumber': return r.cause_number || '';
+                case 'recordSlug': return r.record_slug || '';
+                case 'verificationStatus': return r.verification_status || '';
+                case 'sourceType': return r.source_type || '';
+                case 'collectionDate': return r.collection_date || '';
+                case 'collectorName': return r.collector_name || '';
+                case 'photoHash': return r.photo_hash || '';
+                case 'documentHash': return r.document_hash || '';
                 default: return '';
             }
         }
